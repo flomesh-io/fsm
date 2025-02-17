@@ -186,7 +186,7 @@ jobs:
           - k8s_version: v1.19.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
-            os: macos-15
+            os: ubuntu-24.04-arm
           - k8s_version: v1.27.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
@@ -207,22 +207,6 @@ jobs:
           large-packages: true
           docker-images: false
           swap-storage: true
-      - name: Install Docker(macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install docker docker-buildx
-          
-          mkdir -p ~/.docker
-          
-          tee -a ~/.docker/config.json << END
-          {
-              "cliPluginsExtraDirs": [
-                  "/opt/homebrew/lib/docker/cli-plugins"
-              ]
-          }
-          END
-          
-          brew services start docker
 #      - name: Upgrade Docker Engine
 #        run: |
 #          #Check installed Docker version
@@ -302,7 +286,7 @@ jobs:
           - version: "latest"
             os: ubuntu-24.04
           - version: v1.19.16-k3s1
-            os: macos-15
+            os: ubuntu-24.04-arm
           - version: v1.21.14-k3s1
             os: ubuntu-24.04
           - version: v1.23.17-k3s1
@@ -334,23 +318,6 @@ jobs:
           large-packages: true
           docker-images: false
           swap-storage: true
-      - name: Install Docker(macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install docker docker-buildx
-          
-          mkdir -p ~/.docker
-          
-          tee -a ~/.docker/config.json << END
-          {
-              "cliPluginsExtraDirs": [
-                  "/opt/homebrew/lib/docker/cli-plugins"
-              ]
-          }
-          END
-          
-          brew services start docker
-
 #      - name: Upgrade Docker Engine
 #        run: |
 #          #Check installed Docker version
