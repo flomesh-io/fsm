@@ -198,6 +198,7 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
+        if: runner.os == 'Linux'
         with:
           tool-cache: false
           android: true
@@ -308,6 +309,7 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
+        if: runner.os == 'Linux'
         with:
           tool-cache: false
           android: true
@@ -408,6 +410,7 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
+        if: runner.os == 'Linux'
         with:
           tool-cache: false
           android: true
@@ -475,6 +478,7 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
+        if: runner.os == 'Linux'
         with:
           tool-cache: false
           android: true
@@ -539,6 +543,7 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
+        if: runner.os == 'Linux'
         with:
           tool-cache: false
           android: true
@@ -595,6 +600,7 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
+        if: runner.os == 'Linux'
         with:
           tool-cache: false
           android: true
