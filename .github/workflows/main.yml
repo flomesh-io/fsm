@@ -34,7 +34,7 @@ env:
 jobs:
   shellcheck:
     name: Shellcheck
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
 
   lint:
     name: Lint
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -62,7 +62,7 @@ jobs:
 
   codegen:
     name: Codegen
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -84,7 +84,7 @@ jobs:
 
   mocks:
     name: Mocks
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -100,7 +100,7 @@ jobs:
 
   charts:
     name: Chart checks
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -114,7 +114,7 @@ jobs:
 
   build:
     name: Go build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -130,7 +130,7 @@ jobs:
 
   unittest:
     name: Go test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: build
     steps:
       - name: Checkout
@@ -152,7 +152,7 @@ jobs:
 
   imagescan:
     name: Scan images for security vulnerabilities
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000"
@@ -181,31 +181,59 @@ jobs:
         k8s_version: [""]
         focus: [""]
         bucket: [1, 2, 3, 4, 5]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
         include:
           - k8s_version: v1.19.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
-            os: ubuntu-20.04
+            os: ubuntu-24.04-arm
           - k8s_version: v1.27.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
-            os: ubuntu-22.04
+            os: ubuntu-24.04
     runs-on: ${{ matrix.os }}
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000"
     steps:
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: false
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
+#      - name: Free Disk Space (Ubuntu)
+#        uses: jlumbroso/free-disk-space@main
+#        if: runner.os == 'Linux'
+#        with:
+#          tool-cache: false
+#          android: true
+#          dotnet: true
+#          haskell: true
+#          large-packages: true
+#          docker-images: false
+#          swap-storage: true
+#      - name: Upgrade Docker Engine
+#        run: |
+#          #Check installed Docker version
+#          sudo docker --version
+#
+#          # Uninstall all conflicting packages
+#          for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
+#
+#          # Add Docker's official GPG key:
+#          sudo apt-get update
+#          sudo apt-get install ca-certificates curl
+#          sudo install -m 0755 -d /etc/apt/keyrings
+#          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+#          sudo chmod a+r /etc/apt/keyrings/docker.asc
+#
+#          # Add the repository to Apt sources:
+#          echo \
+#          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+#          $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
+#          sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+#          sudo apt-get update
+#
+#          # Install the Docker packages
+#          sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+#
+#          #Check Docker version after upgrading
+#          sudo docker --version
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
@@ -256,39 +284,67 @@ jobs:
         bucket: [6, 7]
         k8s:
           - version: "latest"
-            os: ubuntu-22.04
+            os: ubuntu-24.04
           - version: v1.19.16-k3s1
-            os: ubuntu-20.04
+            os: ubuntu-24.04-arm
           - version: v1.21.14-k3s1
-            os: ubuntu-22.04
+            os: ubuntu-24.04
           - version: v1.23.17-k3s1
-            os: ubuntu-22.04
+            os: ubuntu-24.04
         exclude:
           - focus: ""
             bucket: "7"
             k8s:
               version: v1.21.14-k3s1
-              os: ubuntu-22.04
+              os: ubuntu-24.04
           - focus: ""
             bucket: "7"
             k8s:
               version: v1.23.17-k3s1
-              os: ubuntu-22.04
+              os: ubuntu-24.04
     runs-on: ${{ matrix.k8s.os }}
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000"
     steps:
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: false
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
+#      - name: Free Disk Space (Ubuntu)
+#        uses: jlumbroso/free-disk-space@main
+#        if: runner.os == 'Linux'
+#        with:
+#          tool-cache: false
+#          android: true
+#          dotnet: true
+#          haskell: true
+#          large-packages: true
+#          docker-images: false
+#          swap-storage: true
+#      - name: Upgrade Docker Engine
+#        run: |
+#          #Check installed Docker version
+#          sudo docker --version
+#
+#          # Uninstall all conflicting packages
+#          for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
+#
+#          # Add Docker's official GPG key:
+#          sudo apt-get update
+#          sudo apt-get install ca-certificates curl
+#          sudo install -m 0755 -d /etc/apt/keyrings
+#          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+#          sudo chmod a+r /etc/apt/keyrings/docker.asc
+#
+#          # Add the repository to Apt sources:
+#          echo \
+#          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+#          $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
+#          sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+#          sudo apt-get update
+#
+#          # Install the Docker packages
+#          sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+#
+#          #Check Docker version after upgrading
+#          sudo docker --version
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
@@ -341,7 +397,7 @@ jobs:
 
   ingress-e2e-test:
     name: Go ingress test e2e
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: build
     strategy:
       matrix:
@@ -354,6 +410,7 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
+        if: runner.os == 'Linux'
         with:
           tool-cache: false
           android: true
@@ -408,7 +465,7 @@ jobs:
 
   mesh-retry-e2e-test:
     name: Go retry test e2e
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: mesh-statefulset-e2e-test
     strategy:
       matrix:
@@ -421,6 +478,7 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
+        if: runner.os == 'Linux'
         with:
           tool-cache: false
           android: true
@@ -472,7 +530,7 @@ jobs:
 
   mesh-statefulset-e2e-test:
     name: Go statefulset test e2e
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: integration-tresor
     strategy:
       matrix:
@@ -485,6 +543,7 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
+        if: runner.os == 'Linux'
         with:
           tool-cache: false
           android: true
@@ -536,11 +595,12 @@ jobs:
 
   integration-tresor:
     name: Integration Test with Tresor, SMI traffic policies, and egress disabled
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: [build]
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
+        if: runner.os == 'Linux'
         with:
           tool-cache: false
           android: true
@@ -579,7 +639,7 @@ jobs:
 
   images:
     name: Docker Images
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-')) && github.event_name == 'push' }}
     env:
       DOCKER_USER: ${{ secrets.RELEASE_DOCKER_USER }}
