@@ -196,17 +196,17 @@ jobs:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000"
     steps:
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        if: runner.os == 'Linux'
-        with:
-          tool-cache: false
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
+#      - name: Free Disk Space (Ubuntu)
+#        uses: jlumbroso/free-disk-space@main
+#        if: runner.os == 'Linux'
+#        with:
+#          tool-cache: false
+#          android: true
+#          dotnet: true
+#          haskell: true
+#          large-packages: true
+#          docker-images: false
+#          swap-storage: true
 #      - name: Upgrade Docker Engine
 #        run: |
 #          #Check installed Docker version
@@ -307,17 +307,17 @@ jobs:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000"
     steps:
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        if: runner.os == 'Linux'
-        with:
-          tool-cache: false
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
+#      - name: Free Disk Space (Ubuntu)
+#        uses: jlumbroso/free-disk-space@main
+#        if: runner.os == 'Linux'
+#        with:
+#          tool-cache: false
+#          android: true
+#          dotnet: true
+#          haskell: true
+#          large-packages: true
+#          docker-images: false
+#          swap-storage: true
 #      - name: Upgrade Docker Engine
 #        run: |
 #          #Check installed Docker version
