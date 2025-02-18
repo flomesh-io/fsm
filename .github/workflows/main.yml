@@ -182,11 +182,17 @@ jobs:
         focus: [""]
         bucket: [1, 2, 3, 4, 5]
         os: [ubuntu-24.04]
+        fixCGroupV2: [true]
+        fixDNS: [true]
+        fixMounts: [true]
         include:
           - k8s_version: v1.19.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
             os: ubuntu-24.04-arm
+            fixCGroupV2: true
+            fixDNS: false
+            fixMounts: true
           - k8s_version: v1.27.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
@@ -249,6 +255,9 @@ jobs:
         id: test
         env:
           K8S_NAMESPACE: "fsm-system"
+          K3D_FIX_CGROUPV2: ${{ matrix.fixCGroupV2 }}
+          K3D_FIX_DNS: ${{ matrix.fixDNS }}
+          K3D_FIX_MOUNTS: ${{ matrix.fixMounts }}
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
