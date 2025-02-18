@@ -285,16 +285,24 @@ jobs:
         k8s:
           - version: "latest"
             os: ubuntu-24.04
-            fixCGroupV2: false
-          - version: v1.19.16-k3s1
-            os: ubuntu-24.04-arm
             fixCGroupV2: true
+            fixDNS: true
+            fixMounts: true
+          - version: v1.19.16-k3s1
+            os: ubuntu-24.04
+            fixCGroupV2: true
+            fixDNS: false
+            fixMounts: true
           - version: v1.21.14-k3s1
             os: ubuntu-24.04
-            fixCGroupV2: false
+            fixCGroupV2: true
+            fixDNS: true
+            fixMounts: true
           - version: v1.23.17-k3s1
             os: ubuntu-24.04
-            fixCGroupV2: false
+            fixCGroupV2: true
+            fixDNS: true
+            fixMounts: true
         exclude:
           - focus: ""
             bucket: "7"
@@ -374,6 +382,8 @@ jobs:
         env:
           K8S_NAMESPACE: "fsm-system"
           K3D_FIX_CGROUPV2: ${{ matrix.k8s.fixCGroupV2 }}
+          K3D_FIX_DNS: ${{ matrix.k8s.fixDNS }}
+          K3D_FIX_MOUNTS: ${{ matrix.k8s.fixMounts }}
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
