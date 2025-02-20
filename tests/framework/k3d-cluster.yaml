@@ -64,6 +64,14 @@ options:
         nodeFilters:
           - server:*
           - agent:*
+      - arg: --debug
+        nodeFilters:
+          - server:*
+          - agent:*
+      - arg: -v=5
+        nodeFilters:
+          - server:*
+          - agent:*
     nodeLabels:
       - label: ingress-ready=true
         nodeFilters:
