@@ -181,12 +181,10 @@ jobs:
         k8s_version: [""]
         focus: [""]
         bucket: [1, 2, 3, 4, 5]
-        fixCGroup: [true]
         include:
           - k8s_version: v1.19.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
-            fixCGroup: false
           - k8s_version: v1.27.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
@@ -221,7 +219,6 @@ jobs:
         id: test
         env:
           K8S_NAMESPACE: "fsm-system"
-          K3D_FIX_CGROUPV2: ${{ matrix.fixCGroup }}
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
@@ -257,13 +254,9 @@ jobs:
         bucket: [6, 7]
         k8s:
           - version: "latest"
-            fixCGroup: true
           - version: v1.19.16-k3s1
-            fixCGroup: false
           - version: v1.21.14-k3s1
-            fixCGroup: true
           - version: v1.23.17-k3s1
-            fixCGroup: true
         exclude:
           - focus: ""
             bucket: "7"
@@ -313,7 +306,6 @@ jobs:
         id: test
         env:
           K8S_NAMESPACE: "fsm-system"
-          K3D_FIX_CGROUPV2: ${{ matrix.k8s.fixCGroup }}
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
