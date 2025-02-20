@@ -324,7 +324,7 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 
 				name := c.Names[0]
 				td.T.Logf("Conainer name: %s", name)
-				if !strings.HasPrefix(name, fmt.Sprintf("k3d-%s-", Td.ClusterName)) {
+				if !strings.HasPrefix(name, fmt.Sprintf("/k3d-%s-", Td.ClusterName)) {
 					continue
 				}
 
