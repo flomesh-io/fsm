@@ -333,7 +333,7 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 				if _, ok := k3dNodes[containerId]; !ok && c.State == "running" {
 					k3dNodes[containerId] = struct{}{}
 					td.T.Logf("Container %s(%s) is running", name, containerId)
-					writer := LogConsumerWriter{func(line string) { td.T.Log(fmt.Sprintf("[%s] %s", name, line)) }}
+					writer := &LogConsumerWriter{func(line string) { td.T.Log(fmt.Sprintf("[%s] %s", name, line)) }}
 					go td.consumeDockerContainerLogs(containerId, writer, writer)
 				}
 			}
