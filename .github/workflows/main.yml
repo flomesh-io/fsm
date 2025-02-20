@@ -182,16 +182,18 @@ jobs:
         focus: [""]
         bucket: [1, 2, 3, 4, 5]
         os: [ubuntu-24.04]
+        fixCGroup: [true]
         include:
           - k8s_version: v1.19.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
             os: ubuntu-24.04
+            fixCGroup: false
           - k8s_version: v1.27.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
             os: ubuntu-24.04
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-24.04
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000"
@@ -207,33 +209,6 @@ jobs:
           large-packages: true
           docker-images: false
           swap-storage: true
-#      - name: Upgrade Docker Engine
-#        run: |
-#          #Check installed Docker version
-#          sudo docker --version
-#
-#          # Uninstall all conflicting packages
-#          for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
-#
-#          # Add Docker's official GPG key:
-#          sudo apt-get update
-#          sudo apt-get install ca-certificates curl
-#          sudo install -m 0755 -d /etc/apt/keyrings
-#          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-#          sudo chmod a+r /etc/apt/keyrings/docker.asc
-#
-#          # Add the repository to Apt sources:
-#          echo \
-#          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-#          $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
-#          sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-#          sudo apt-get update
-#
-#          # Install the Docker packages
-#          sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-#
-#          #Check Docker version after upgrading
-#          sudo docker --version
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
@@ -249,6 +224,7 @@ jobs:
         id: test
         env:
           K8S_NAMESPACE: "fsm-system"
+          K3D_FIX_CGROUPV2: ${{ matrix.fixCGroup }}
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
@@ -284,25 +260,23 @@ jobs:
         bucket: [6, 7]
         k8s:
           - version: "latest"
-            os: ubuntu-24.04
+            fixCGroup: true
           - version: v1.19.16-k3s1
-            os: ubuntu-20.04
+            fixCGroup: false
           - version: v1.21.14-k3s1
-            os: ubuntu-24.04
+            fixCGroup: true
           - version: v1.23.17-k3s1
-            os: ubuntu-24.04
+            fixCGroup: true
         exclude:
           - focus: ""
             bucket: "7"
             k8s:
               version: v1.21.14-k3s1
-              os: ubuntu-24.04
           - focus: ""
             bucket: "7"
             k8s:
               version: v1.23.17-k3s1
-              os: ubuntu-24.04
-    runs-on: ${{ matrix.k8s.os }}
+    runs-on: ubuntu-24.04
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000"
@@ -318,33 +292,6 @@ jobs:
           large-packages: true
           docker-images: false
           swap-storage: true
-#      - name: Upgrade Docker Engine
-#        run: |
-#          #Check installed Docker version
-#          sudo docker --version
-#
-#          # Uninstall all conflicting packages
-#          for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
-#
-#          # Add Docker's official GPG key:
-#          sudo apt-get update
-#          sudo apt-get install ca-certificates curl
-#          sudo install -m 0755 -d /etc/apt/keyrings
-#          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-#          sudo chmod a+r /etc/apt/keyrings/docker.asc
-#
-#          # Add the repository to Apt sources:
-#          echo \
-#          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-#          $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
-#          sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-#          sudo apt-get update
-#
-#          # Install the Docker packages
-#          sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-#
-#          #Check Docker version after upgrading
-#          sudo docker --version
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
@@ -369,6 +316,7 @@ jobs:
         id: test
         env:
           K8S_NAMESPACE: "fsm-system"
+          K3D_FIX_CGROUPV2: ${{ matrix.k8s.fixCGroup }}
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
