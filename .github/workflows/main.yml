@@ -182,17 +182,11 @@ jobs:
         focus: [""]
         bucket: [1, 2, 3, 4, 5]
         os: [ubuntu-24.04]
-        fixCGroupV2: [true]
-        fixDNS: [true]
-        fixMounts: [true]
         include:
           - k8s_version: v1.19.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
-            os: ubuntu-24.04-arm
-            fixCGroupV2: true
-            fixDNS: true
-            fixMounts: false
+            os: ubuntu-24.04
           - k8s_version: v1.27.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
@@ -202,17 +196,17 @@ jobs:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000"
     steps:
-#      - name: Free Disk Space (Ubuntu)
-#        uses: jlumbroso/free-disk-space@main
-#        if: runner.os == 'Linux'
-#        with:
-#          tool-cache: false
-#          android: true
-#          dotnet: true
-#          haskell: true
-#          large-packages: true
-#          docker-images: false
-#          swap-storage: true
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        if: runner.os == 'Linux'
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+          swap-storage: true
 #      - name: Upgrade Docker Engine
 #        run: |
 #          #Check installed Docker version
@@ -255,9 +249,6 @@ jobs:
         id: test
         env:
           K8S_NAMESPACE: "fsm-system"
-          K3D_FIX_CGROUPV2: ${{ matrix.fixCGroupV2 }}
-          K3D_FIX_DNS: ${{ matrix.fixDNS }}
-          K3D_FIX_MOUNTS: ${{ matrix.fixMounts }}
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
@@ -294,24 +285,12 @@ jobs:
         k8s:
           - version: "latest"
             os: ubuntu-24.04
-            fixCGroupV2: true
-            fixDNS: true
-            fixMounts: true
           - version: v1.19.16-k3s1
-            os: ubuntu-24.04
-            fixCGroupV2: true
-            fixDNS: true
-            fixMounts: false
+            os: ubuntu-20.04
           - version: v1.21.14-k3s1
             os: ubuntu-24.04
-            fixCGroupV2: true
-            fixDNS: true
-            fixMounts: true
           - version: v1.23.17-k3s1
             os: ubuntu-24.04
-            fixCGroupV2: true
-            fixDNS: true
-            fixMounts: true
         exclude:
           - focus: ""
             bucket: "7"
@@ -328,17 +307,17 @@ jobs:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000"
     steps:
-#      - name: Free Disk Space (Ubuntu)
-#        uses: jlumbroso/free-disk-space@main
-#        if: runner.os == 'Linux'
-#        with:
-#          tool-cache: false
-#          android: true
-#          dotnet: true
-#          haskell: true
-#          large-packages: true
-#          docker-images: false
-#          swap-storage: true
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        if: runner.os == 'Linux'
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+          swap-storage: true
 #      - name: Upgrade Docker Engine
 #        run: |
 #          #Check installed Docker version
@@ -390,9 +369,6 @@ jobs:
         id: test
         env:
           K8S_NAMESPACE: "fsm-system"
-          K3D_FIX_CGROUPV2: ${{ matrix.k8s.fixCGroupV2 }}
-          K3D_FIX_DNS: ${{ matrix.k8s.fixDNS }}
-          K3D_FIX_MOUNTS: ${{ matrix.k8s.fixMounts }}
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
