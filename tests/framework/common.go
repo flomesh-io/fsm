@@ -329,8 +329,8 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 				}
 
 				containerId := c.ID
-				td.T.Logf("Conainer Name: %s, ID: %s, Status: %s, State: %s", name, containerId, c.Status, c.State)
-				if _, ok := k3dNodes[containerId]; !ok && c.Status == "running" {
+				td.T.Logf("Conainer Name: %s, ID: %s, State: %s", name, containerId, c.State)
+				if _, ok := k3dNodes[containerId]; !ok && c.State == "running" {
 					k3dNodes[containerId] = struct{}{}
 					td.T.Logf("Container %s(%s) is running", name, containerId)
 					writer := LogConsumerWriter{func(line string) { td.T.Log(fmt.Sprintf("[%s] %s", name, line)) }}
