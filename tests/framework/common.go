@@ -21,6 +21,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-co-op/gocron"
+
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/pkg/stdcopy"
+
 	policyAttachmentClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 
 	extClientset "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned"
@@ -294,6 +299,52 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 		}
 
 		td.ClusterConfig = clusterConfig
+
+		go func() {
+			docker, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation())
+			if err != nil {
+				td.T.Errorf("failed to create docker client: %v", err)
+				return
+			}
+
+			k3dNodes := make(map[string]struct{})
+
+			checkLogs := func() {
+				containers, err := docker.ContainerList(context.Background(), container.ListOptions{})
+				if err != nil {
+					td.T.Errorf("Error while listing containers: %s", err)
+					return
+				}
+
+				for _, c := range containers {
+					if len(c.Names) == 0 {
+						continue
+					}
+
+					name := c.Names[0]
+					if !strings.HasPrefix(name, fmt.Sprintf("k3d-%s-", Td.ClusterName)) {
+						continue
+					}
+
+					containerId := c.ID
+					if _, ok := k3dNodes[containerId]; !ok && c.Status == "running" {
+						k3dNodes[containerId] = struct{}{}
+						td.T.Logf("Container %s(%s) is running", name, containerId)
+						writer := LogConsumerWriter{func(line string) { td.T.Log(fmt.Sprintf("[%s] %s", name, line)) }}
+						go td.consumeDockerContainerLogs(containerId, writer, writer)
+					}
+				}
+			}
+
+			s := gocron.NewScheduler(time.Local)
+			s.SingletonModeAll()
+			if _, err := s.Every(5).Seconds().
+				Name("k3d-logs").
+				Do(checkLogs); err != nil {
+				td.T.Errorf("Error happened while checking k3d logs: %s", err)
+			}
+			s.StartAsync()
+		}()
 
 		// create cluster
 		if err := k3dCluster.ClusterRun(context.TODO(), runtimes.SelectedRuntime, clusterConfig); err != nil {
@@ -1962,4 +2013,30 @@ func (td *FsmTestData) AddOpenShiftSCC(scc, serviceAccount, namespace string) er
 	}
 
 	return nil
+}
+
+// consumeLogs is the function called by the function returned by createLogConsumer.
+func (td *FsmTestData) consumeDockerContainerLogs(containerId string, logStdout, logStderr io.Writer) {
+	docker, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation())
+	if err != nil {
+		td.T.Errorf("failed to create docker client: %v", err)
+		return
+	}
+	// We must run inside a goroutine because we're using Follow:true,
+	// and StdCopy will block until the log stream is closed.
+	stream, err := docker.ContainerLogs(context.Background(), containerId, container.LogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Details:    true,
+		Follow:     true,
+	})
+
+	if err != nil {
+		td.T.Errorf("error reading container logs: %v", err)
+	} else {
+		_, err := stdcopy.StdCopy(logStdout, logStderr, stream)
+		if err != nil {
+			td.T.Errorf("error demultiplexing docker logs: %v", err)
+		}
+	}
 }
