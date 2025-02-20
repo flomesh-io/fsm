@@ -300,51 +300,53 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 
 		td.ClusterConfig = clusterConfig
 
-		go func() {
-			docker, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation())
+		td.T.Logf("Starting k3d log consumer")
+		docker, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation())
+		if err != nil {
+			td.T.Errorf("failed to create docker client: %v", err)
+			return err
+		}
+
+		k3dNodes := make(map[string]struct{})
+
+		checkLogs := func() {
+			td.T.Logf("Checking k3d logs")
+			containers, err := docker.ContainerList(context.Background(), container.ListOptions{All: true})
 			if err != nil {
-				td.T.Errorf("failed to create docker client: %v", err)
+				td.T.Errorf("Error while listing containers: %s", err)
 				return
 			}
 
-			k3dNodes := make(map[string]struct{})
-
-			checkLogs := func() {
-				containers, err := docker.ContainerList(context.Background(), container.ListOptions{})
-				if err != nil {
-					td.T.Errorf("Error while listing containers: %s", err)
-					return
+			for _, c := range containers {
+				if len(c.Names) == 0 {
+					continue
 				}
 
-				for _, c := range containers {
-					if len(c.Names) == 0 {
-						continue
-					}
+				name := c.Names[0]
+				td.T.Logf("Conainer name: %s", name)
+				if !strings.HasPrefix(name, fmt.Sprintf("k3d-%s-", Td.ClusterName)) {
+					continue
+				}
 
-					name := c.Names[0]
-					if !strings.HasPrefix(name, fmt.Sprintf("k3d-%s-", Td.ClusterName)) {
-						continue
-					}
-
-					containerId := c.ID
-					if _, ok := k3dNodes[containerId]; !ok && c.Status == "running" {
-						k3dNodes[containerId] = struct{}{}
-						td.T.Logf("Container %s(%s) is running", name, containerId)
-						writer := LogConsumerWriter{func(line string) { td.T.Log(fmt.Sprintf("[%s] %s", name, line)) }}
-						go td.consumeDockerContainerLogs(containerId, writer, writer)
-					}
+				containerId := c.ID
+				td.T.Logf("Conainer ID: %s", containerId)
+				if _, ok := k3dNodes[containerId]; !ok && c.Status == "running" {
+					k3dNodes[containerId] = struct{}{}
+					td.T.Logf("Container %s(%s) is running", name, containerId)
+					writer := LogConsumerWriter{func(line string) { td.T.Log(fmt.Sprintf("[%s] %s", name, line)) }}
+					go td.consumeDockerContainerLogs(containerId, writer, writer)
 				}
 			}
+		}
 
-			s := gocron.NewScheduler(time.Local)
-			s.SingletonModeAll()
-			if _, err := s.Every(5).Seconds().
-				Name("k3d-logs").
-				Do(checkLogs); err != nil {
-				td.T.Errorf("Error happened while checking k3d logs: %s", err)
-			}
-			s.StartAsync()
-		}()
+		s := gocron.NewScheduler(time.Local)
+		s.SingletonModeAll()
+		if _, err := s.Every(5).Seconds().
+			Name("k3d-logs").
+			Do(checkLogs); err != nil {
+			td.T.Errorf("Error happened while checking k3d logs: %s", err)
+		}
+		s.StartAsync()
 
 		// create cluster
 		if err := k3dCluster.ClusterRun(context.TODO(), runtimes.SelectedRuntime, clusterConfig); err != nil {
