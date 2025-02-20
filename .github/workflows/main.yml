@@ -181,18 +181,15 @@ jobs:
         k8s_version: [""]
         focus: [""]
         bucket: [1, 2, 3, 4, 5]
-        os: [ubuntu-24.04]
         fixCGroup: [true]
         include:
           - k8s_version: v1.19.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
-            os: ubuntu-24.04
             fixCGroup: false
           - k8s_version: v1.27.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
-            os: ubuntu-24.04
     runs-on: ubuntu-24.04
     env:
       CTR_TAG: ${{ github.sha }}
