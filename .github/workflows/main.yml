@@ -195,7 +195,6 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
-        if: runner.os == 'Linux'
         with:
           tool-cache: false
           android: true
@@ -219,6 +218,7 @@ jobs:
         id: test
         env:
           K8S_NAMESPACE: "fsm-system"
+          K3D_FIX_CGROUPV2: true
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
@@ -273,7 +273,6 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
-        if: runner.os == 'Linux'
         with:
           tool-cache: false
           android: true
@@ -306,6 +305,7 @@ jobs:
         id: test
         env:
           K8S_NAMESPACE: "fsm-system"
+          K3D_FIX_CGROUPV2: true
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
@@ -347,7 +347,6 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
-        if: runner.os == 'Linux'
         with:
           tool-cache: false
           android: true
@@ -415,7 +414,6 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
-        if: runner.os == 'Linux'
         with:
           tool-cache: false
           android: true
@@ -480,7 +478,6 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
-        if: runner.os == 'Linux'
         with:
           tool-cache: false
           android: true
@@ -537,7 +534,6 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
-        if: runner.os == 'Linux'
         with:
           tool-cache: false
           android: true
