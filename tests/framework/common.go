@@ -329,7 +329,7 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 				}
 
 				containerId := c.ID
-				td.T.Logf("Conainer ID: %s", containerId)
+				td.T.Logf("Conainer Name: %s, ID: %s, Status: %s, State: %s", name, containerId, c.Status, c.State)
 				if _, ok := k3dNodes[containerId]; !ok && c.Status == "running" {
 					k3dNodes[containerId] = struct{}{}
 					td.T.Logf("Container %s(%s) is running", name, containerId)
