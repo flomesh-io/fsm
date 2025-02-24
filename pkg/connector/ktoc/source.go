@@ -144,7 +144,7 @@ func (t *KtoCSource) Upsert(key string, raw interface{}) error {
 				svcMeta := connector.Decode(svc, v)
 				endpoints := new(corev1.Endpoints)
 				endpointSubset := corev1.EndpointSubset{}
-				for port, protocol := range svcMeta.Ports {
+				for port, protocol := range svcMeta.TargetPorts {
 					endpointPort := corev1.EndpointPort{}
 					endpointPort.Port = int32(port)
 					endpointPort.Protocol = constants.ProtocolTCP
@@ -488,10 +488,18 @@ func (t *KtoCSource) determinePortAnnotations(svc *corev1.Service, baseService c
 		baseService.MicroService.EndpointPort().Set(port)
 
 		// Add all the ports as annotations
+		ports := []string{}
 		for _, p := range svc.Spec.Ports {
 			// Set the tag
-			baseService.Meta[connector.CloudK8SPort+"-"+p.Name] = strconv.FormatInt(int64(p.Port), 10)
+			portStr := strconv.FormatInt(int64(p.Port), 10)
+			baseService.Meta[connector.CloudK8SPort+"-"+p.Name] = portStr
+			if p.TargetPort.IntVal > 0 {
+				ports = append(ports, fmt.Sprintf("%d:%d", p.TargetPort.IntVal, p.Port))
+			} else {
+				ports = append(ports, fmt.Sprintf("%d:%d", p.Port, p.Port))
+			}
 		}
+		baseService.Meta[connector.CloudK8SPort] = strings.Join(ports, ",")
 	}
 	return overridePortName, overridePortNumber
 }

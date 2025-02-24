@@ -415,13 +415,18 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 }
 
 func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *apiv1.Service) {
-	for targetPort, appProtocol := range svcMeta.Ports {
+	for targetPort, appProtocol := range svcMeta.TargetPorts {
 		if exists := s.existPort(createSvc, targetPort, appProtocol); !exists {
 			specPort := apiv1.ServicePort{
 				Name:       fmt.Sprintf("%s%d", appProtocol, targetPort),
 				Protocol:   apiv1.ProtocolTCP,
 				Port:       int32(targetPort),
 				TargetPort: intstr.FromInt32(int32(targetPort)),
+			}
+			if len(svcMeta.Ports) > 0 {
+				if port, exists := svcMeta.Ports[targetPort]; exists {
+					specPort.Port = int32(port)
+				}
 			}
 			if appProtocol == constants.ProtocolHTTP {
 				specPort.AppProtocol = &protocolHTTP
@@ -540,8 +545,8 @@ func (s *CtoKSyncer) mergeFixedHTTPServiceEndpoints(meta *connector.MicroSvcMeta
 				valley = port
 			}
 		}
-		meta.Ports = make(map[connector.MicroServicePort]connector.MicroServiceProtocol)
-		meta.Ports[valley] = connector.ProtocolHTTP
+		meta.TargetPorts = make(map[connector.MicroServicePort]connector.MicroServiceProtocol)
+		meta.TargetPorts[valley] = connector.ProtocolHTTP
 		meta.Endpoints = stats[valley]
 	}
 }
