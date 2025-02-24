@@ -1,6 +1,9 @@
 package framework
 
 import (
+	"bufio"
+	"bytes"
+	"io"
 	"time"
 
 	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
@@ -189,3 +192,18 @@ type SuccessFunction func() bool
 
 // RetryOnErrorFunc is a function type passed to RetryFuncOnError() to execute
 type RetryOnErrorFunc func() error
+
+type LogConsumerWriter struct {
+	consumer func(string)
+}
+
+func (l LogConsumerWriter) Write(p []byte) (n int, err error) {
+	scanner := bufio.NewScanner(bytes.NewReader(p))
+	scanner.Buffer(make([]byte, 64*1024), bufio.MaxScanTokenSize)
+	for scanner.Scan() {
+		l.consumer(scanner.Text())
+	}
+	return len(p), nil
+}
+
+var _ io.Writer = &LogConsumerWriter{}
