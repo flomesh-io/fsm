@@ -82,8 +82,9 @@ type GRPCMeta struct {
 
 // MicroSvcMeta defines micro service meta
 type MicroSvcMeta struct {
-	Ports     map[MicroServicePort]MicroServiceProtocol  `json:"ports,omitempty"`
-	Endpoints map[MicroServiceAddress]*MicroEndpointMeta `json:"endpoints,omitempty"`
+	Ports       map[MicroServicePort]MicroServicePort
+	TargetPorts map[MicroServicePort]MicroServiceProtocol  `json:"ports,omitempty"`
+	Endpoints   map[MicroServiceAddress]*MicroEndpointMeta `json:"endpoints,omitempty"`
 
 	GRPCMeta *GRPCMeta `json:"grpcMeta,omitempty"`
 

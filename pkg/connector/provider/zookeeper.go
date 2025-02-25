@@ -10,12 +10,14 @@ import (
 	"github.com/flomesh-io/fsm/pkg/zookeeper"
 	"github.com/flomesh-io/fsm/pkg/zookeeper/discovery"
 	"github.com/flomesh-io/fsm/pkg/zookeeper/discovery/dubbo"
+	"github.com/flomesh-io/fsm/pkg/zookeeper/discovery/k8s"
 	"github.com/flomesh-io/fsm/pkg/zookeeper/discovery/nebula"
 )
 
 const (
 	NebulaAdaptor = CodecAdaptor(`nebula`)
 	DubboAdaptor  = CodecAdaptor(`dubbo`)
+	K8sAdaptor    = CodecAdaptor(`k8s`)
 )
 
 type CodecAdaptor string
@@ -70,8 +72,10 @@ func (dc *ZookeeperDiscoveryClient) zookeeperClient() *discovery.ServiceDiscover
 			dc.adaptorOps = nebula.NewAdaptor()
 		case DubboAdaptor:
 			dc.adaptorOps = dubbo.NewAdaptor()
+		case K8sAdaptor:
+			dc.adaptorOps = k8s.NewAdaptor()
 		default:
-			log.Fatal().Msgf("invalid grpc adaptor: %s", dc.adaptor)
+			log.Fatal().Msgf("invalid zookeeper adaptor: %s", dc.adaptor)
 		}
 
 		dc.namingClient = discovery.NewServiceDiscovery(client, dc.basePath, dc.category, dc.adaptorOps)
@@ -359,14 +363,16 @@ func (dc *ZookeeperDiscoveryClient) Close() {
 func GetZookeeperDiscoveryClient(connectController connector.ConnectController) (*ZookeeperDiscoveryClient, error) {
 	zookeeperDiscoveryClient := new(ZookeeperDiscoveryClient)
 	zookeeperDiscoveryClient.connectController = connectController
-	adaptor := connectController.GetZookeeperAdaptor()
-	switch CodecAdaptor(adaptor) {
+	zookeeperDiscoveryClient.adaptor = connectController.GetZookeeperAdaptor()
+	switch CodecAdaptor(zookeeperDiscoveryClient.adaptor) {
 	case NebulaAdaptor:
 		zookeeperDiscoveryClient.adaptorOps = nebula.NewAdaptor()
 	case DubboAdaptor:
 		zookeeperDiscoveryClient.adaptorOps = dubbo.NewAdaptor()
+	case K8sAdaptor:
+		zookeeperDiscoveryClient.adaptorOps = k8s.NewAdaptor()
 	default:
-		log.Fatal().Msgf("invalid grpc adaptor: %s", adaptor)
+		log.Fatal().Msgf("invalid zookeeper adaptor: %s", zookeeperDiscoveryClient.adaptor)
 	}
 	return zookeeperDiscoveryClient, nil
 }
