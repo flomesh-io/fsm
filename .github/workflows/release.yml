@@ -175,6 +175,7 @@ jobs:
       - name: Repository Dispatch
         uses: peter-evans/repository-dispatch@v3
         with:
+          token: ${{ secrets.REPOSITORY_DISPATCH_PAT }}
           repository: flomesh-io/xnet
           event-type: fsm-release
           client-payload: '{"version": "${{ env.VERSION }}"}'
