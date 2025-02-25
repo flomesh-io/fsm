@@ -3,6 +3,7 @@ package connector
 import (
 	"context"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -15,7 +16,6 @@ import (
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/zookeeper/discovery"
 )
 
@@ -75,6 +75,7 @@ type AgentService struct {
 	ClusterId    string
 	MicroService MicroService
 	Weights      AgentWeights
+	Ports        map[MicroServicePort]MicroServicePort
 	Tags         []string
 	Meta         map[string]interface{}
 
@@ -165,22 +166,35 @@ func (as *AgentService) FromZookeeper(ins discovery.ServiceInstance) {
 	}
 	as.ID = ins.InstanceId()
 	as.MicroService.Service = ins.ServiceName()
-	as.GRPCInterface = ins.ServiceInterface()
-	as.GRPCMethods = append(as.GRPCMethods, ins.ServiceMethods()...)
 	as.InstanceId = ins.InstanceId()
 	as.MicroService.Endpoint().Set(MicroServiceAddress(ins.InstanceIP()), MicroServicePort(ins.InstancePort()))
-	switch strings.ToLower(ins.ServiceSchema()) {
-	case constants.ProtocolHTTP:
-		as.MicroService.Protocol().SetVar(ProtocolHTTP)
-	case constants.ProtocolGRPC:
+	if MicroServiceProtocol(ins.ServiceSchema()) == ProtocolGRPC {
+		as.GRPCInterface = ins.ServiceInterface()
+		as.GRPCMethods = append(as.GRPCMethods, ins.ServiceMethods()...)
 		as.MicroService.Protocol().SetVar(ProtocolGRPC)
-	default:
+	} else {
 		as.MicroService.Protocol().SetVar(ProtocolHTTP)
 	}
 	if metadata := ins.Metadatas(); len(metadata) > 0 {
 		as.Meta = make(map[string]interface{})
 		for k, v := range metadata {
 			as.Meta[k] = v
+			if strings.EqualFold(CloudK8SPort, k) && len(v) > 0 {
+				as.Ports = make(map[MicroServicePort]MicroServicePort)
+				portPairs := strings.Split(v, ",")
+				for _, portPair := range portPairs {
+					ports := strings.Split(portPair, ":")
+					if len(ports) == 2 {
+						if nv, err := strconv.ParseInt(ports[0], 10, 32); err == nil && nv > 0 && nv < math.MaxInt32 {
+							targetPort := int32(nv)
+							if nv, err := strconv.ParseInt(ports[1], 10, 32); err == nil && nv > 0 && nv < math.MaxInt32 {
+								svcPort := int32(nv)
+								as.Ports[MicroServicePort(targetPort)] = MicroServicePort(svcPort)
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 }
@@ -336,7 +350,13 @@ func (cr *CatalogRegistration) ToNacos(cluster, group string, weight float64) *v
 }
 
 func (cr *CatalogRegistration) ToZookeeper(adaptor discovery.FuncOps) (discovery.ServiceInstance, error) {
-	r := adaptor.NewInstance(cr.Service.GRPCInterface, "")
+	var r discovery.ServiceInstance
+	if cr.Service.MicroService.protocol == ProtocolGRPC {
+		r = adaptor.NewInstance(cr.Service.GRPCInterface, "")
+	} else {
+		r = adaptor.NewInstance(cr.Service.MicroService.Service, "")
+	}
+
 	if err := r.Unmarshal(
 		fmt.Sprintf("%s://%s:%d",
 			*cr.Service.MicroService.Protocol(),
@@ -345,23 +365,31 @@ func (cr *CatalogRegistration) ToZookeeper(adaptor discovery.FuncOps) (discovery
 		[]byte(cr.Service.MicroService.EndpointAddress().Get())); err != nil {
 		return nil, err
 	}
-	if cr.Service.GRPCInstanceMeta != nil {
-		for k, v := range cr.Service.GRPCInstanceMeta {
-			r.SetMetadata(k, fmt.Sprintf("%v", v))
+	if cr.Service.MicroService.protocol == ProtocolGRPC {
+		if cr.Service.GRPCInstanceMeta != nil {
+			for k, v := range cr.Service.GRPCInstanceMeta {
+				r.SetMetadata(k, fmt.Sprintf("%v", v))
+			}
 		}
-	}
-	if cr.Service.Meta != nil {
-		if clusterSetKey, exists := cr.Service.Meta[ClusterSetKey]; exists {
-			r.SetMetadata(ClusterSetKey, fmt.Sprintf("%v", clusterSetKey))
+		if cr.Service.Meta != nil {
+			if clusterSetKey, exists := cr.Service.Meta[ClusterSetKey]; exists {
+				r.SetMetadata(ClusterSetKey, fmt.Sprintf("%v", clusterSetKey))
+			}
+			if connectUIDKey, exists := cr.Service.Meta[ConnectUIDKey]; exists {
+				r.SetMetadata(ConnectUIDKey, fmt.Sprintf("%v", connectUIDKey))
+			}
+			if grpcViaGateway, exists := cr.Service.Meta[CloudGRPCViaGateway]; exists {
+				r.SetMetadata(CloudGRPCViaGateway, fmt.Sprintf("%v", grpcViaGateway))
+			}
+			if viaGatewayMode, exists := cr.Service.Meta[CloudViaGatewayMode]; exists {
+				r.SetMetadata(CloudViaGatewayMode, fmt.Sprintf("%v", viaGatewayMode))
+			}
 		}
-		if connectUIDKey, exists := cr.Service.Meta[ConnectUIDKey]; exists {
-			r.SetMetadata(ConnectUIDKey, fmt.Sprintf("%v", connectUIDKey))
-		}
-		if grpcViaGateway, exists := cr.Service.Meta[CloudGRPCViaGateway]; exists {
-			r.SetMetadata(CloudGRPCViaGateway, fmt.Sprintf("%v", grpcViaGateway))
-		}
-		if viaGatewayMode, exists := cr.Service.Meta[CloudViaGatewayMode]; exists {
-			r.SetMetadata(CloudViaGatewayMode, fmt.Sprintf("%v", viaGatewayMode))
+	} else {
+		if cr.Service.Meta != nil {
+			for k, v := range cr.Service.Meta {
+				r.SetMetadata(k, fmt.Sprintf("%v", v))
+			}
 		}
 	}
 	_, _ = r.Marshal()

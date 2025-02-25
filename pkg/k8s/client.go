@@ -396,9 +396,9 @@ func ServiceToMeshServices(c Controller, svc *corev1.Service) []service.MeshServ
 		meshSvc.Protocol = pointer.StringDeref(portSpec.AppProtocol, string(portSpec.Protocol))
 
 		if svcMeta != nil {
-			if len(svcMeta.Ports) > 0 {
+			if len(svcMeta.TargetPorts) > 0 {
 				found := false
-				for metaPort, metaProtocol := range svcMeta.Ports {
+				for metaPort, metaProtocol := range svcMeta.TargetPorts {
 					if strings.EqualFold(meshSvc.Protocol, string(metaProtocol)) {
 						meshSvc.TargetPort = uint16(metaPort)
 						meshServices = append(meshServices, meshSvc)

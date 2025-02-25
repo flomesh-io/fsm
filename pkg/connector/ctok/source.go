@@ -128,16 +128,24 @@ func (s *CtoKSource) aggregateMeta(svcMetaMap map[connector.MicroSvcName]*connec
 	svcMeta, exists := svcMetaMap[serviceName]
 	if !exists {
 		svcMeta = new(connector.MicroSvcMeta)
-		svcMeta.Ports = make(map[connector.MicroServicePort]connector.MicroServiceProtocol)
+		svcMeta.TargetPorts = make(map[connector.MicroServicePort]connector.MicroServiceProtocol)
 		svcMeta.Endpoints = make(map[connector.MicroServiceAddress]*connector.MicroEndpointMeta)
 		svcMetaMap[serviceName] = svcMeta
 	}
+
+	if len(instance.Ports) > 0 {
+		svcMeta.Ports = make(map[connector.MicroServicePort]connector.MicroServicePort)
+		for targetPort, port := range instance.Ports {
+			svcMeta.Ports[targetPort] = port
+		}
+	}
+
 	svcMeta.HealthCheck = instance.HealthCheck
 
 	endpointMeta := new(connector.MicroEndpointMeta)
 	endpointMeta.Ports = make(map[connector.MicroServicePort]connector.MicroServiceProtocol)
 	if *port > 0 {
-		svcMeta.Ports[*port] = *protocol
+		svcMeta.TargetPorts[*port] = *protocol
 		endpointMeta.Ports[*port] = *protocol
 	}
 	if *protocol == connector.ProtocolGRPC {
