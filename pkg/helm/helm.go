@@ -98,6 +98,39 @@ func RenderChart(
 	return ctrl.Result{}, nil
 }
 
+// RenderChartWithValues renders a chart and returns the rendered manifest
+func RenderChartWithValues(
+	templateClient *helm.Install,
+	object metav1.Object,
+	chartSource []byte,
+	client client.Client,
+	scheme *runtime.Scheme,
+	values map[string]interface{},
+) (ctrl.Result, error) {
+	chart, err := loader.LoadArchive(bytes.NewReader(chartSource))
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("error loading chart for installation: %s", err)
+	}
+	log.Debug().Msgf("[HELM UTIL] Chart = %v", chart)
+	log.Debug().Msgf("[HELM UTIL] Values = %s", values)
+
+	rel, err := templateClient.Run(chart, values)
+	if err != nil {
+		log.Error().Msgf("[HELM UTIL] Error rendering chart: %s", err)
+		return ctrl.Result{}, fmt.Errorf("error rendering templates: %s", err)
+	}
+
+	manifests := rel.Manifest
+	log.Debug().Msgf("[HELM UTIL] Manifest = \n%s\n", manifests)
+
+	if result, err := applyChartYAMLs(object, manifests, client, scheme); err != nil {
+		log.Error().Msgf("[HELM UTIL] Error applying chart YAMLs: %s", err)
+		return result, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
 func TemplateClient(cfg *helm.Configuration, releaseName, namespace string, kubeVersion *chartutil.KubeVersion) *helm.Install {
 	//log.Debug().Msgf("[HELM UTIL] Creating Helm Install Client ...")
 	installClient := helm.NewInstall(cfg)
