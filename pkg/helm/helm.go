@@ -107,28 +107,9 @@ func RenderChartWithValues(
 	scheme *runtime.Scheme,
 	values map[string]interface{},
 ) (ctrl.Result, error) {
-	chart, err := loader.LoadArchive(bytes.NewReader(chartSource))
-	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("error loading chart for installation: %s", err)
-	}
-	log.Debug().Msgf("[HELM UTIL] Chart = %v", chart)
-	log.Debug().Msgf("[HELM UTIL] Values = %s", values)
-
-	rel, err := templateClient.Run(chart, values)
-	if err != nil {
-		log.Error().Msgf("[HELM UTIL] Error rendering chart: %s", err)
-		return ctrl.Result{}, fmt.Errorf("error rendering templates: %s", err)
-	}
-
-	manifests := rel.Manifest
-	log.Debug().Msgf("[HELM UTIL] Manifest = \n%s\n", manifests)
-
-	if result, err := applyChartYAMLs(object, manifests, client, scheme); err != nil {
-		log.Error().Msgf("[HELM UTIL] Error applying chart YAMLs: %s", err)
-		return result, err
-	}
-
-	return ctrl.Result{}, nil
+	return RenderChart(templateClient, object, chartSource, nil, client, scheme, func(metav1.Object, configurator.Configurator) (map[string]interface{}, error) {
+		return values, nil
+	})
 }
 
 func TemplateClient(cfg *helm.Configuration, releaseName, namespace string, kubeVersion *chartutil.KubeVersion) *helm.Install {
