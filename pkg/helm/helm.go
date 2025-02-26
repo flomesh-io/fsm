@@ -98,6 +98,20 @@ func RenderChart(
 	return ctrl.Result{}, nil
 }
 
+// RenderChartWithValues renders a chart and returns the rendered manifest
+func RenderChartWithValues(
+	templateClient *helm.Install,
+	object metav1.Object,
+	chartSource []byte,
+	client client.Client,
+	scheme *runtime.Scheme,
+	values map[string]interface{},
+) (ctrl.Result, error) {
+	return RenderChart(templateClient, object, chartSource, nil, client, scheme, func(metav1.Object, configurator.Configurator) (map[string]interface{}, error) {
+		return values, nil
+	})
+}
+
 func TemplateClient(cfg *helm.Configuration, releaseName, namespace string, kubeVersion *chartutil.KubeVersion) *helm.Install {
 	//log.Debug().Msgf("[HELM UTIL] Creating Helm Install Client ...")
 	installClient := helm.NewInstall(cfg)

@@ -71,6 +71,10 @@ func (r *gatewayReconciler) addGatewayNotAcceptedCondition(gw *gwv1.Gateway, gsu
 }
 
 func (r *gatewayReconciler) addCondition(gw *gwv1.Gateway, gsu *gw.GatewayStatusUpdate, eventType string, conditionType gwv1.GatewayConditionType, status metav1.ConditionStatus, reason gwv1.GatewayConditionReason, message string) {
+	if gsu == nil {
+		return
+	}
+
 	gsu.AddCondition(
 		conditionType,
 		status,
@@ -82,6 +86,10 @@ func (r *gatewayReconciler) addCondition(gw *gwv1.Gateway, gsu *gw.GatewayStatus
 }
 
 func (r *gatewayReconciler) addListenerCondition(gw *gwv1.Gateway, gsu *gw.GatewayStatusUpdate, name gwv1.SectionName, eventType string, conditionType gwv1.ListenerConditionType, status metav1.ConditionStatus, reason gwv1.ListenerConditionReason, message string) {
+	if gsu == nil {
+		return
+	}
+
 	gsu.AddListenerCondition(
 		string(name),
 		conditionType,
