@@ -283,7 +283,7 @@ fsm:
         # -- xnet image name
         name: xnet
         # -- xnet image tag
-        tag: latest
+        tag: 1.5.0-alpha.9
       resource:
         limits:
           cpu: "1.5"
