@@ -24,7 +24,7 @@ securityContext:
 {{- if .Values.fsm.image.tag -}}
 {{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmConnector .Values.fsm.image.tag -}}
 {{- else -}}
-{{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmConnector .Values.fsm.image.digest.fsmInjector -}}
+{{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmConnector .Values.fsm.image.digest.fsmConnector -}}
 {{- end -}}
 {{- end -}}
 

@@ -843,6 +843,12 @@ type ImageSpec struct {
 	// Tag defines the tag of docker image.
 	Tag string `json:"tag"`
 
+	// Name defines the name of docker image.
+	Name map[string]string `json:"name"`
+
+	// Digest defines the digest of docker image.
+	Digest map[string]string `json:"digest"`
+
 	// +kubebuilder:default=IfNotPresent
 	// PullPolicy defines the pull policy of docker image.
 	PullPolicy corev1.PullPolicy `json:"pullPolicy"`

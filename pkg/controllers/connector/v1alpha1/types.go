@@ -116,6 +116,20 @@ func (r *connectorReconciler) resolveValues(object metav1.Object, mc configurato
 		fmt.Sprintf("fsm.cloudConnector.leaderElection=%t", leaderElection(connector, true)),
 	}
 
+	image := mc.GetMeshConfig().Spec.Image
+	if fsmConnectorImageName := image.Name[`fsmConnector`]; len(fsmConnectorImageName) > 0 {
+		overrides = append(overrides, fmt.Sprintf("fsm.image.name.fsmConnector=%s", fsmConnectorImageName))
+	}
+	if fsmCurlImageName := image.Name[`fsmCurl`]; len(fsmCurlImageName) > 0 {
+		overrides = append(overrides, fmt.Sprintf("fsm.image.name.fsmCurl=%s", fsmCurlImageName))
+	}
+	if fsmConnectorImageDigest := image.Digest[`fsmConnector`]; len(fsmConnectorImageDigest) > 0 {
+		overrides = append(overrides, fmt.Sprintf("fsm.image.digest.fsmConnector=%s", fsmConnectorImageDigest))
+	}
+	if fsmCurlImageDigest := image.Digest[`fsmCurl`]; len(fsmCurlImageDigest) > 0 {
+		overrides = append(overrides, fmt.Sprintf("fsm.image.digest.fsmCurl=%s", fsmCurlImageDigest))
+	}
+
 	if pullSecrets := connector.GetImagePullSecrets(); len(pullSecrets) > 0 {
 		for index, pullSecret := range pullSecrets {
 			overrides = append(overrides, fmt.Sprintf("fsm.imagePullSecrets[%d].name=%s", index, pullSecret.Name))
