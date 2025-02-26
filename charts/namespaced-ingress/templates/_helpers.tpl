@@ -19,7 +19,7 @@ ServiceAccountName - namespaced-ingress
 {{/* fsm-ingress image */}}
 {{- define "fsmIngress.image" -}}
 {{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmIngress .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmIngress (.Values.fsm.image.tag|toString) -}}
 {{- else -}}
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmIngress .Values.fsm.image.digest.fsmIngress -}}
 {{- end -}}
@@ -35,7 +35,7 @@ app.kubernetes.io/version: {{ .Chart.AppVersion }}
 {{/* fsm-curl image */}}
 {{- define "fsmCurl.image" -}}
 {{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmCurl .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmCurl (.Values.fsm.image.tag|toString) -}}
 {{- else -}}
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmCurl .Values.fsm.image.digest.fsmCurl -}}
 {{- end -}}

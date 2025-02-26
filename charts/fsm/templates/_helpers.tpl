@@ -43,7 +43,7 @@ securityContext:
 {{/* fsm-controller image */}}
 {{- define "fsmController.image" -}}
 {{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmController .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmController (.Values.fsm.image.tag|toString) -}}
 {{- else -}}
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmController .Values.fsm.image.digest.fsmController -}}
 {{- end -}}
@@ -52,7 +52,7 @@ securityContext:
 {{/* fsm-injector image */}}
 {{- define "fsmInjector.image" -}}
 {{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmInjector .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmInjector (.Values.fsm.image.tag|toString) -}}
 {{- else -}}
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmInjector .Values.fsm.image.digest.fsmInjector -}}
 {{- end -}}
@@ -61,7 +61,7 @@ securityContext:
 {{/* fsm-conector image */}}
 {{- define "fsmConnector.image" -}}
 {{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmConnector .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmConnector (.Values.fsm.image.tag|toString) -}}
 {{- else -}}
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmConnector .Values.fsm.image.digest.fsmInjector -}}
 {{- end -}}
@@ -70,7 +70,7 @@ securityContext:
 {{/* Sidecar init image */}}
 {{- define "fsmSidecarInit.image" -}}
 {{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmSidecarInit .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmSidecarInit (.Values.fsm.image.tag|toString) -}}
 {{- else -}}
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmSidecarInit .Values.fsm.image.digest.fsmSidecarInit -}}
 {{- end -}}
@@ -79,7 +79,7 @@ securityContext:
 {{/* fsm-bootstrap image */}}
 {{- define "fsmBootstrap.image" -}}
 {{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmBootstrap .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmBootstrap (.Values.fsm.image.tag|toString) -}}
 {{- else -}}
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmBootstrap .Values.fsm.image.digest.fsmBootstrap -}}
 {{- end -}}
@@ -88,7 +88,7 @@ securityContext:
 {{/* fsm-crds image */}}
 {{- define "fsmCRDs.image" -}}
 {{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmCRDs .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmCRDs (.Values.fsm.image.tag|toString) -}}
 {{- else -}}
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmCRDs .Values.fsm.image.digest.fsmCRDs -}}
 {{- end -}}
@@ -97,7 +97,7 @@ securityContext:
 {{/* fsm-preinstall image */}}
 {{- define "fsmPreinstall.image" -}}
 {{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmPreinstall .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmPreinstall (.Values.fsm.image.tag|toString) -}}
 {{- else -}}
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmPreinstall .Values.fsm.image.digest.fsmPreinstall -}}
 {{- end -}}
@@ -106,7 +106,7 @@ securityContext:
 {{/* fsm-healthcheck image */}}
 {{- define "fsmHealthcheck.image" -}}
 {{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmHealthcheck .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmHealthcheck (.Values.fsm.image.tag|toString) -}}
 {{- else -}}
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmHealthcheck .Values.fsm.image.digest.fsmHealthcheck -}}
 {{- end -}}
@@ -115,7 +115,7 @@ securityContext:
 {{/* fsm-xmgt image */}}
 {{- define "fsmXnetwork.xmgt.image" -}}
 {{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmXnetmgmt .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmXnetmgmt (.Values.fsm.image.tag|toString) -}}
 {{- else -}}
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmXnetmgmt .Values.fsm.image.digest.fsmController -}}
 {{- end -}}
@@ -124,16 +124,16 @@ securityContext:
 {{/* fsm-xnet image */}}
 {{- define "fsmXnetwork.xnet.image" -}}
 {{- if .Values.fsm.fsmXnetwork.xnet.image.registry -}}
-{{- printf "%s/%s:%s" .Values.fsm.fsmXnetwork.xnet.image.registry .Values.fsm.fsmXnetwork.xnet.image.name .Values.fsm.fsmXnetwork.xnet.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.fsmXnetwork.xnet.image.registry .Values.fsm.fsmXnetwork.xnet.image.name (.Values.fsm.fsmXnetwork.xnet.image.tag|toString) -}}
 {{- else -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.fsmXnetwork.xnet.image.name .Values.fsm.fsmXnetwork.xnet.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.fsmXnetwork.xnet.image.name (.Values.fsm.fsmXnetwork.xnet.image.tag|toString) -}}
 {{- end -}}
 {{- end -}}
 
 {{/* fsm-ingress image */}}
 {{- define "fsmIngress.image" -}}
 {{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmIngress .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmIngress (.Values.fsm.image.tag|toString) -}}
 {{- else -}}
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmIngress .Values.fsm.image.digest.fsmIngress -}}
 {{- end -}}
@@ -142,7 +142,7 @@ securityContext:
 {{/* fsm-gateway image */}}
 {{- define "fsmGateway.image" -}}
 {{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmGateway .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmGateway (.Values.fsm.image.tag|toString) -}}
 {{- else -}}
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmGateway .Values.fsm.image.digest.fsmGateway -}}
 {{- end -}}
@@ -151,7 +151,7 @@ securityContext:
 {{/* fsm-curl image */}}
 {{- define "fsmCurl.image" -}}
 {{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmCurl .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmCurl (.Values.fsm.image.tag|toString) -}}
 {{- else -}}
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmCurl .Values.fsm.image.digest.fsmCurl -}}
 {{- end -}}
@@ -160,72 +160,72 @@ securityContext:
 {{/* pipy repo image */}}
 {{- define "repoServer.image" -}}
 {{- if .Values.fsm.repoServer.image.registry -}}
-{{- printf "%s/%s:%s" .Values.fsm.repoServer.image.registry .Values.fsm.repoServer.image.name .Values.fsm.repoServer.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.repoServer.image.registry .Values.fsm.repoServer.image.name (.Values.fsm.repoServer.image.tag|toString) -}}
 {{- else -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.repoServer.image.name .Values.fsm.repoServer.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.repoServer.image.name (.Values.fsm.repoServer.image.tag|toString) -}}
 {{- end -}}
 {{- end -}}
 
 {{/* pipy sidecar image */}}
 {{- define "sidecar.image" -}}
 {{- if .Values.fsm.sidecar.image.registry -}}
-{{- printf "%s/%s:%s" .Values.fsm.sidecar.image.registry .Values.fsm.sidecar.image.name .Values.fsm.sidecar.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.sidecar.image.registry .Values.fsm.sidecar.image.name (.Values.fsm.sidecar.image.tag|toString) -}}
 {{- else -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.sidecar.image.name .Values.fsm.sidecar.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.sidecar.image.name (.Values.fsm.sidecar.image.tag|toString) -}}
 {{- end -}}
 {{- end -}}
 
 {{/* serviceLB image */}}
 {{- define "serviceLB.image" -}}
 {{- if .Values.fsm.serviceLB.image.registry -}}
-{{- printf "%s/%s:%s" .Values.fsm.serviceLB.image.registry .Values.fsm.serviceLB.image.name .Values.fsm.serviceLB.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.serviceLB.image.registry .Values.fsm.serviceLB.image.name (.Values.fsm.serviceLB.image.tag|toString) -}}
 {{- else -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.serviceLB.image.name .Values.fsm.serviceLB.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.serviceLB.image.name (.Values.fsm.serviceLB.image.tag|toString) -}}
 {{- end -}}
 {{- end -}}
 
 {{/* prometheus image */}}
 {{- define "prometheus.image" -}}
 {{- if .Values.fsm.prometheus.image.registry -}}
-{{- printf "%s/%s:%s" .Values.fsm.prometheus.image.registry .Values.fsm.prometheus.image.name .Values.fsm.prometheus.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.prometheus.image.registry .Values.fsm.prometheus.image.name (.Values.fsm.prometheus.image.tag|toString) -}}
 {{- else -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.prometheus.image.name .Values.fsm.prometheus.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.prometheus.image.name (.Values.fsm.prometheus.image.tag|toString) -}}
 {{- end -}}
 {{- end -}}
 
 {{/* grafana image */}}
 {{- define "grafana.image" -}}
 {{- if .Values.fsm.grafana.image.registry -}}
-{{- printf "%s/%s:%s" .Values.fsm.grafana.image.registry .Values.fsm.grafana.image.name .Values.fsm.grafana.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.grafana.image.registry .Values.fsm.grafana.image.name (.Values.fsm.grafana.image.tag|toString) -}}
 {{- else -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.grafana.image.name .Values.fsm.grafana.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.grafana.image.name (.Values.fsm.grafana.image.tag|toString) -}}
 {{- end -}}
 {{- end -}}
 
 {{/* grafana renderer image */}}
 {{- define "grafana.renderer.image" -}}
 {{- if .Values.fsm.grafana.rendererImage.registry -}}
-{{- printf "%s/%s:%s" .Values.fsm.grafana.rendererImage.registry .Values.fsm.grafana.rendererImage.name .Values.fsm.grafana.rendererImage.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.grafana.rendererImage.registry .Values.fsm.grafana.rendererImage.name (.Values.fsm.grafana.rendererImage.tag|toString) -}}
 {{- else -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.grafana.rendererImage.name .Values.fsm.grafana.rendererImage.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.grafana.rendererImage.name (.Values.fsm.grafana.rendererImage.tag|toString) -}}
 {{- end -}}
 {{- end -}}
 
 {{/* fluentBit image */}}
 {{- define "fluentBit.image" -}}
 {{- if .Values.fsm.fluentBit.image.registry -}}
-{{- printf "%s/%s:%s" .Values.fsm.fluentBit.image.registry .Values.fsm.fluentBit.image.name .Values.fsm.fluentBit.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.fluentBit.image.registry .Values.fsm.fluentBit.image.name (.Values.fsm.fluentBit.image.tag|toString) -}}
 {{- else -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.fluentBit.image.name .Values.fsm.fluentBit.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.fluentBit.image.name (.Values.fsm.fluentBit.image.tag|toString) -}}
 {{- end -}}
 {{- end -}}
 
 {{/* tracing image */}}
 {{- define "tracing.image" -}}
 {{- if .Values.fsm.tracing.image.registry -}}
-{{- printf "%s/%s:%s" .Values.fsm.tracing.image.registry .Values.fsm.tracing.image.name .Values.fsm.tracing.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.tracing.image.registry .Values.fsm.tracing.image.name (.Values.fsm.tracing.image.tag|toString) -}}
 {{- else -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.tracing.image.name .Values.fsm.tracing.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.tracing.image.name (.Values.fsm.tracing.image.tag|toString) -}}
 {{- end -}}
 {{- end -}}
 
