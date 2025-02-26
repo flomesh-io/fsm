@@ -155,6 +155,8 @@ data:
       "image": {
         "registry": "{{ .Values.fsm.image.registry }}",
         "tag": "{{ .Values.fsm.image.tag }}",
+        "name": {{ .Values.fsm.image.name | mustToJson}},
+        "digest": {{ .Values.fsm.image.digest | mustToJson}},
         "pullPolicy": "{{ .Values.fsm.image.pullPolicy }}"
       },
       "misc": {

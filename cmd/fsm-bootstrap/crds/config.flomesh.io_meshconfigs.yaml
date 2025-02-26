@@ -1572,6 +1572,16 @@ spec:
               image:
                 description: Image defines the configurations of Image info
                 properties:
+                  digest:
+                    additionalProperties:
+                      type: string
+                    description: Digest defines the digest of docker image.
+                    type: object
+                  name:
+                    additionalProperties:
+                      type: string
+                    description: Name defines the name of docker image.
+                    type: object
                   pullPolicy:
                     default: IfNotPresent
                     description: PullPolicy defines the pull policy of docker image.
@@ -1585,6 +1595,8 @@ spec:
                     description: Tag defines the tag of docker image.
                     type: string
                 required:
+                - digest
+                - name
                 - pullPolicy
                 - registry
                 - tag
