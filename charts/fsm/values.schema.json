@@ -358,7 +358,7 @@
                                 },
                                 "tag": {
                                   "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/image/properties/tag",
-                                  "type": "string",
+                                  "type": ["string", "integer"],
                                   "title": "The tag schema"
                                 }
                               },
@@ -890,7 +890,7 @@
                         },
                         "tag": {
                             "$id": "#/properties/fsm/properties/image/properties/tag",
-                            "type": "string",
+                            "type": ["string", "integer"],
                             "title": "The tag schema",
                             "description": "The image tag to run.",
                             "examples": [
@@ -1031,7 +1031,7 @@
                         },
                         "tag": {
                           "$id": "#/properties/fsm/properties/sidecar/properties/image/properties/tag",
-                          "type": "string",
+                          "type": ["string", "integer"],
                           "title": "The tag schema"
                         }
                       },
@@ -1059,7 +1059,7 @@
                         },
                         "tag": {
                           "$id": "#/properties/fsm/properties/sidecar/properties/initContainerImage/properties/tag",
-                          "type": "string",
+                          "type": ["string", "integer"],
                           "title": "The tag schema"
                         }
                       },
@@ -1281,7 +1281,7 @@
                           },
                           "tag": {
                             "$id": "#/properties/fsm/properties/repoServer/properties/image/properties/tag",
-                            "type": "string",
+                            "type": ["string", "integer"],
                             "title": "The tag schema"
                           }
                         },
@@ -1581,7 +1581,7 @@
                         },
                         "tag": {
                           "$id": "#/properties/fsm/properties/fluentBit/properties/image/properties/tag",
-                          "type": "string",
+                          "type": ["string", "integer"],
                           "title": "The tag schema"
                         }
                       },
@@ -2041,7 +2041,7 @@
                         },
                         "tag": {
                           "$id": "#/properties/fsm/properties/tracing/properties/image/properties/tag",
-                          "type": "string",
+                          "type": ["string", "integer"],
                           "title": "The tag schema"
                         }
                       },
@@ -2545,7 +2545,7 @@
                         },
                         "tag": {
                           "$id": "#/properties/fsm/properties/serviceLB/properties/image/properties/tag",
-                          "type": "string",
+                          "type": ["string", "integer"],
                           "title": "The tag schema"
                         }
                       },
@@ -3055,7 +3055,7 @@
                         },
                         "tag": {
                           "$id": "#/properties/fsm/properties/grafana/properties/image/properties/tag",
-                          "type": "string",
+                          "type": ["string", "integer"],
                           "title": "The tag schema"
                         }
                       },
@@ -3083,7 +3083,7 @@
                         },
                         "tag": {
                           "$id": "#/properties/fsm/properties/grafana/properties/rendererImage/properties/tag",
-                          "type": "string",
+                          "type": ["string", "integer"],
                           "title": "The tag schema"
                         }
                       },
@@ -3286,7 +3286,7 @@
                         },
                         "tag": {
                           "$id": "#/properties/fsm/properties/prometheus/properties/image/properties/tag",
-                          "type": "string",
+                          "type": ["string", "integer"],
                           "title": "The tag schema"
                         }
                       },

@@ -22,7 +22,7 @@ securityContext:
 {{/* fsm-conector image */}}
 {{- define "fsmConnector.image" -}}
 {{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmConnector .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmConnector (.Values.fsm.image.tag|toString) -}}
 {{- else -}}
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmConnector .Values.fsm.image.digest.fsmInjector -}}
 {{- end -}}

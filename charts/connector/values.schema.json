@@ -228,7 +228,7 @@
                         },
                         "tag": {
                             "$id": "#/properties/fsm/properties/image/properties/tag",
-                            "type": "string",
+                            "type": ["string", "integer"],
                             "title": "The tag schema",
                             "description": "The image tag to run.",
                             "examples": [

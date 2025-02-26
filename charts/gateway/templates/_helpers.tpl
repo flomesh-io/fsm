@@ -8,7 +8,7 @@ ServiceAccountName - GatewayAPI
 {{/* fsm-gateway image */}}
 {{- define "fsmGateway.image" -}}
 {{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmGateway .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmGateway (.Values.fsm.image.tag|toString) -}}
 {{- else -}}
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmGateway .Values.fsm.image.digest.fsmGateway -}}
 {{- end -}}
@@ -24,7 +24,7 @@ app.kubernetes.io/version: {{ .Chart.AppVersion }}
 {{/* fsm-curl image */}}
 {{- define "fsmCurl.image" -}}
 {{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmCurl .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmCurl (.Values.fsm.image.tag|toString) -}}
 {{- else -}}
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmCurl .Values.fsm.image.digest.fsmCurl -}}
 {{- end -}}
