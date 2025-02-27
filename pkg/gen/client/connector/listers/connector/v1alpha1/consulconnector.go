@@ -28,9 +28,8 @@ type ConsulConnectorLister interface {
 	// List lists all ConsulConnectors in the indexer.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.ConsulConnector, err error)
-	// Get retrieves the ConsulConnector from the index for a given name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.ConsulConnector, error)
+	// ConsulConnectors returns an object that can list and get ConsulConnectors.
+	ConsulConnectors(namespace string) ConsulConnectorNamespaceLister
 	ConsulConnectorListerExpansion
 }
 
@@ -42,4 +41,27 @@ type consulConnectorLister struct {
 // NewConsulConnectorLister returns a new ConsulConnectorLister.
 func NewConsulConnectorLister(indexer cache.Indexer) ConsulConnectorLister {
 	return &consulConnectorLister{listers.New[*v1alpha1.ConsulConnector](indexer, v1alpha1.Resource("consulconnector"))}
+}
+
+// ConsulConnectors returns an object that can list and get ConsulConnectors.
+func (s *consulConnectorLister) ConsulConnectors(namespace string) ConsulConnectorNamespaceLister {
+	return consulConnectorNamespaceLister{listers.NewNamespaced[*v1alpha1.ConsulConnector](s.ResourceIndexer, namespace)}
+}
+
+// ConsulConnectorNamespaceLister helps list and get ConsulConnectors.
+// All objects returned here must be treated as read-only.
+type ConsulConnectorNamespaceLister interface {
+	// List lists all ConsulConnectors in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
+	List(selector labels.Selector) (ret []*v1alpha1.ConsulConnector, err error)
+	// Get retrieves the ConsulConnector from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*v1alpha1.ConsulConnector, error)
+	ConsulConnectorNamespaceListerExpansion
+}
+
+// consulConnectorNamespaceLister implements the ConsulConnectorNamespaceLister
+// interface.
+type consulConnectorNamespaceLister struct {
+	listers.ResourceIndexer[*v1alpha1.ConsulConnector]
 }

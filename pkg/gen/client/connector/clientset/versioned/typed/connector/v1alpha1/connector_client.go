@@ -38,28 +38,28 @@ type ConnectorV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *ConnectorV1alpha1Client) ConsulConnectors() ConsulConnectorInterface {
-	return newConsulConnectors(c)
+func (c *ConnectorV1alpha1Client) ConsulConnectors(namespace string) ConsulConnectorInterface {
+	return newConsulConnectors(c, namespace)
 }
 
-func (c *ConnectorV1alpha1Client) EurekaConnectors() EurekaConnectorInterface {
-	return newEurekaConnectors(c)
+func (c *ConnectorV1alpha1Client) EurekaConnectors(namespace string) EurekaConnectorInterface {
+	return newEurekaConnectors(c, namespace)
 }
 
-func (c *ConnectorV1alpha1Client) GatewayConnectors() GatewayConnectorInterface {
-	return newGatewayConnectors(c)
+func (c *ConnectorV1alpha1Client) GatewayConnectors(namespace string) GatewayConnectorInterface {
+	return newGatewayConnectors(c, namespace)
 }
 
-func (c *ConnectorV1alpha1Client) MachineConnectors() MachineConnectorInterface {
-	return newMachineConnectors(c)
+func (c *ConnectorV1alpha1Client) MachineConnectors(namespace string) MachineConnectorInterface {
+	return newMachineConnectors(c, namespace)
 }
 
-func (c *ConnectorV1alpha1Client) NacosConnectors() NacosConnectorInterface {
-	return newNacosConnectors(c)
+func (c *ConnectorV1alpha1Client) NacosConnectors(namespace string) NacosConnectorInterface {
+	return newNacosConnectors(c, namespace)
 }
 
-func (c *ConnectorV1alpha1Client) ZookeeperConnectors() ZookeeperConnectorInterface {
-	return newZookeeperConnectors(c)
+func (c *ConnectorV1alpha1Client) ZookeeperConnectors(namespace string) ZookeeperConnectorInterface {
+	return newZookeeperConnectors(c, namespace)
 }
 
 // NewForConfig creates a new ConnectorV1alpha1Client for the given config.

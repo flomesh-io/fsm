@@ -29,7 +29,7 @@ import (
 // GatewayConnectorsGetter has a method to return a GatewayConnectorInterface.
 // A group's client should implement this interface.
 type GatewayConnectorsGetter interface {
-	GatewayConnectors() GatewayConnectorInterface
+	GatewayConnectors(namespace string) GatewayConnectorInterface
 }
 
 // GatewayConnectorInterface has methods to work with GatewayConnector resources.
@@ -53,13 +53,13 @@ type gatewayConnectors struct {
 }
 
 // newGatewayConnectors returns a GatewayConnectors
-func newGatewayConnectors(c *ConnectorV1alpha1Client) *gatewayConnectors {
+func newGatewayConnectors(c *ConnectorV1alpha1Client, namespace string) *gatewayConnectors {
 	return &gatewayConnectors{
 		gentype.NewClientWithList[*v1alpha1.GatewayConnector, *v1alpha1.GatewayConnectorList](
 			"gatewayconnectors",
 			c.RESTClient(),
 			scheme.ParameterCodec,
-			"",
+			namespace,
 			func() *v1alpha1.GatewayConnector { return &v1alpha1.GatewayConnector{} },
 			func() *v1alpha1.GatewayConnectorList { return &v1alpha1.GatewayConnectorList{} }),
 	}

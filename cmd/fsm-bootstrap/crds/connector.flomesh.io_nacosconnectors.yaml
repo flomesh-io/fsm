@@ -16,7 +16,7 @@ spec:
     shortNames:
     - nacosconnector
     singular: nacosconnector
-  scope: Cluster
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .spec.httpAddr

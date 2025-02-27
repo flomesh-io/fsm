@@ -39,32 +39,33 @@ type NacosConnectorInformer interface {
 type nacosConnectorInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
+	namespace        string
 }
 
 // NewNacosConnectorInformer constructs a new informer for NacosConnector type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewNacosConnectorInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredNacosConnectorInformer(client, resyncPeriod, indexers, nil)
+func NewNacosConnectorInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredNacosConnectorInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
 // NewFilteredNacosConnectorInformer constructs a new informer for NacosConnector type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredNacosConnectorInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredNacosConnectorInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ConnectorV1alpha1().NacosConnectors().List(context.TODO(), options)
+				return client.ConnectorV1alpha1().NacosConnectors(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ConnectorV1alpha1().NacosConnectors().Watch(context.TODO(), options)
+				return client.ConnectorV1alpha1().NacosConnectors(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&connectorv1alpha1.NacosConnector{},
@@ -74,7 +75,7 @@ func NewFilteredNacosConnectorInformer(client versioned.Interface, resyncPeriod 
 }
 
 func (f *nacosConnectorInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredNacosConnectorInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+	return NewFilteredNacosConnectorInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
 func (f *nacosConnectorInformer) Informer() cache.SharedIndexInformer {

@@ -48,30 +48,30 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 
 // ConsulConnectors returns a ConsulConnectorInformer.
 func (v *version) ConsulConnectors() ConsulConnectorInformer {
-	return &consulConnectorInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+	return &consulConnectorInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // EurekaConnectors returns a EurekaConnectorInformer.
 func (v *version) EurekaConnectors() EurekaConnectorInformer {
-	return &eurekaConnectorInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+	return &eurekaConnectorInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // GatewayConnectors returns a GatewayConnectorInformer.
 func (v *version) GatewayConnectors() GatewayConnectorInformer {
-	return &gatewayConnectorInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+	return &gatewayConnectorInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // MachineConnectors returns a MachineConnectorInformer.
 func (v *version) MachineConnectors() MachineConnectorInformer {
-	return &machineConnectorInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+	return &machineConnectorInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // NacosConnectors returns a NacosConnectorInformer.
 func (v *version) NacosConnectors() NacosConnectorInformer {
-	return &nacosConnectorInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+	return &nacosConnectorInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // ZookeeperConnectors returns a ZookeeperConnectorInformer.
 func (v *version) ZookeeperConnectors() ZookeeperConnectorInformer {
-	return &zookeeperConnectorInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+	return &zookeeperConnectorInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

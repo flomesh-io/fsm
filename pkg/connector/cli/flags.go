@@ -60,20 +60,21 @@ func ToMetaSet(s []ctv1.Metadata) mapset.Set {
 
 // Config is used to configure the creation of a client
 type Config struct {
-	Verbosity         string
-	MeshName          string // An ID that uniquely identifies an FSM instance
-	KubeConfigFile    string
-	FsmNamespace      string
-	FsmMeshConfigName string
-	FsmVersion        string
-	TrustDomain       string
-	Workers           uint
-	Limit             uint
-	Burst             uint
-	Timeout           uint
-	SdrProvider       string
-	SdrConnector      string
-	LeaderElection    bool
+	Verbosity             string
+	MeshName              string // An ID that uniquely identifies an FSM instance
+	KubeConfigFile        string
+	FsmNamespace          string
+	FsmMeshConfigName     string
+	FsmVersion            string
+	TrustDomain           string
+	Workers               uint
+	Limit                 uint
+	Burst                 uint
+	Timeout               uint
+	SdrProvider           string
+	SdrConnectorNamespace string
+	SdrConnectorName      string
+	LeaderElection        bool
 }
 
 func init() {
@@ -89,7 +90,8 @@ func init() {
 	flags.UintVar(&Cfg.Burst, "k8s-client-burst", 1500, "k8s request burst")
 	flags.UintVar(&Cfg.Timeout, "k8s-client-timeout", 15, "k8s request timeout")
 	flags.StringVar(&Cfg.SdrProvider, "sdr-provider", "", "service discovery and registration (consul, eureka, nacos, machine, gateway)")
-	flags.StringVar(&Cfg.SdrConnector, "sdr-connector", "", "connector name")
+	flags.StringVar(&Cfg.SdrConnectorNamespace, "sdr-connector-namespace", "", "connector namespace")
+	flags.StringVar(&Cfg.SdrConnectorName, "sdr-connector-name", "", "connector name")
 	flags.BoolVar(&Cfg.LeaderElection, "leader-election", true, "leader election mode")
 }
 
@@ -116,8 +118,12 @@ func ValidateCLIParams() error {
 		return fmt.Errorf("please specify the connector using -sdr-provider(consul/eureka/nacos/machine/gateway)")
 	}
 
-	if len(Cfg.SdrConnector) == 0 {
-		return fmt.Errorf("please specify the connector using -sdr-connector")
+	if len(Cfg.SdrConnectorNamespace) == 0 {
+		return fmt.Errorf("please specify the connector namespace using -sdr-connector-namespace")
+	}
+
+	if len(Cfg.SdrConnectorName) == 0 {
+		return fmt.Errorf("please specify the connector name using -sdr-connector-name")
 	}
 
 	return nil

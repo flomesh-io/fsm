@@ -14,15 +14,16 @@ type ConnectController interface {
 	BroadcastListener(stopCh <-chan struct{})
 
 	GetConnectorProvider() ctv1.DiscoveryServiceProvider
+	GetConnectorNamespace() string
 	GetConnectorName() string
 	GetConnectorUID() string
 
-	GetConsulConnector(connector string) *ctv1.ConsulConnector
-	GetEurekaConnector(connector string) *ctv1.EurekaConnector
-	GetNacosConnector(connector string) *ctv1.NacosConnector
-	GetZookeeperConnector(connector string) *ctv1.ZookeeperConnector
-	GetMachineConnector(connector string) *ctv1.MachineConnector
-	GetGatewayConnector(connector string) *ctv1.GatewayConnector
+	GetConsulConnector(namespace, name string) *ctv1.ConsulConnector
+	GetEurekaConnector(namespace, name string) *ctv1.EurekaConnector
+	GetNacosConnector(namespace, name string) *ctv1.NacosConnector
+	GetZookeeperConnector(namespace, name string) *ctv1.ZookeeperConnector
+	GetMachineConnector(namespace, name string) *ctv1.MachineConnector
+	GetGatewayConnector(namespace, name string) *ctv1.GatewayConnector
 	GetConnector() (connector, spec interface{}, uid string, ok bool)
 
 	Refresh()

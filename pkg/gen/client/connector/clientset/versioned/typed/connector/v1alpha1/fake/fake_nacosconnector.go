@@ -29,6 +29,7 @@ import (
 // FakeNacosConnectors implements NacosConnectorInterface
 type FakeNacosConnectors struct {
 	Fake *FakeConnectorV1alpha1
+	ns   string
 }
 
 var nacosconnectorsResource = v1alpha1.SchemeGroupVersion.WithResource("nacosconnectors")
@@ -39,7 +40,8 @@ var nacosconnectorsKind = v1alpha1.SchemeGroupVersion.WithKind("NacosConnector")
 func (c *FakeNacosConnectors) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.NacosConnector, err error) {
 	emptyResult := &v1alpha1.NacosConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootGetActionWithOptions(nacosconnectorsResource, name, options), emptyResult)
+		Invokes(testing.NewGetActionWithOptions(nacosconnectorsResource, c.ns, name, options), emptyResult)
+
 	if obj == nil {
 		return emptyResult, err
 	}
@@ -50,7 +52,8 @@ func (c *FakeNacosConnectors) Get(ctx context.Context, name string, options v1.G
 func (c *FakeNacosConnectors) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.NacosConnectorList, err error) {
 	emptyResult := &v1alpha1.NacosConnectorList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootListActionWithOptions(nacosconnectorsResource, nacosconnectorsKind, opts), emptyResult)
+		Invokes(testing.NewListActionWithOptions(nacosconnectorsResource, nacosconnectorsKind, c.ns, opts), emptyResult)
+
 	if obj == nil {
 		return emptyResult, err
 	}
@@ -71,14 +74,16 @@ func (c *FakeNacosConnectors) List(ctx context.Context, opts v1.ListOptions) (re
 // Watch returns a watch.Interface that watches the requested nacosConnectors.
 func (c *FakeNacosConnectors) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewRootWatchActionWithOptions(nacosconnectorsResource, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(nacosconnectorsResource, c.ns, opts))
+
 }
 
 // Create takes the representation of a nacosConnector and creates it.  Returns the server's representation of the nacosConnector, and an error, if there is any.
 func (c *FakeNacosConnectors) Create(ctx context.Context, nacosConnector *v1alpha1.NacosConnector, opts v1.CreateOptions) (result *v1alpha1.NacosConnector, err error) {
 	emptyResult := &v1alpha1.NacosConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootCreateActionWithOptions(nacosconnectorsResource, nacosConnector, opts), emptyResult)
+		Invokes(testing.NewCreateActionWithOptions(nacosconnectorsResource, c.ns, nacosConnector, opts), emptyResult)
+
 	if obj == nil {
 		return emptyResult, err
 	}
@@ -89,7 +94,8 @@ func (c *FakeNacosConnectors) Create(ctx context.Context, nacosConnector *v1alph
 func (c *FakeNacosConnectors) Update(ctx context.Context, nacosConnector *v1alpha1.NacosConnector, opts v1.UpdateOptions) (result *v1alpha1.NacosConnector, err error) {
 	emptyResult := &v1alpha1.NacosConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateActionWithOptions(nacosconnectorsResource, nacosConnector, opts), emptyResult)
+		Invokes(testing.NewUpdateActionWithOptions(nacosconnectorsResource, c.ns, nacosConnector, opts), emptyResult)
+
 	if obj == nil {
 		return emptyResult, err
 	}
@@ -101,7 +107,8 @@ func (c *FakeNacosConnectors) Update(ctx context.Context, nacosConnector *v1alph
 func (c *FakeNacosConnectors) UpdateStatus(ctx context.Context, nacosConnector *v1alpha1.NacosConnector, opts v1.UpdateOptions) (result *v1alpha1.NacosConnector, err error) {
 	emptyResult := &v1alpha1.NacosConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateSubresourceActionWithOptions(nacosconnectorsResource, "status", nacosConnector, opts), emptyResult)
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(nacosconnectorsResource, "status", c.ns, nacosConnector, opts), emptyResult)
+
 	if obj == nil {
 		return emptyResult, err
 	}
@@ -111,13 +118,14 @@ func (c *FakeNacosConnectors) UpdateStatus(ctx context.Context, nacosConnector *
 // Delete takes name of the nacosConnector and deletes it. Returns an error if one occurs.
 func (c *FakeNacosConnectors) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteActionWithOptions(nacosconnectorsResource, name, opts), &v1alpha1.NacosConnector{})
+		Invokes(testing.NewDeleteActionWithOptions(nacosconnectorsResource, c.ns, name, opts), &v1alpha1.NacosConnector{})
+
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeNacosConnectors) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionActionWithOptions(nacosconnectorsResource, opts, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(nacosconnectorsResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.NacosConnectorList{})
 	return err
@@ -127,7 +135,8 @@ func (c *FakeNacosConnectors) DeleteCollection(ctx context.Context, opts v1.Dele
 func (c *FakeNacosConnectors) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.NacosConnector, err error) {
 	emptyResult := &v1alpha1.NacosConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceActionWithOptions(nacosconnectorsResource, name, pt, data, opts, subresources...), emptyResult)
+		Invokes(testing.NewPatchSubresourceActionWithOptions(nacosconnectorsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
+
 	if obj == nil {
 		return emptyResult, err
 	}

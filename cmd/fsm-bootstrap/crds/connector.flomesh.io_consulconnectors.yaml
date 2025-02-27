@@ -16,7 +16,7 @@ spec:
     shortNames:
     - consulconnector
     singular: consulconnector
-  scope: Cluster
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .spec.httpAddr

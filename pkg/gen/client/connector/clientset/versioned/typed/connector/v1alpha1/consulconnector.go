@@ -29,7 +29,7 @@ import (
 // ConsulConnectorsGetter has a method to return a ConsulConnectorInterface.
 // A group's client should implement this interface.
 type ConsulConnectorsGetter interface {
-	ConsulConnectors() ConsulConnectorInterface
+	ConsulConnectors(namespace string) ConsulConnectorInterface
 }
 
 // ConsulConnectorInterface has methods to work with ConsulConnector resources.
@@ -53,13 +53,13 @@ type consulConnectors struct {
 }
 
 // newConsulConnectors returns a ConsulConnectors
-func newConsulConnectors(c *ConnectorV1alpha1Client) *consulConnectors {
+func newConsulConnectors(c *ConnectorV1alpha1Client, namespace string) *consulConnectors {
 	return &consulConnectors{
 		gentype.NewClientWithList[*v1alpha1.ConsulConnector, *v1alpha1.ConsulConnectorList](
 			"consulconnectors",
 			c.RESTClient(),
 			scheme.ParameterCodec,
-			"",
+			namespace,
 			func() *v1alpha1.ConsulConnector { return &v1alpha1.ConsulConnector{} },
 			func() *v1alpha1.ConsulConnectorList { return &v1alpha1.ConsulConnectorList{} }),
 	}

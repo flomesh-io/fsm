@@ -311,6 +311,7 @@
                     "enable",
                     "leaderElection",
                     "connectorProvider",
+                    "connectorNamespace",
                     "connectorName",
                     "replicaCount",
                     "resource"
@@ -333,6 +334,12 @@
                       "type": "string",
                       "title": "Connector Provider",
                       "description": "Connector Provider"
+                    },
+                    "connectorNamespace": {
+                      "$id": "#/properties/fsm/properties/cloudConnector/properties/connectorNamespace",
+                      "type": "string",
+                      "title": "Connector Namespace",
+                      "description": "Connector Namespace"
                     },
                     "connectorName": {
                       "$id": "#/properties/fsm/properties/cloudConnector/properties/connectorName",

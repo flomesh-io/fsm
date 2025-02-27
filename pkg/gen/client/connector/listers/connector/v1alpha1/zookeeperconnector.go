@@ -28,9 +28,8 @@ type ZookeeperConnectorLister interface {
 	// List lists all ZookeeperConnectors in the indexer.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.ZookeeperConnector, err error)
-	// Get retrieves the ZookeeperConnector from the index for a given name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.ZookeeperConnector, error)
+	// ZookeeperConnectors returns an object that can list and get ZookeeperConnectors.
+	ZookeeperConnectors(namespace string) ZookeeperConnectorNamespaceLister
 	ZookeeperConnectorListerExpansion
 }
 
@@ -42,4 +41,27 @@ type zookeeperConnectorLister struct {
 // NewZookeeperConnectorLister returns a new ZookeeperConnectorLister.
 func NewZookeeperConnectorLister(indexer cache.Indexer) ZookeeperConnectorLister {
 	return &zookeeperConnectorLister{listers.New[*v1alpha1.ZookeeperConnector](indexer, v1alpha1.Resource("zookeeperconnector"))}
+}
+
+// ZookeeperConnectors returns an object that can list and get ZookeeperConnectors.
+func (s *zookeeperConnectorLister) ZookeeperConnectors(namespace string) ZookeeperConnectorNamespaceLister {
+	return zookeeperConnectorNamespaceLister{listers.NewNamespaced[*v1alpha1.ZookeeperConnector](s.ResourceIndexer, namespace)}
+}
+
+// ZookeeperConnectorNamespaceLister helps list and get ZookeeperConnectors.
+// All objects returned here must be treated as read-only.
+type ZookeeperConnectorNamespaceLister interface {
+	// List lists all ZookeeperConnectors in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
+	List(selector labels.Selector) (ret []*v1alpha1.ZookeeperConnector, err error)
+	// Get retrieves the ZookeeperConnector from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*v1alpha1.ZookeeperConnector, error)
+	ZookeeperConnectorNamespaceListerExpansion
+}
+
+// zookeeperConnectorNamespaceLister implements the ZookeeperConnectorNamespaceLister
+// interface.
+type zookeeperConnectorNamespaceLister struct {
+	listers.ResourceIndexer[*v1alpha1.ZookeeperConnector]
 }

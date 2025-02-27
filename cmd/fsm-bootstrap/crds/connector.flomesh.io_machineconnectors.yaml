@@ -16,7 +16,7 @@ spec:
     shortNames:
     - machineconnector
     singular: machineconnector
-  scope: Cluster
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .spec.syncToK8S.enable

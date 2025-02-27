@@ -114,7 +114,7 @@ func main() {
 	}
 	cfg := configurator.NewConfigurator(informerCollection, cli.Cfg.FsmNamespace, cli.Cfg.FsmMeshConfigName, msgBroker)
 	connectController := cli.NewConnectController(
-		cli.Cfg.SdrProvider, cli.Cfg.SdrConnector,
+		cli.Cfg.SdrProvider, cli.Cfg.SdrConnectorNamespace, cli.Cfg.SdrConnectorName,
 		ctx, kubeConfig, kubeClient, configClient,
 		connectorClient, machineClient, gatewayClient,
 		informerCollection, msgBroker)
@@ -126,7 +126,7 @@ func main() {
 	if cli.Cfg.LeaderElection {
 		lock := &resourcelock.LeaseLock{
 			LeaseMeta: metav1.ObjectMeta{
-				Name:      cli.Cfg.SdrConnector,
+				Name:      cli.Cfg.SdrConnectorName,
 				Namespace: connectorPod.Namespace,
 			},
 			Client: kubeClient.CoordinationV1(),

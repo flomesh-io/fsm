@@ -29,7 +29,7 @@ import (
 // EurekaConnectorsGetter has a method to return a EurekaConnectorInterface.
 // A group's client should implement this interface.
 type EurekaConnectorsGetter interface {
-	EurekaConnectors() EurekaConnectorInterface
+	EurekaConnectors(namespace string) EurekaConnectorInterface
 }
 
 // EurekaConnectorInterface has methods to work with EurekaConnector resources.
@@ -53,13 +53,13 @@ type eurekaConnectors struct {
 }
 
 // newEurekaConnectors returns a EurekaConnectors
-func newEurekaConnectors(c *ConnectorV1alpha1Client) *eurekaConnectors {
+func newEurekaConnectors(c *ConnectorV1alpha1Client, namespace string) *eurekaConnectors {
 	return &eurekaConnectors{
 		gentype.NewClientWithList[*v1alpha1.EurekaConnector, *v1alpha1.EurekaConnectorList](
 			"eurekaconnectors",
 			c.RESTClient(),
 			scheme.ParameterCodec,
-			"",
+			namespace,
 			func() *v1alpha1.EurekaConnector { return &v1alpha1.EurekaConnector{} },
 			func() *v1alpha1.EurekaConnectorList { return &v1alpha1.EurekaConnectorList{} }),
 	}

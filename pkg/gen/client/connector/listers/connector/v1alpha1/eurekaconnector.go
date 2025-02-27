@@ -28,9 +28,8 @@ type EurekaConnectorLister interface {
 	// List lists all EurekaConnectors in the indexer.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.EurekaConnector, err error)
-	// Get retrieves the EurekaConnector from the index for a given name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.EurekaConnector, error)
+	// EurekaConnectors returns an object that can list and get EurekaConnectors.
+	EurekaConnectors(namespace string) EurekaConnectorNamespaceLister
 	EurekaConnectorListerExpansion
 }
 
@@ -42,4 +41,27 @@ type eurekaConnectorLister struct {
 // NewEurekaConnectorLister returns a new EurekaConnectorLister.
 func NewEurekaConnectorLister(indexer cache.Indexer) EurekaConnectorLister {
 	return &eurekaConnectorLister{listers.New[*v1alpha1.EurekaConnector](indexer, v1alpha1.Resource("eurekaconnector"))}
+}
+
+// EurekaConnectors returns an object that can list and get EurekaConnectors.
+func (s *eurekaConnectorLister) EurekaConnectors(namespace string) EurekaConnectorNamespaceLister {
+	return eurekaConnectorNamespaceLister{listers.NewNamespaced[*v1alpha1.EurekaConnector](s.ResourceIndexer, namespace)}
+}
+
+// EurekaConnectorNamespaceLister helps list and get EurekaConnectors.
+// All objects returned here must be treated as read-only.
+type EurekaConnectorNamespaceLister interface {
+	// List lists all EurekaConnectors in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
+	List(selector labels.Selector) (ret []*v1alpha1.EurekaConnector, err error)
+	// Get retrieves the EurekaConnector from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*v1alpha1.EurekaConnector, error)
+	EurekaConnectorNamespaceListerExpansion
+}
+
+// eurekaConnectorNamespaceLister implements the EurekaConnectorNamespaceLister
+// interface.
+type eurekaConnectorNamespaceLister struct {
+	listers.ResourceIndexer[*v1alpha1.EurekaConnector]
 }

@@ -29,7 +29,7 @@ import (
 // ZookeeperConnectorsGetter has a method to return a ZookeeperConnectorInterface.
 // A group's client should implement this interface.
 type ZookeeperConnectorsGetter interface {
-	ZookeeperConnectors() ZookeeperConnectorInterface
+	ZookeeperConnectors(namespace string) ZookeeperConnectorInterface
 }
 
 // ZookeeperConnectorInterface has methods to work with ZookeeperConnector resources.
@@ -53,13 +53,13 @@ type zookeeperConnectors struct {
 }
 
 // newZookeeperConnectors returns a ZookeeperConnectors
-func newZookeeperConnectors(c *ConnectorV1alpha1Client) *zookeeperConnectors {
+func newZookeeperConnectors(c *ConnectorV1alpha1Client, namespace string) *zookeeperConnectors {
 	return &zookeeperConnectors{
 		gentype.NewClientWithList[*v1alpha1.ZookeeperConnector, *v1alpha1.ZookeeperConnectorList](
 			"zookeeperconnectors",
 			c.RESTClient(),
 			scheme.ParameterCodec,
-			"",
+			namespace,
 			func() *v1alpha1.ZookeeperConnector { return &v1alpha1.ZookeeperConnector{} },
 			func() *v1alpha1.ZookeeperConnectorList { return &v1alpha1.ZookeeperConnectorList{} }),
 	}

@@ -25,28 +25,28 @@ type FakeConnectorV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeConnectorV1alpha1) ConsulConnectors() v1alpha1.ConsulConnectorInterface {
-	return &FakeConsulConnectors{c}
+func (c *FakeConnectorV1alpha1) ConsulConnectors(namespace string) v1alpha1.ConsulConnectorInterface {
+	return &FakeConsulConnectors{c, namespace}
 }
 
-func (c *FakeConnectorV1alpha1) EurekaConnectors() v1alpha1.EurekaConnectorInterface {
-	return &FakeEurekaConnectors{c}
+func (c *FakeConnectorV1alpha1) EurekaConnectors(namespace string) v1alpha1.EurekaConnectorInterface {
+	return &FakeEurekaConnectors{c, namespace}
 }
 
-func (c *FakeConnectorV1alpha1) GatewayConnectors() v1alpha1.GatewayConnectorInterface {
-	return &FakeGatewayConnectors{c}
+func (c *FakeConnectorV1alpha1) GatewayConnectors(namespace string) v1alpha1.GatewayConnectorInterface {
+	return &FakeGatewayConnectors{c, namespace}
 }
 
-func (c *FakeConnectorV1alpha1) MachineConnectors() v1alpha1.MachineConnectorInterface {
-	return &FakeMachineConnectors{c}
+func (c *FakeConnectorV1alpha1) MachineConnectors(namespace string) v1alpha1.MachineConnectorInterface {
+	return &FakeMachineConnectors{c, namespace}
 }
 
-func (c *FakeConnectorV1alpha1) NacosConnectors() v1alpha1.NacosConnectorInterface {
-	return &FakeNacosConnectors{c}
+func (c *FakeConnectorV1alpha1) NacosConnectors(namespace string) v1alpha1.NacosConnectorInterface {
+	return &FakeNacosConnectors{c, namespace}
 }
 
-func (c *FakeConnectorV1alpha1) ZookeeperConnectors() v1alpha1.ZookeeperConnectorInterface {
-	return &FakeZookeeperConnectors{c}
+func (c *FakeConnectorV1alpha1) ZookeeperConnectors(namespace string) v1alpha1.ZookeeperConnectorInterface {
+	return &FakeZookeeperConnectors{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
