@@ -89,6 +89,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.controllerLogLevel | string | `"info"` | Controller log verbosity |
 | fsm.fsmNamespace | string | `""` | Namespace to deploy FSM in. If not specified, the Helm release namespace is used. |
+| fsm.fsmServiceAccountName | string | `""` | ServiceAccountName to deploy FSM in. If not specified, the Helm release name is used. |
 | fsm.image.digest | object | `{"fsmConnector":"","fsmCurl":""}` | Image digest (defaults to latest compatible tag) |
 | fsm.image.digest.fsmConnector | string | `""` | fsm-connector's image digest |
 | fsm.image.digest.fsmCurl | string | `""` | fsm-curl's image digest |

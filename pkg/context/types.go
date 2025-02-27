@@ -31,16 +31,17 @@ var ControllerCtxKey int
 type ControllerContext struct {
 	context.Context
 
-	ProxyServerPort  uint32
-	ProxyServiceCert *certificate.Certificate
-	FsmNamespace     string
-	KubeConfig       *rest.Config
-	Configurator     configurator.Configurator
-	MeshCatalog      catalog.MeshCataloger
-	CertManager      *certificate.Manager
-	MsgBroker        *messaging.Broker
-	CancelFunc       func()
-	Stop             chan struct{}
+	ProxyServerPort   uint32
+	ProxyServiceCert  *certificate.Certificate
+	FsmNamespace      string
+	FsmServiceAccount string
+	KubeConfig        *rest.Config
+	Configurator      configurator.Configurator
+	MeshCatalog       catalog.MeshCataloger
+	CertManager       *certificate.Manager
+	MsgBroker         *messaging.Broker
+	CancelFunc        func()
+	Stop              chan struct{}
 
 	// Merge with FSM ControllerContext to simplify the code
 	client.Client

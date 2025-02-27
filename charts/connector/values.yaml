@@ -30,6 +30,9 @@ fsm:
   # -- Namespace to deploy FSM in. If not specified, the Helm release namespace is used.
   fsmNamespace: ""
 
+  # -- ServiceAccountName to deploy FSM in. If not specified, the Helm release name is used.
+  fsmServiceAccountName: ""
+
   # -- Controller log verbosity
   controllerLogLevel: info
 
