@@ -282,7 +282,7 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
-        if: matrix.os == 'ubuntu-24.04'
+        if: matrix.k8s.os == 'ubuntu-24.04'
         with:
           tool-cache: false
           android: true
