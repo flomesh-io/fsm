@@ -198,7 +198,7 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
-        if: ${{ !contains(fromJSON(matrix.os), 'self-hosted') }}
+        if: !contains(fromJSON(matrix.os), 'self-hosted')
         with:
           tool-cache: false
           android: true
@@ -282,7 +282,7 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
-        if: ${{ !contains(fromJSON(matrix.k8s.os), 'self-hosted') }}
+        if: !contains(fromJSON(matrix.k8s.os), 'self-hosted')
         with:
           tool-cache: false
           android: true
