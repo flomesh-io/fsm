@@ -99,6 +99,7 @@ func (r *connectorReconciler) resolveValues(object metav1.Object, mc configurato
 
 		fmt.Sprintf("fsm.meshName=%s", r.fctx.MeshName),
 		fmt.Sprintf("fsm.fsmNamespace=%s", mc.GetFSMNamespace()),
+		fmt.Sprintf("fsm.fsmServiceAccountName=%s", r.fctx.FsmServiceAccount),
 		fmt.Sprintf("fsm.trustDomain=%s", r.fctx.TrustDomain),
 
 		fmt.Sprintf("fsm.controllerLogLevel=%s", mc.GetFSMLogLevel()),

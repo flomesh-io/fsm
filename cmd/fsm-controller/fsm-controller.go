@@ -237,8 +237,9 @@ func main() {
 	}
 
 	background := fctx.ControllerContext{
-		FsmNamespace: fsmNamespace,
-		KubeConfig:   kubeConfig,
+		FsmNamespace:      fsmNamespace,
+		FsmServiceAccount: fsmServiceAccount,
+		KubeConfig:        kubeConfig,
 	}
 	ctx, cancel := context.WithCancel(&background)
 	stop := signals.RegisterExitHandlers(cancel)

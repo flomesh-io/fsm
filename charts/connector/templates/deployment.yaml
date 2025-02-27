@@ -35,7 +35,7 @@ spec:
       {{- toYaml .Values.fsm.cloudConnector.affinity | nindent 8 }}
       {{- end }}
       priorityClassName: system-node-critical
-      serviceAccountName: {{ .Release.Name }}
+      serviceAccountName: {{ include "fsmConnector.serviceAccountName" . }}
       {{- if not (.Capabilities.APIVersions.Has "security.openshift.io/v1") }}
       {{- include "restricted.securityContext" . | nindent 6 }}
       {{- end }}

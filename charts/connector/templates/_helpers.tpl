@@ -19,7 +19,16 @@ securityContext:
     supplementalGroups: [5555]
 {{- end -}}
 
-{{/* fsm-conector image */}}
+{{/* fsm-connector serviceAccountName */}}
+{{- define "fsmConnector.serviceAccountName" -}}
+{{- if .Values.fsm.fsmServiceAccountName -}}
+{{- printf "%s" .Values.fsm.fsmServiceAccountName -}}
+{{- else -}}
+{{- printf "%s" .Release.Name -}}
+{{- end -}}
+{{- end -}}
+
+{{/* fsm-connector image */}}
 {{- define "fsmConnector.image" -}}
 {{- if .Values.fsm.image.tag -}}
 {{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmConnector (.Values.fsm.image.tag|toString) -}}

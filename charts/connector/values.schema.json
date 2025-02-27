@@ -293,6 +293,15 @@
                         "fsm-system"
                     ]
                 },
+                "fsmServiceAccountName": {
+                  "$id": "#/properties/fsm/properties/fsmServiceAccountName",
+                  "type": "string",
+                  "title": "The service account name of the FSM control plane components",
+                  "description": "Indicates the service account name which the FSM control plane components will use",
+                  "examples": [
+                    "fsm"
+                  ]
+                },
                 "cloudConnector": {
                   "$id": "#/properties/fsm/properties/cloudConnector",
                   "type": "object",
