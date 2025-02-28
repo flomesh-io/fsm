@@ -16,7 +16,7 @@ spec:
     shortNames:
     - eurekaconnector
     singular: eurekaconnector
-  scope: Cluster
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .spec.httpAddr

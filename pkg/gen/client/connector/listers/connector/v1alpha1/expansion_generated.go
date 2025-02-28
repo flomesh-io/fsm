@@ -19,22 +19,46 @@ package v1alpha1
 // ConsulConnectorLister.
 type ConsulConnectorListerExpansion interface{}
 
+// ConsulConnectorNamespaceListerExpansion allows custom methods to be added to
+// ConsulConnectorNamespaceLister.
+type ConsulConnectorNamespaceListerExpansion interface{}
+
 // EurekaConnectorListerExpansion allows custom methods to be added to
 // EurekaConnectorLister.
 type EurekaConnectorListerExpansion interface{}
+
+// EurekaConnectorNamespaceListerExpansion allows custom methods to be added to
+// EurekaConnectorNamespaceLister.
+type EurekaConnectorNamespaceListerExpansion interface{}
 
 // GatewayConnectorListerExpansion allows custom methods to be added to
 // GatewayConnectorLister.
 type GatewayConnectorListerExpansion interface{}
 
+// GatewayConnectorNamespaceListerExpansion allows custom methods to be added to
+// GatewayConnectorNamespaceLister.
+type GatewayConnectorNamespaceListerExpansion interface{}
+
 // MachineConnectorListerExpansion allows custom methods to be added to
 // MachineConnectorLister.
 type MachineConnectorListerExpansion interface{}
+
+// MachineConnectorNamespaceListerExpansion allows custom methods to be added to
+// MachineConnectorNamespaceLister.
+type MachineConnectorNamespaceListerExpansion interface{}
 
 // NacosConnectorListerExpansion allows custom methods to be added to
 // NacosConnectorLister.
 type NacosConnectorListerExpansion interface{}
 
+// NacosConnectorNamespaceListerExpansion allows custom methods to be added to
+// NacosConnectorNamespaceLister.
+type NacosConnectorNamespaceListerExpansion interface{}
+
 // ZookeeperConnectorListerExpansion allows custom methods to be added to
 // ZookeeperConnectorLister.
 type ZookeeperConnectorListerExpansion interface{}
+
+// ZookeeperConnectorNamespaceListerExpansion allows custom methods to be added to
+// ZookeeperConnectorNamespaceLister.
+type ZookeeperConnectorNamespaceListerExpansion interface{}

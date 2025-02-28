@@ -28,9 +28,8 @@ type NacosConnectorLister interface {
 	// List lists all NacosConnectors in the indexer.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.NacosConnector, err error)
-	// Get retrieves the NacosConnector from the index for a given name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.NacosConnector, error)
+	// NacosConnectors returns an object that can list and get NacosConnectors.
+	NacosConnectors(namespace string) NacosConnectorNamespaceLister
 	NacosConnectorListerExpansion
 }
 
@@ -42,4 +41,27 @@ type nacosConnectorLister struct {
 // NewNacosConnectorLister returns a new NacosConnectorLister.
 func NewNacosConnectorLister(indexer cache.Indexer) NacosConnectorLister {
 	return &nacosConnectorLister{listers.New[*v1alpha1.NacosConnector](indexer, v1alpha1.Resource("nacosconnector"))}
+}
+
+// NacosConnectors returns an object that can list and get NacosConnectors.
+func (s *nacosConnectorLister) NacosConnectors(namespace string) NacosConnectorNamespaceLister {
+	return nacosConnectorNamespaceLister{listers.NewNamespaced[*v1alpha1.NacosConnector](s.ResourceIndexer, namespace)}
+}
+
+// NacosConnectorNamespaceLister helps list and get NacosConnectors.
+// All objects returned here must be treated as read-only.
+type NacosConnectorNamespaceLister interface {
+	// List lists all NacosConnectors in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
+	List(selector labels.Selector) (ret []*v1alpha1.NacosConnector, err error)
+	// Get retrieves the NacosConnector from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*v1alpha1.NacosConnector, error)
+	NacosConnectorNamespaceListerExpansion
+}
+
+// nacosConnectorNamespaceLister implements the NacosConnectorNamespaceLister
+// interface.
+type nacosConnectorNamespaceLister struct {
+	listers.ResourceIndexer[*v1alpha1.NacosConnector]
 }

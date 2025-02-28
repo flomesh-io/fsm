@@ -78,6 +78,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.autoScale.memory.targetAverageUtilization | int | `80` | Average target memory utilization (%) |
 | fsm.cloudConnector.autoScale.minReplicas | int | `1` | Minimum replicas for autoscale |
 | fsm.cloudConnector.connectorName | string | `""` |  |
+| fsm.cloudConnector.connectorNamespace | string | `""` |  |
 | fsm.cloudConnector.connectorProvider | string | `""` |  |
 | fsm.cloudConnector.enable | bool | `false` |  |
 | fsm.cloudConnector.enablePodDisruptionBudget | bool | `false` | Enable Pod Disruption Budget |

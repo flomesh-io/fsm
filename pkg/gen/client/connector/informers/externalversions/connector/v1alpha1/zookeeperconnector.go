@@ -39,32 +39,33 @@ type ZookeeperConnectorInformer interface {
 type zookeeperConnectorInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
+	namespace        string
 }
 
 // NewZookeeperConnectorInformer constructs a new informer for ZookeeperConnector type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewZookeeperConnectorInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredZookeeperConnectorInformer(client, resyncPeriod, indexers, nil)
+func NewZookeeperConnectorInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredZookeeperConnectorInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
 // NewFilteredZookeeperConnectorInformer constructs a new informer for ZookeeperConnector type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredZookeeperConnectorInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredZookeeperConnectorInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ConnectorV1alpha1().ZookeeperConnectors().List(context.TODO(), options)
+				return client.ConnectorV1alpha1().ZookeeperConnectors(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ConnectorV1alpha1().ZookeeperConnectors().Watch(context.TODO(), options)
+				return client.ConnectorV1alpha1().ZookeeperConnectors(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&connectorv1alpha1.ZookeeperConnector{},
@@ -74,7 +75,7 @@ func NewFilteredZookeeperConnectorInformer(client versioned.Interface, resyncPer
 }
 
 func (f *zookeeperConnectorInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredZookeeperConnectorInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+	return NewFilteredZookeeperConnectorInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
 func (f *zookeeperConnectorInformer) Informer() cache.SharedIndexInformer {

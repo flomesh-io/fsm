@@ -24,7 +24,7 @@ import (
 )
 
 // NewConnectController returns a new Connector.Controller which means to provide access to locally-cached connector resources
-func NewConnectController(provider, connector string,
+func NewConnectController(provider, connectorNamespace, connectorName string,
 	context context.Context,
 	kubeConfig *rest.Config,
 	kubeClient kubernetes.Interface,
@@ -35,7 +35,7 @@ func NewConnectController(provider, connector string,
 	informerCollection *fsminformers.InformerCollection,
 	msgBroker *messaging.Broker,
 	selectInformers ...InformerKey) connector.ConnectController {
-	return newClient(provider, connector,
+	return newClient(provider, connectorNamespace, connectorName,
 		context,
 		kubeConfig,
 		kubeClient,
@@ -48,7 +48,7 @@ func NewConnectController(provider, connector string,
 		selectInformers...)
 }
 
-func newClient(provider, connectorName string,
+func newClient(provider, connectorNamespace, connectorName string,
 	context context.Context,
 	kubeConfig *rest.Config,
 	kubeClient kubernetes.Interface,
@@ -61,8 +61,9 @@ func newClient(provider, connectorName string,
 	selectInformers ...InformerKey) *client {
 	// Initialize client object
 	c := &client{
-		connectorProvider: provider,
-		connectorName:     connectorName,
+		connectorProvider:  provider,
+		connectorNamespace: connectorNamespace,
+		connectorName:      connectorName,
 
 		context:         context,
 		kubeConfig:      kubeConfig,
@@ -214,8 +215,8 @@ func (c *client) initGatewayTCPRouteMonitor() {
 }
 
 // GetConsulConnector returns a ConsulConnector resource if found, nil otherwise.
-func (c *client) GetConsulConnector(connector string) *ctv1.ConsulConnector {
-	connectorIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyConsulConnector, connector)
+func (c *client) GetConsulConnector(namespace, name string) *ctv1.ConsulConnector {
+	connectorIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyConsulConnector, fmt.Sprintf("%s/%s", namespace, name))
 	if exists && err == nil {
 		return connectorIf.(*ctv1.ConsulConnector)
 	}
@@ -223,8 +224,8 @@ func (c *client) GetConsulConnector(connector string) *ctv1.ConsulConnector {
 }
 
 // GetEurekaConnector returns a EurekaConnector resource if found, nil otherwise.
-func (c *client) GetEurekaConnector(connector string) *ctv1.EurekaConnector {
-	connectorIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyEurekaConnector, connector)
+func (c *client) GetEurekaConnector(namespace, name string) *ctv1.EurekaConnector {
+	connectorIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyEurekaConnector, fmt.Sprintf("%s/%s", namespace, name))
 	if exists && err == nil {
 		return connectorIf.(*ctv1.EurekaConnector)
 	}
@@ -232,8 +233,8 @@ func (c *client) GetEurekaConnector(connector string) *ctv1.EurekaConnector {
 }
 
 // GetNacosConnector returns a NacosConnector resource if found, nil otherwise.
-func (c *client) GetNacosConnector(connector string) *ctv1.NacosConnector {
-	connectorIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyNacosConnector, connector)
+func (c *client) GetNacosConnector(namespace, name string) *ctv1.NacosConnector {
+	connectorIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyNacosConnector, fmt.Sprintf("%s/%s", namespace, name))
 	if exists && err == nil {
 		return connectorIf.(*ctv1.NacosConnector)
 	}
@@ -241,8 +242,8 @@ func (c *client) GetNacosConnector(connector string) *ctv1.NacosConnector {
 }
 
 // GetZookeeperConnector returns a ZookeeperConnector resource if found, nil otherwise.
-func (c *client) GetZookeeperConnector(connector string) *ctv1.ZookeeperConnector {
-	connectorIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyZookeeperConnector, connector)
+func (c *client) GetZookeeperConnector(namespace, name string) *ctv1.ZookeeperConnector {
+	connectorIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyZookeeperConnector, fmt.Sprintf("%s/%s", namespace, name))
 	if exists && err == nil {
 		return connectorIf.(*ctv1.ZookeeperConnector)
 	}
@@ -250,8 +251,8 @@ func (c *client) GetZookeeperConnector(connector string) *ctv1.ZookeeperConnecto
 }
 
 // GetMachineConnector returns a MachineConnector resource if found, nil otherwise.
-func (c *client) GetMachineConnector(connector string) *ctv1.MachineConnector {
-	connectorIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyMachineConnector, connector)
+func (c *client) GetMachineConnector(namespace, name string) *ctv1.MachineConnector {
+	connectorIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyMachineConnector, fmt.Sprintf("%s/%s", namespace, name))
 	if exists && err == nil {
 		return connectorIf.(*ctv1.MachineConnector)
 	}
@@ -259,8 +260,8 @@ func (c *client) GetMachineConnector(connector string) *ctv1.MachineConnector {
 }
 
 // GetGatewayConnector returns a GatewayConnector resource if found, nil otherwise.
-func (c *client) GetGatewayConnector(connector string) *ctv1.GatewayConnector {
-	connectorIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyGatewayConnector, connector)
+func (c *client) GetGatewayConnector(namespace, name string) *ctv1.GatewayConnector {
+	connectorIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyGatewayConnector, fmt.Sprintf("%s/%s", namespace, name))
 	if exists && err == nil {
 		return connectorIf.(*ctv1.GatewayConnector)
 	}
@@ -271,42 +272,42 @@ func (c *client) GetGatewayConnector(connector string) *ctv1.GatewayConnector {
 func (c *client) GetConnector() (connector, spec interface{}, uid string, ok bool) {
 	switch c.GetConnectorProvider() {
 	case ctv1.ConsulDiscoveryService:
-		if consulConnector := c.GetConsulConnector(c.GetConnectorName()); consulConnector != nil {
+		if consulConnector := c.GetConsulConnector(c.GetConnectorNamespace(), c.GetConnectorName()); consulConnector != nil {
 			connector = consulConnector
 			spec = consulConnector.Spec
 			uid = string(consulConnector.UID)
 			ok = true
 		}
 	case ctv1.EurekaDiscoveryService:
-		if eurekaConnector := c.GetEurekaConnector(c.GetConnectorName()); eurekaConnector != nil {
+		if eurekaConnector := c.GetEurekaConnector(c.GetConnectorNamespace(), c.GetConnectorName()); eurekaConnector != nil {
 			connector = eurekaConnector.Spec
 			spec = eurekaConnector.Spec
 			uid = string(eurekaConnector.UID)
 			ok = true
 		}
 	case ctv1.NacosDiscoveryService:
-		if nacosConnector := c.GetNacosConnector(c.GetConnectorName()); nacosConnector != nil {
+		if nacosConnector := c.GetNacosConnector(c.GetConnectorNamespace(), c.GetConnectorName()); nacosConnector != nil {
 			connector = nacosConnector.Spec
 			spec = nacosConnector.Spec
 			uid = string(nacosConnector.UID)
 			ok = true
 		}
 	case ctv1.ZookeeperDiscoveryService:
-		if zookeeperConnector := c.GetZookeeperConnector(c.GetConnectorName()); zookeeperConnector != nil {
+		if zookeeperConnector := c.GetZookeeperConnector(c.GetConnectorNamespace(), c.GetConnectorName()); zookeeperConnector != nil {
 			connector = zookeeperConnector.Spec
 			spec = zookeeperConnector.Spec
 			uid = string(zookeeperConnector.UID)
 			ok = true
 		}
 	case ctv1.MachineDiscoveryService:
-		if machineConnector := c.GetMachineConnector(c.GetConnectorName()); machineConnector != nil {
+		if machineConnector := c.GetMachineConnector(c.GetConnectorNamespace(), c.GetConnectorName()); machineConnector != nil {
 			connector = machineConnector.Spec
 			spec = machineConnector.Spec
 			uid = string(machineConnector.UID)
 			ok = true
 		}
 	case ctv1.GatewayDiscoveryService:
-		if gatewayConnector := c.GetGatewayConnector(c.GetConnectorName()); gatewayConnector != nil {
+		if gatewayConnector := c.GetGatewayConnector(c.GetConnectorNamespace(), c.GetConnectorName()); gatewayConnector != nil {
 			connector = gatewayConnector.Spec
 			spec = gatewayConnector.Spec
 			uid = string(gatewayConnector.UID)
@@ -320,6 +321,11 @@ func (c *client) GetConnector() (connector, spec interface{}, uid string, ok boo
 // GetConnectorProvider returns connector provider.
 func (c *client) GetConnectorProvider() ctv1.DiscoveryServiceProvider {
 	return ctv1.DiscoveryServiceProvider(c.connectorProvider)
+}
+
+// GetConnectorNamespace returns connector namespace.
+func (c *client) GetConnectorNamespace() string {
+	return c.connectorNamespace
 }
 
 // GetConnectorName returns connector name.
@@ -371,7 +377,7 @@ func (c *client) updateConnectorMetrics() {
 			if fromK8sServiceCnt >= 0 {
 				consulConnector.Status.FromK8SServiceCnt = fromK8sServiceCnt
 			}
-			if _, err := c.connectorClient.ConnectorV1alpha1().ConsulConnectors().
+			if _, err := c.connectorClient.ConnectorV1alpha1().ConsulConnectors(consulConnector.Namespace).
 				UpdateStatus(c.context, consulConnector, metav1.UpdateOptions{}); err != nil {
 				log.Error().Err(err)
 			} else {
@@ -387,7 +393,7 @@ func (c *client) updateConnectorMetrics() {
 			if fromK8sServiceCnt >= 0 {
 				eurekaConnector.Status.FromK8SServiceCnt = fromK8sServiceCnt
 			}
-			if _, err := c.connectorClient.ConnectorV1alpha1().EurekaConnectors().
+			if _, err := c.connectorClient.ConnectorV1alpha1().EurekaConnectors(eurekaConnector.Namespace).
 				UpdateStatus(c.context, eurekaConnector, metav1.UpdateOptions{}); err != nil {
 				log.Error().Err(err)
 			} else {
@@ -403,7 +409,7 @@ func (c *client) updateConnectorMetrics() {
 			if fromK8sServiceCnt >= 0 {
 				nacosConnector.Status.FromK8SServiceCnt = fromK8sServiceCnt
 			}
-			if _, err := c.connectorClient.ConnectorV1alpha1().NacosConnectors().
+			if _, err := c.connectorClient.ConnectorV1alpha1().NacosConnectors(nacosConnector.Namespace).
 				UpdateStatus(c.context, nacosConnector, metav1.UpdateOptions{}); err != nil {
 				log.Error().Err(err)
 			} else {
@@ -417,7 +423,7 @@ func (c *client) updateConnectorMetrics() {
 			if toK8sServiceCnt >= 0 {
 				machineConnector.Status.ToK8SServiceCnt = toK8sServiceCnt
 			}
-			if _, err := c.connectorClient.ConnectorV1alpha1().MachineConnectors().
+			if _, err := c.connectorClient.ConnectorV1alpha1().MachineConnectors(machineConnector.Namespace).
 				UpdateStatus(c.context, machineConnector, metav1.UpdateOptions{}); err != nil {
 				log.Error().Err(err)
 			} else {

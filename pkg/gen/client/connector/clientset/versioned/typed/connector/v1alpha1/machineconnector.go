@@ -29,7 +29,7 @@ import (
 // MachineConnectorsGetter has a method to return a MachineConnectorInterface.
 // A group's client should implement this interface.
 type MachineConnectorsGetter interface {
-	MachineConnectors() MachineConnectorInterface
+	MachineConnectors(namespace string) MachineConnectorInterface
 }
 
 // MachineConnectorInterface has methods to work with MachineConnector resources.
@@ -53,13 +53,13 @@ type machineConnectors struct {
 }
 
 // newMachineConnectors returns a MachineConnectors
-func newMachineConnectors(c *ConnectorV1alpha1Client) *machineConnectors {
+func newMachineConnectors(c *ConnectorV1alpha1Client, namespace string) *machineConnectors {
 	return &machineConnectors{
 		gentype.NewClientWithList[*v1alpha1.MachineConnector, *v1alpha1.MachineConnectorList](
 			"machineconnectors",
 			c.RESTClient(),
 			scheme.ParameterCodec,
-			"",
+			namespace,
 			func() *v1alpha1.MachineConnector { return &v1alpha1.MachineConnector{} },
 			func() *v1alpha1.MachineConnectorList { return &v1alpha1.MachineConnectorList{} }),
 	}

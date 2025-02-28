@@ -55,7 +55,8 @@ spec:
             "-trust-domain", "{{.Values.fsm.trustDomain}}",
             "-leader-election={{.Values.fsm.cloudConnector.leaderElection}}",
             "-sdr-provider={{.Values.fsm.cloudConnector.connectorProvider}}",
-            "-sdr-connector={{.Values.fsm.cloudConnector.connectorName}}",
+            "-sdr-connector-namespace={{.Values.fsm.cloudConnector.connectorNamespace}}",
+            "-sdr-connector-name={{.Values.fsm.cloudConnector.connectorName}}",
           ]
           resources:
             limits:

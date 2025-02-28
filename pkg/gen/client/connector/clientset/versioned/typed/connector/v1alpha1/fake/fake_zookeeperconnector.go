@@ -29,6 +29,7 @@ import (
 // FakeZookeeperConnectors implements ZookeeperConnectorInterface
 type FakeZookeeperConnectors struct {
 	Fake *FakeConnectorV1alpha1
+	ns   string
 }
 
 var zookeeperconnectorsResource = v1alpha1.SchemeGroupVersion.WithResource("zookeeperconnectors")
@@ -39,7 +40,8 @@ var zookeeperconnectorsKind = v1alpha1.SchemeGroupVersion.WithKind("ZookeeperCon
 func (c *FakeZookeeperConnectors) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.ZookeeperConnector, err error) {
 	emptyResult := &v1alpha1.ZookeeperConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootGetActionWithOptions(zookeeperconnectorsResource, name, options), emptyResult)
+		Invokes(testing.NewGetActionWithOptions(zookeeperconnectorsResource, c.ns, name, options), emptyResult)
+
 	if obj == nil {
 		return emptyResult, err
 	}
@@ -50,7 +52,8 @@ func (c *FakeZookeeperConnectors) Get(ctx context.Context, name string, options 
 func (c *FakeZookeeperConnectors) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.ZookeeperConnectorList, err error) {
 	emptyResult := &v1alpha1.ZookeeperConnectorList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootListActionWithOptions(zookeeperconnectorsResource, zookeeperconnectorsKind, opts), emptyResult)
+		Invokes(testing.NewListActionWithOptions(zookeeperconnectorsResource, zookeeperconnectorsKind, c.ns, opts), emptyResult)
+
 	if obj == nil {
 		return emptyResult, err
 	}
@@ -71,14 +74,16 @@ func (c *FakeZookeeperConnectors) List(ctx context.Context, opts v1.ListOptions)
 // Watch returns a watch.Interface that watches the requested zookeeperConnectors.
 func (c *FakeZookeeperConnectors) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewRootWatchActionWithOptions(zookeeperconnectorsResource, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(zookeeperconnectorsResource, c.ns, opts))
+
 }
 
 // Create takes the representation of a zookeeperConnector and creates it.  Returns the server's representation of the zookeeperConnector, and an error, if there is any.
 func (c *FakeZookeeperConnectors) Create(ctx context.Context, zookeeperConnector *v1alpha1.ZookeeperConnector, opts v1.CreateOptions) (result *v1alpha1.ZookeeperConnector, err error) {
 	emptyResult := &v1alpha1.ZookeeperConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootCreateActionWithOptions(zookeeperconnectorsResource, zookeeperConnector, opts), emptyResult)
+		Invokes(testing.NewCreateActionWithOptions(zookeeperconnectorsResource, c.ns, zookeeperConnector, opts), emptyResult)
+
 	if obj == nil {
 		return emptyResult, err
 	}
@@ -89,7 +94,8 @@ func (c *FakeZookeeperConnectors) Create(ctx context.Context, zookeeperConnector
 func (c *FakeZookeeperConnectors) Update(ctx context.Context, zookeeperConnector *v1alpha1.ZookeeperConnector, opts v1.UpdateOptions) (result *v1alpha1.ZookeeperConnector, err error) {
 	emptyResult := &v1alpha1.ZookeeperConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateActionWithOptions(zookeeperconnectorsResource, zookeeperConnector, opts), emptyResult)
+		Invokes(testing.NewUpdateActionWithOptions(zookeeperconnectorsResource, c.ns, zookeeperConnector, opts), emptyResult)
+
 	if obj == nil {
 		return emptyResult, err
 	}
@@ -101,7 +107,8 @@ func (c *FakeZookeeperConnectors) Update(ctx context.Context, zookeeperConnector
 func (c *FakeZookeeperConnectors) UpdateStatus(ctx context.Context, zookeeperConnector *v1alpha1.ZookeeperConnector, opts v1.UpdateOptions) (result *v1alpha1.ZookeeperConnector, err error) {
 	emptyResult := &v1alpha1.ZookeeperConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateSubresourceActionWithOptions(zookeeperconnectorsResource, "status", zookeeperConnector, opts), emptyResult)
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(zookeeperconnectorsResource, "status", c.ns, zookeeperConnector, opts), emptyResult)
+
 	if obj == nil {
 		return emptyResult, err
 	}
@@ -111,13 +118,14 @@ func (c *FakeZookeeperConnectors) UpdateStatus(ctx context.Context, zookeeperCon
 // Delete takes name of the zookeeperConnector and deletes it. Returns an error if one occurs.
 func (c *FakeZookeeperConnectors) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteActionWithOptions(zookeeperconnectorsResource, name, opts), &v1alpha1.ZookeeperConnector{})
+		Invokes(testing.NewDeleteActionWithOptions(zookeeperconnectorsResource, c.ns, name, opts), &v1alpha1.ZookeeperConnector{})
+
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeZookeeperConnectors) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionActionWithOptions(zookeeperconnectorsResource, opts, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(zookeeperconnectorsResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.ZookeeperConnectorList{})
 	return err
@@ -127,7 +135,8 @@ func (c *FakeZookeeperConnectors) DeleteCollection(ctx context.Context, opts v1.
 func (c *FakeZookeeperConnectors) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ZookeeperConnector, err error) {
 	emptyResult := &v1alpha1.ZookeeperConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceActionWithOptions(zookeeperconnectorsResource, name, pt, data, opts, subresources...), emptyResult)
+		Invokes(testing.NewPatchSubresourceActionWithOptions(zookeeperconnectorsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
+
 	if obj == nil {
 		return emptyResult, err
 	}
