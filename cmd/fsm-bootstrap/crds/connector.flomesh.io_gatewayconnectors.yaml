@@ -16,7 +16,7 @@ spec:
     shortNames:
     - gatewayconnector
     singular: gatewayconnector
-  scope: Cluster
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .spec.syncToFgw.enable

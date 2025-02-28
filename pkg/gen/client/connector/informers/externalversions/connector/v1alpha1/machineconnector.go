@@ -39,32 +39,33 @@ type MachineConnectorInformer interface {
 type machineConnectorInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
+	namespace        string
 }
 
 // NewMachineConnectorInformer constructs a new informer for MachineConnector type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewMachineConnectorInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredMachineConnectorInformer(client, resyncPeriod, indexers, nil)
+func NewMachineConnectorInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredMachineConnectorInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
 // NewFilteredMachineConnectorInformer constructs a new informer for MachineConnector type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredMachineConnectorInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredMachineConnectorInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ConnectorV1alpha1().MachineConnectors().List(context.TODO(), options)
+				return client.ConnectorV1alpha1().MachineConnectors(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ConnectorV1alpha1().MachineConnectors().Watch(context.TODO(), options)
+				return client.ConnectorV1alpha1().MachineConnectors(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&connectorv1alpha1.MachineConnector{},
@@ -74,7 +75,7 @@ func NewFilteredMachineConnectorInformer(client versioned.Interface, resyncPerio
 }
 
 func (f *machineConnectorInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredMachineConnectorInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+	return NewFilteredMachineConnectorInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
 func (f *machineConnectorInformer) Informer() cache.SharedIndexInformer {

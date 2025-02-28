@@ -29,7 +29,7 @@ import (
 // NacosConnectorsGetter has a method to return a NacosConnectorInterface.
 // A group's client should implement this interface.
 type NacosConnectorsGetter interface {
-	NacosConnectors() NacosConnectorInterface
+	NacosConnectors(namespace string) NacosConnectorInterface
 }
 
 // NacosConnectorInterface has methods to work with NacosConnector resources.
@@ -53,13 +53,13 @@ type nacosConnectors struct {
 }
 
 // newNacosConnectors returns a NacosConnectors
-func newNacosConnectors(c *ConnectorV1alpha1Client) *nacosConnectors {
+func newNacosConnectors(c *ConnectorV1alpha1Client, namespace string) *nacosConnectors {
 	return &nacosConnectors{
 		gentype.NewClientWithList[*v1alpha1.NacosConnector, *v1alpha1.NacosConnectorList](
 			"nacosconnectors",
 			c.RESTClient(),
 			scheme.ParameterCodec,
-			"",
+			namespace,
 			func() *v1alpha1.NacosConnector { return &v1alpha1.NacosConnector{} },
 			func() *v1alpha1.NacosConnectorList { return &v1alpha1.NacosConnectorList{} }),
 	}

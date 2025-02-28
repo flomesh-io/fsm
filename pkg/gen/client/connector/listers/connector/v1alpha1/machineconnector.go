@@ -28,9 +28,8 @@ type MachineConnectorLister interface {
 	// List lists all MachineConnectors in the indexer.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.MachineConnector, err error)
-	// Get retrieves the MachineConnector from the index for a given name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.MachineConnector, error)
+	// MachineConnectors returns an object that can list and get MachineConnectors.
+	MachineConnectors(namespace string) MachineConnectorNamespaceLister
 	MachineConnectorListerExpansion
 }
 
@@ -42,4 +41,27 @@ type machineConnectorLister struct {
 // NewMachineConnectorLister returns a new MachineConnectorLister.
 func NewMachineConnectorLister(indexer cache.Indexer) MachineConnectorLister {
 	return &machineConnectorLister{listers.New[*v1alpha1.MachineConnector](indexer, v1alpha1.Resource("machineconnector"))}
+}
+
+// MachineConnectors returns an object that can list and get MachineConnectors.
+func (s *machineConnectorLister) MachineConnectors(namespace string) MachineConnectorNamespaceLister {
+	return machineConnectorNamespaceLister{listers.NewNamespaced[*v1alpha1.MachineConnector](s.ResourceIndexer, namespace)}
+}
+
+// MachineConnectorNamespaceLister helps list and get MachineConnectors.
+// All objects returned here must be treated as read-only.
+type MachineConnectorNamespaceLister interface {
+	// List lists all MachineConnectors in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
+	List(selector labels.Selector) (ret []*v1alpha1.MachineConnector, err error)
+	// Get retrieves the MachineConnector from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*v1alpha1.MachineConnector, error)
+	MachineConnectorNamespaceListerExpansion
+}
+
+// machineConnectorNamespaceLister implements the MachineConnectorNamespaceLister
+// interface.
+type machineConnectorNamespaceLister struct {
+	listers.ResourceIndexer[*v1alpha1.MachineConnector]
 }

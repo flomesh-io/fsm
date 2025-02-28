@@ -44,12 +44,13 @@ const (
 
 // client is the type used to represent the k8s client for the connector resources
 type client struct {
-	connectorProvider string
-	connectorName     string
-	connectorSpec     interface{}
-	connectorUID      string
-	connectorHash     uint64
-	clusterSet        string
+	connectorProvider  string
+	connectorNamespace string
+	connectorName      string
+	connectorSpec      interface{}
+	connectorUID       string
+	connectorHash      uint64
+	clusterSet         string
 
 	informers     *informers.InformerCollection
 	msgBroker     *messaging.Broker

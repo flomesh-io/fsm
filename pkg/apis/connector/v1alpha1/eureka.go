@@ -6,11 +6,10 @@ import (
 )
 
 // +genclient
-// +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:object:root=true
 // +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
-// +kubebuilder:resource:shortName=eurekaconnector,scope=Cluster
+// +kubebuilder:resource:shortName=eurekaconnector,scope=Namespaced
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="HttpAddr",type=string,JSONPath=`.spec.httpAddr`
