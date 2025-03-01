@@ -27,7 +27,7 @@ env:
   CI_MAX_WAIT_FOR_POD_TIME_SECONDS: 60
   CI_MIN_SUCCESS_THRESHOLD: 1
   FSM_HUMAN_DEBUG_LOG: true
-  CLUSTER_INSTALL_TYPE: ${{ inputs.cluster-install_type }}
+  CLUSTER_INSTALL_TYPE: ${{ inputs.cluster_install_type }}
 
 jobs:
   e2e-test:
