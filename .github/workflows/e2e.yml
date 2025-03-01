@@ -3,9 +3,6 @@ name: Run e2e tests
 on:
   workflow_call:
     inputs:
-      cluster_install_type:
-        required: true
-        type: string
       os:
         required: true
         type: string
@@ -19,7 +16,6 @@ on:
         required: true
         type: string
 
-
 env:
   CI_WAIT_FOR_OK_SECONDS: 60
   CI_MAX_ITERATIONS_THRESHOLD: 60
@@ -27,7 +23,7 @@ env:
   CI_MAX_WAIT_FOR_POD_TIME_SECONDS: 60
   CI_MIN_SUCCESS_THRESHOLD: 1
   FSM_HUMAN_DEBUG_LOG: true
-  CLUSTER_INSTALL_TYPE: ${{ inputs.cluster_install_type }}
+  CLUSTER_INSTALL_TYPE: K3dCluster
 
 jobs:
   e2e-test:

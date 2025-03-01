@@ -193,7 +193,6 @@ jobs:
             os: ubuntu-24.04
     uses: ./.github/workflows/e2e.yml
     with:
-      cluster_install_type: ${{ env.CLUSTER_INSTALL_TYPE }}
       os: ${{ matrix.os }}
       k8s_version: ${{ matrix.k8s_version }}
       bucket: ${{ matrix.bucket }}
@@ -229,7 +228,6 @@ jobs:
               os: ubuntu-24.04
     uses: ./.github/workflows/e2e.yml
     with:
-      cluster_install_type: ${{ env.CLUSTER_INSTALL_TYPE }}
       os: ${{ matrix.k8s.os }}
       k8s_version: ${{ matrix.k8s.version }}
       bucket: ${{ matrix.bucket }}
@@ -241,7 +239,6 @@ jobs:
     needs: build
     uses: ./.github/workflows/e2e.yml
     with:
-      cluster_install_type: ${{ env.CLUSTER_INSTALL_TYPE }}
       os: ubuntu-24.04
       k8s_version: ""
       bucket: 10
@@ -258,7 +255,6 @@ jobs:
         bucket: [9]
     uses: ./.github/workflows/e2e.yml
     with:
-      cluster_install_type: ${{ env.CLUSTER_INSTALL_TYPE }}
       os: ubuntu-24.04
       k8s_version: ${{ matrix.k8s_version }}
       bucket: ${{ matrix.bucket }}
@@ -275,7 +271,6 @@ jobs:
         bucket: [8]
     uses: ./.github/workflows/e2e.yml
     with:
-      cluster_install_type: ${{ env.CLUSTER_INSTALL_TYPE }}
       os: ubuntu-24.04
       k8s_version: ${{ matrix.k8s_version }}
       bucket: ${{ matrix.bucket }}
