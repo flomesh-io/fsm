@@ -255,7 +255,7 @@ jobs:
         bucket: [9]
     uses: ./.github/workflows/e2e.yml
     with:
-      os: ubuntu-24.04
+      os: self-hosted-ubuntu-20.04
       k8s_version: ${{ matrix.k8s_version }}
       bucket: ${{ matrix.bucket }}
       focus: ${{ matrix.focus }}
