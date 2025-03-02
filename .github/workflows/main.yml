@@ -51,7 +51,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
       - name: go build deps
         run: make embed-files-test
       - name: golangci-lint
@@ -70,7 +70,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
       - name: go mod tidy
         run: make go-mod-tidy
       - name: Codegen checks
@@ -92,7 +92,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
       - name: go mod tidy
         run: make go-mod-tidy
       - name: gomock checks
@@ -108,7 +108,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
       - name: chart checks
         run: make chart-checks
 
@@ -122,7 +122,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
       - name: Package Helm Charts
         run: make charts-tgz
       - name: Go Build
@@ -139,7 +139,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
       - name: go mod tidy
         run: make go-mod-tidy
       - name: Test
@@ -163,7 +163,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
       - name: Build docker images
         env:
           DOCKER_BUILDX_OUTPUT: type=docker
@@ -298,7 +298,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
       - name: Install k3d CLI
         run: |
           curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
