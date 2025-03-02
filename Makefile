@@ -436,7 +436,7 @@ HELM_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/helm/helm/main/scripts
 .PHONY: helm
 helm: $(HELM) ## Download kustomize locally if necessary.
 $(HELM): $(LOCALBIN)
-	[ -f $(HELM) ] || curl -s $(HELM_INSTALL_SCRIPT) | HELM_INSTALL_DIR=$(LOCALBIN) PATH=$(HELM_INSTALL_DIR):$(PATH) bash -s -- --version $(HELM_VERSION) --no-sudo
+	[ -f $(HELM) ] || curl -s $(HELM_INSTALL_SCRIPT) | HELM_INSTALL_DIR=$(LOCALBIN) PATH="$(LOCALBIN):$(PATH)" bash -s -- --version $(HELM_VERSION) --no-sudo
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
