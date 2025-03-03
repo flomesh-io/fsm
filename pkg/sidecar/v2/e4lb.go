@@ -148,7 +148,7 @@ func (s *Server) processEIPAdvertisements(readyNodes map[string]bool, existsE4lb
 }
 
 func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4lbEips map[types.UID]string) {
-	defaultEth, defaultHwAddr, err := s.discoverGateway()
+	defaultIfi, defaultEth, defaultHwAddr, err := s.discoverGateway()
 	if err != nil {
 		log.Error().Err(err).Msg(`fail to discover gateway`)
 		return
@@ -197,6 +197,7 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 
 			e4lbNat := newXNat(maps.SysE4lb, natKey, natVal)
 			if existsNat, exists := s.xnatCache[e4lbNat.Key()]; !exists {
+				s.setupE4LBServiceNeigh(defaultIfi, eip, defaultHwAddr)
 				if err := s.setupE4LBServiceNat(natKey, natVal); err != nil {
 					log.Error().Err(err).Msgf(`failed to setup e4lb nat, eip: %s`, eip)
 					continue
@@ -204,6 +205,7 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 				s.xnatCache[e4lbNat.Key()] = e4lbNat
 			} else {
 				if existsNat.valHash != e4lbNat.valHash {
+					s.setupE4LBServiceNeigh(defaultIfi, eip, defaultHwAddr)
 					if err := s.setupE4LBServiceNat(natKey, natVal); err != nil {
 						log.Error().Err(err).Msgf(`failed to setup e4lb nat, eip: %s`, eip)
 						continue
@@ -235,7 +237,7 @@ func (s *Server) getE4lbNatKey(eipAddr net.IP, vport uint16) *maps.NatKey {
 	natKey.Daddr[0], natKey.Daddr[1], natKey.Daddr[2], natKey.Daddr[3], natKey.V6, _ = util.IPToInt(eipAddr)
 	natKey.Dport = util.HostToNetShort(vport)
 	natKey.Proto = uint8(maps.IPPROTO_TCP)
-	if eipAddr.To16() != nil {
+	if eipAddr.To4() == nil {
 		natKey.V6 = 1
 	}
 	return natKey
@@ -300,22 +302,21 @@ func (s *Server) headlessService(k8sSvc *corev1.Service, upstreams map[string]bo
 	return microSvc
 }
 
-func (s *Server) discoverGateway() (string, net.HardwareAddr, error) {
-	var defaultEth string
-	var defaultHwAddr net.HardwareAddr
+func (s *Server) discoverGateway() (int, string, net.HardwareAddr, error) {
 	if dev, _, err := route.DiscoverGateway(); err != nil {
-		return "", nil, err
+		return 0, "", nil, err
 	} else if viaEth, err := netlink.LinkByName(dev); err != nil {
-		return "", nil, err
+		return 0, "", nil, err
 	} else {
-		defaultHwAddr = viaEth.Attrs().HardwareAddr
-		defaultEth = dev
-		return defaultEth, defaultHwAddr, nil
+		defaultHwAddr := viaEth.Attrs().HardwareAddr
+		defaultEth := dev
+		defaultIfi := viaEth.Attrs().Index
+		return defaultIfi, defaultEth, defaultHwAddr, nil
 	}
 }
 
 func (s *Server) setupE4LBServiceNat(natKey *maps.NatKey, natVal *maps.NatVal) error {
-	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR} {
+	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {
 		natKey.TcDir = uint8(tcDir)
 		if err := maps.AddNatEntry(maps.SysE4lb, natKey, natVal); err != nil {
 			return err
@@ -325,7 +326,7 @@ func (s *Server) setupE4LBServiceNat(natKey *maps.NatKey, natVal *maps.NatVal) e
 }
 
 func (s *Server) unsetE4LBServiceNat(natKey *maps.NatKey) error {
-	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR} {
+	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {
 		natKey.TcDir = uint8(tcDir)
 		if err := maps.DelNatEntry(maps.SysE4lb, natKey); err != nil {
 			return err
@@ -333,6 +334,33 @@ func (s *Server) unsetE4LBServiceNat(natKey *maps.NatKey) error {
 	}
 	return nil
 }
+
+func (s *Server) setupE4LBServiceNeigh(defaultIfi int, eip string, defaultHwAddr net.HardwareAddr) {
+	neigh := &netlink.Neigh{
+		LinkIndex:    defaultIfi,
+		State:        arp.NUD_REACHABLE,
+		IP:           net.ParseIP(eip),
+		HardwareAddr: defaultHwAddr,
+	}
+	if err := netlink.NeighSet(neigh); err != nil {
+		log.Error().Msg(err.Error())
+		if err = netlink.NeighAdd(neigh); err != nil {
+			log.Error().Msg(err.Error())
+		}
+	}
+}
+
+//func (s *Server) unsetE4LBServiceNeigh(defaultIfi int, eip string, defaultHwAddr net.HardwareAddr) {
+//	neigh := &netlink.Neigh{
+//		LinkIndex:    defaultIfi,
+//		State:        arp.NUD_REACHABLE,
+//		IP:           net.ParseIP(eip),
+//		HardwareAddr: defaultHwAddr,
+//	}
+//	if err := netlink.NeighDel(neigh); err != nil {
+//		log.Error().Msg(err.Error())
+//	}
+//}
 
 // IsE4LBEnabled checks if the service is enabled for flb
 func IsE4LBEnabled(svc *corev1.Service, kubeClient kubernetes.Interface) bool {

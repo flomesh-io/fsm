@@ -2,6 +2,7 @@ package v2
 
 import (
 	"context"
+	"time"
 
 	"k8s.io/client-go/kubernetes"
 
@@ -46,6 +47,7 @@ func (s *Server) Start() error {
 	for {
 		if err := s.loadNatEntries(); err != nil {
 			log.Warn().Msg(err.Error())
+			time.Sleep(time.Second * 5)
 		} else {
 			break
 		}

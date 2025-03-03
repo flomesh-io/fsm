@@ -43,6 +43,9 @@ func availableNetworkNodes(kubeClient kubernetes.Interface) (map[string]bool, bo
 			if len(node.Annotations) > 0 {
 				e4lbEnabled = utils.ParseEnabled(node.Annotations[constants.FLBEnabledAnnotation])
 			}
+			if !e4lbEnabled && len(node.Labels) > 0 {
+				e4lbEnabled = utils.ParseEnabled(node.Labels[constants.FLBEnabledAnnotation])
+			}
 			if !existsE4lbNode && e4lbEnabled {
 				existsE4lbNode = true
 			}
