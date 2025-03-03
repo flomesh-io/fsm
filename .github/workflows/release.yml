@@ -12,7 +12,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - id: version
-        run: echo "::set-output name=version::$(sed 's#^refs/tags/\(.*\)#\1#' <<< '${{ github.ref }}')"
+        run: echo "version=$(sed 's#^refs/tags/\(.*\)#\1#' <<< '${{ github.ref }}')" >> $GITHUB_OUTPUT
 
   binaries:
     name: Binaries
@@ -67,6 +67,32 @@ jobs:
       image: ${{ secrets.RELEASE_REGISTRY }}/fsm-demo-${{ matrix.id }}
       dockerfile: ./dockerfiles/Dockerfile.demo
     secrets: inherit
+
+  helm-chart:
+    name: Helm Chart
+    runs-on: ubuntu-24.04
+    needs: version
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Exclude Charts
+        run: |
+          rm -rfv charts/gateway/
+          rm -rfv charts/namespaced-ingress/
+          rm -rfv charts/connector/
+      - name: Helm Chart Version
+        run: echo "HELM_CHART_VERSION=$(cut -c 2- ${{ env.VERSION }})" >> $GITHUB_ENV
+      - name: Publish Helm Charts
+        uses: stefanprodan/helm-gh-pages@v1.7.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          app_version: ${{ env.HELM_CHART_VERSION }}
+          chart_version: ${{ env.HELM_CHART_VERSION }}
+          linting: false
 
   xnet:
     name: Trigger Xnet Release
