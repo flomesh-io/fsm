@@ -174,7 +174,7 @@ jobs:
         run: make trivy-scan-images
 
   mesh-e2e-test:
-    name: Go mesh test e2e
+    name: Go mesh test
     needs: build
     strategy:
       matrix:
@@ -200,7 +200,7 @@ jobs:
     secrets: inherit
 
   gateway-e2e-test:
-    name: Go gateway test e2e
+    name: Go gateway test
     needs: build
     strategy:
       matrix:
@@ -235,7 +235,7 @@ jobs:
     secrets: inherit
 
   ingress-e2e-test:
-    name: Go ingress test e2e
+    name: Go ingress test
     needs: build
     uses: ./.github/workflows/e2e.yml
     with:
@@ -246,7 +246,7 @@ jobs:
     secrets: inherit
 
   mesh-retry-e2e-test:
-    name: Go retry test e2e
+    name: Go retry test
     needs: mesh-statefulset-e2e-test
     strategy:
       matrix:
@@ -262,7 +262,7 @@ jobs:
     secrets: inherit
 
   mesh-statefulset-e2e-test:
-    name: Go statefulset test e2e
+    name: Go statefulset test
     needs: integration-tresor
     strategy:
       matrix:
