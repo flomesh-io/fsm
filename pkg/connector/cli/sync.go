@@ -192,6 +192,9 @@ func checkGatewayIPs(fgwSvc *corev1.Service, ingressIPSelector, egressIPSelector
 	if len(clusterIP) == 0 && len(fgwSvc.Spec.ClusterIPs) > 0 && len(fgwSvc.Spec.ClusterIPs[0]) > 0 {
 		clusterIP = fgwSvc.Spec.ClusterIPs[0]
 	}
+	if len(clusterIP) == 0 && len(fgwSvc.Spec.ClusterIP) > 0 {
+		clusterIP = fgwSvc.Spec.ClusterIP
+	}
 
 	ingressAddr = selectIP(ingressAddr, ingressIPSelector, ctv1.ExternalIP, fgwSvc.Spec.ExternalIPs)
 	ingressAddr = selectIngressIP(ingressAddr, ingressIPSelector, ctv1.ExternalIP, fgwSvc.Status.LoadBalancer.Ingress)
