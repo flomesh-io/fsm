@@ -1,6 +1,9 @@
 package framework
 
 import (
+	"bufio"
+	"bytes"
+	"io"
 	"time"
 
 	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
@@ -104,6 +107,8 @@ type FsmTestData struct {
 	DeployOnOpenShift bool // Determines whether to configure tests for OpenShift
 
 	RetryAppPodCreation bool // Whether to retry app pod creation due to issue #3973
+
+	K3dNodeLogs bool // Whether to collect logs from k3d nodes
 }
 
 // InstallFSMOpts describes install options for FSM
@@ -189,3 +194,18 @@ type SuccessFunction func() bool
 
 // RetryOnErrorFunc is a function type passed to RetryFuncOnError() to execute
 type RetryOnErrorFunc func() error
+
+type LogConsumerWriter struct {
+	consumer func(string)
+}
+
+func (l LogConsumerWriter) Write(p []byte) (n int, err error) {
+	scanner := bufio.NewScanner(bytes.NewReader(p))
+	scanner.Buffer(make([]byte, 64*1024), bufio.MaxScanTokenSize)
+	for scanner.Scan() {
+		l.consumer(scanner.Text())
+	}
+	return len(p), nil
+}
+
+var _ io.Writer = &LogConsumerWriter{}

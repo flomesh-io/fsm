@@ -21,6 +21,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-co-op/gocron"
+
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/pkg/stdcopy"
+
 	policyAttachmentClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 
 	extClientset "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned"
@@ -198,6 +203,8 @@ func registerFlags(td *FsmTestData) {
 	flag.BoolVar(&td.EnableNsMetricTag, "EnableMetricsTag", true, "Enable tagging Namespaces for metrics collection")
 	flag.BoolVar(&td.DeployOnOpenShift, "deployOnOpenShift", false, "Configure tests to run on OpenShift")
 	flag.BoolVar(&td.RetryAppPodCreation, "retryAppPodCreation", true, "Retry app pod creation on error")
+
+	flag.BoolVar(&td.K3dNodeLogs, "k3dNodeLogs", utils.GetBoolEnv("K3D_NODE_LOGS"), "Collect and write k3d node logs to stdout")
 }
 
 // ValidateStringParams validates input string parameters are valid
@@ -294,6 +301,56 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 		}
 
 		td.ClusterConfig = clusterConfig
+
+		if td.K3dNodeLogs {
+			td.T.Logf("Starting k3d log consumer")
+			docker, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation())
+			if err != nil {
+				td.T.Errorf("failed to create docker client: %v", err)
+				return err
+			}
+
+			k3dNodes := make(map[string]struct{})
+
+			checkLogs := func() {
+				td.T.Logf("Checking k3d logs")
+				containers, err := docker.ContainerList(context.Background(), container.ListOptions{All: true})
+				if err != nil {
+					td.T.Errorf("Error while listing containers: %s", err)
+					return
+				}
+
+				for _, c := range containers {
+					if len(c.Names) == 0 {
+						continue
+					}
+
+					name := c.Names[0]
+					td.T.Logf("Conainer name: %s", name)
+					if !strings.HasPrefix(name, fmt.Sprintf("/k3d-%s-", Td.ClusterName)) {
+						continue
+					}
+
+					containerId := c.ID
+					td.T.Logf("Conainer Name: %s, ID: %s, State: %s", name, containerId, c.State)
+					if _, ok := k3dNodes[containerId]; !ok && c.State == "running" {
+						k3dNodes[containerId] = struct{}{}
+						td.T.Logf("Container %s(%s) is running", name, containerId)
+						writer := &LogConsumerWriter{func(line string) { td.T.Log(fmt.Sprintf("[%s] %s", name, line)) }}
+						go td.consumeDockerContainerLogs(containerId, writer, writer)
+					}
+				}
+			}
+
+			s := gocron.NewScheduler(time.Local)
+			s.SingletonModeAll()
+			if _, err := s.Every(5).Seconds().
+				Name("k3d-logs").
+				Do(checkLogs); err != nil {
+				td.T.Errorf("Error happened while checking k3d logs: %s", err)
+			}
+			s.StartAsync()
+		}
 
 		// create cluster
 		if err := k3dCluster.ClusterRun(context.TODO(), runtimes.SelectedRuntime, clusterConfig); err != nil {
@@ -1962,4 +2019,30 @@ func (td *FsmTestData) AddOpenShiftSCC(scc, serviceAccount, namespace string) er
 	}
 
 	return nil
+}
+
+// consumeLogs is the function called by the function returned by createLogConsumer.
+func (td *FsmTestData) consumeDockerContainerLogs(containerId string, logStdout, logStderr io.Writer) {
+	docker, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation())
+	if err != nil {
+		td.T.Errorf("failed to create docker client: %v", err)
+		return
+	}
+	// We must run inside a goroutine because we're using Follow:true,
+	// and StdCopy will block until the log stream is closed.
+	stream, err := docker.ContainerLogs(context.Background(), containerId, container.LogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Details:    true,
+		Follow:     true,
+	})
+
+	if err != nil {
+		td.T.Errorf("error reading container logs: %v", err)
+	} else {
+		_, err := stdcopy.StdCopy(logStdout, logStderr, stream)
+		if err != nil {
+			td.T.Errorf("error demultiplexing docker logs: %v", err)
+		}
+	}
 }
