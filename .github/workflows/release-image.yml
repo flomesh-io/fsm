@@ -74,7 +74,7 @@ jobs:
         id: docker_meta
         uses: crazy-max/ghaction-docker-meta@v5.7.0
         with:
-          images: ${{ inputs.image }}
+          images: ${{ secrets.RELEASE_REGISTRY }}/${{ inputs.image }}
           tags: |
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}.{{minor}}.{{patch}}
