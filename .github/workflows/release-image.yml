@@ -33,8 +33,7 @@ on:
         default: nonroot
 
 jobs:
-  images:
-    name: Images
+  image:
     runs-on: ubuntu-24.04
     env:
       VERSION: ${{ inputs.version }}
