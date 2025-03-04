@@ -28,13 +28,14 @@ env:
   CI_CLIENT_CONCURRENT_CONNECTIONS: 1
   CI_MAX_WAIT_FOR_POD_TIME_SECONDS: 60
   CI_MIN_SUCCESS_THRESHOLD: 1
-  FSM_HUMAN_DEBUG_LOG: true
-  CLUSTER_INSTALL_TYPE: K3dCluster
+  FSM_HUMAN_DEBUG_LOG: ${{ vars.FSM_HUMAN_DEBUG_LOG }}
+  CLUSTER_INSTALL_TYPE: ${{ vars.CLUSTER_INSTALL_TYPE }}
+  K3D_NODE_LOGS: ${{ vars.K3D_NODE_LOGS }}
 
 jobs:
   shellcheck:
     name: Shellcheck
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,7 +44,7 @@ jobs:
 
   lint:
     name: Lint
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,7 +52,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
       - name: go build deps
         run: make embed-files-test
       - name: golangci-lint
@@ -62,7 +63,7 @@ jobs:
 
   codegen:
     name: Codegen
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -70,7 +71,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
       - name: go mod tidy
         run: make go-mod-tidy
       - name: Codegen checks
@@ -84,7 +85,7 @@ jobs:
 
   mocks:
     name: Mocks
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -92,7 +93,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
       - name: go mod tidy
         run: make go-mod-tidy
       - name: gomock checks
@@ -100,7 +101,7 @@ jobs:
 
   charts:
     name: Chart checks
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -108,13 +109,13 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
       - name: chart checks
         run: make chart-checks
 
   build:
     name: Go build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -122,7 +123,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
       - name: Package Helm Charts
         run: make charts-tgz
       - name: Go Build
@@ -130,7 +131,7 @@ jobs:
 
   unittest:
     name: Go test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: build
     steps:
       - name: Checkout
@@ -139,7 +140,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
       - name: go mod tidy
         run: make go-mod-tidy
       - name: Test
@@ -152,7 +153,7 @@ jobs:
 
   imagescan:
     name: Scan images for security vulnerabilities
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000"
@@ -163,7 +164,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
       - name: Build docker images
         env:
           DOCKER_BUILDX_OUTPUT: type=docker
@@ -174,14 +175,14 @@ jobs:
         run: make trivy-scan-images
 
   mesh-e2e-test:
-    name: Go mesh test e2e
+    name: Go mesh test
     needs: build
     strategy:
       matrix:
         k8s_version: [""]
         focus: [""]
         bucket: [1, 2, 3, 4, 5]
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
         include:
           - k8s_version: v1.19.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
@@ -190,65 +191,17 @@ jobs:
           - k8s_version: v1.27.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
-            os: ubuntu-22.04
-    runs-on: ${{ matrix.os }}
-    env:
-      CTR_TAG: ${{ github.sha }}
-      CTR_REGISTRY: "localhost:5000"
-    steps:
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: false
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
-      - name: Build test dependencies
-        env:
-          DOCKER_BUILDX_OUTPUT: type=docker
-        run: make docker-build-fsm build-fsm
-      - name: Run tests
-        id: test
-        env:
-          K8S_NAMESPACE: "fsm-system"
-        run: |
-          export PATH=$PWD/bin:$PATH
-          echo "PATH=$PATH"
-          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=${{ env.CLUSTER_INSTALL_TYPE }} -clusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
-        continue-on-error: true
-      - name: Set Logs name
-        if: ${{ steps.test.conclusion != 'skipped' }}
-        run: |
-          if [[ -n "${{ matrix.k8s_version }}" ]]; then
-            echo "ARTIFACT_NAME=test_logs_k8s_version_${{ matrix.k8s_version }}" >> $GITHUB_ENV
-          else
-            echo "ARTIFACT_NAME=test_logs_bucket_${{ matrix.bucket }}" >> $GITHUB_ENV
-          fi
-      - name: Upload test logs
-        if: ${{ steps.test.conclusion != 'skipped' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.ARTIFACT_NAME }}
-          path: /tmp/test**/*
-      - name: Check continue tests
-        if: ${{ steps.test.conclusion != 'skipped' && steps.test.outcome == 'failure'}}
-        run: exit 1
-      - name: Clean tests
-        if: ${{ steps.test.conclusion != 'skipped' }}
-        run: rm -rf /tmp/test*
+            os: ubuntu-24.04
+    uses: ./.github/workflows/e2e.yml
+    with:
+      os: ${{ matrix.os }}
+      k8s_version: ${{ matrix.k8s_version }}
+      bucket: ${{ matrix.bucket }}
+      focus: ${{ matrix.focus }}
+    secrets: inherit
 
   gateway-e2e-test:
-    name: Go gateway test e2e
+    name: Go gateway test
     needs: build
     strategy:
       matrix:
@@ -256,287 +209,78 @@ jobs:
         bucket: [6, 7]
         k8s:
           - version: "latest"
-            os: ubuntu-22.04
+            os: ubuntu-24.04
           - version: v1.19.16-k3s1
             os: ubuntu-20.04
           - version: v1.21.14-k3s1
-            os: ubuntu-22.04
+            os: ubuntu-24.04
           - version: v1.23.17-k3s1
-            os: ubuntu-22.04
+            os: ubuntu-24.04
         exclude:
           - focus: ""
             bucket: "7"
             k8s:
               version: v1.21.14-k3s1
-              os: ubuntu-22.04
+              os: ubuntu-24.04
           - focus: ""
             bucket: "7"
             k8s:
               version: v1.23.17-k3s1
-              os: ubuntu-22.04
-    runs-on: ${{ matrix.k8s.os }}
-    env:
-      CTR_TAG: ${{ github.sha }}
-      CTR_REGISTRY: "localhost:5000"
-    steps:
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: false
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
-      - name: Build test dependencies
-        env:
-          DOCKER_BUILDX_OUTPUT: type=docker
-        run: make docker-build-fsm build-fsm
-      - name: Add hosts to /etc/hosts
-        run: |
-          sudo echo "127.0.0.1 httptest.localhost" | sudo tee -a /etc/hosts
-          sudo echo "127.0.0.1 grpctest.localhost" | sudo tee -a /etc/hosts
-          sudo echo "127.0.0.1 tcptest.localhost" | sudo tee -a /etc/hosts
-          sudo echo "127.0.0.1 udptest.localhost" | sudo tee -a /etc/hosts
-      - name: Install gRPCurl
-        run: |
-          go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
-      - name: Run tests
-        id: test
-        env:
-          K8S_NAMESPACE: "fsm-system"
-        run: |
-          export PATH=$PWD/bin:$PATH
-          echo "PATH=$PATH"
-          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=${{ env.CLUSTER_INSTALL_TYPE }} -clusterVersion='${{ matrix.k8s.version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
-        continue-on-error: true
-      - name: Set Logs name
-        if: ${{ steps.test.conclusion != 'skipped' }}
-        run: |
-          if [[ -n "${{ matrix.k8s.version }}" ]]; then
-            echo "ARTIFACT_NAME=test_logs_k8s_version_${{ matrix.k8s.version }}" >> $GITHUB_ENV
-          else
-            echo "ARTIFACT_NAME=test_logs_bucket_${{ matrix.bucket }}" >> $GITHUB_ENV
-          fi
-      - name: Upload test logs
-        if: ${{ steps.test.conclusion != 'skipped' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.ARTIFACT_NAME }}
-          path: /tmp/test**/*
-      - name: Check continue tests
-        if: ${{ steps.test.conclusion != 'skipped' && steps.test.outcome == 'failure'}}
-        run: exit 1
-      - name: Clean tests
-        if: ${{ steps.test.conclusion != 'skipped' }}
-        run: rm -rf /tmp/test*
+              os: ubuntu-24.04
+    uses: ./.github/workflows/e2e.yml
+    with:
+      os: ${{ matrix.k8s.os }}
+      k8s_version: ${{ matrix.k8s.version }}
+      bucket: ${{ matrix.bucket }}
+      focus: ${{ matrix.focus }}
+    secrets: inherit
 
   ingress-e2e-test:
-    name: Go ingress test e2e
-    runs-on: ubuntu-22.04
+    name: Go ingress test
     needs: build
-    strategy:
-      matrix:
-        k8s_version: [ "" ]
-        focus: [ "" ]
-        bucket: [ 10 ]
-    env:
-      CTR_TAG: ${{ github.sha }}
-      CTR_REGISTRY: "localhost:5000"
-    steps:
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: false
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
-      - name: Build test dependencies
-        env:
-          DOCKER_BUILDX_OUTPUT: type=docker
-        run: make docker-build-fsm build-fsm
-      - name: Add hosts to /etc/hosts
-        run: |
-          sudo echo "127.0.0.1 httptest.localhost" | sudo tee -a /etc/hosts
-      - name: Run tests
-        id: test
-        env:
-          K8S_NAMESPACE: "fsm-system"
-        run: |
-          export PATH=$PWD/bin:$PATH
-          echo "PATH=$PATH"
-          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=${{ env.CLUSTER_INSTALL_TYPE }} -clusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
-        continue-on-error: true
-      - name: Set Logs name
-        if: ${{ steps.test.conclusion != 'skipped' }}
-        run: |
-          if [[ -n "${{ matrix.k8s_version }}" ]]; then
-            echo "ARTIFACT_NAME=test_logs_k8s_version_${{ matrix.k8s_version }}" >> $GITHUB_ENV
-          else
-            echo "ARTIFACT_NAME=test_logs_bucket_${{ matrix.bucket }}" >> $GITHUB_ENV
-          fi
-      - name: Upload test logs
-        if: ${{ steps.test.conclusion != 'skipped' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.ARTIFACT_NAME }}
-          path: /tmp/test**/*
-      - name: Check continue tests
-        if: ${{ steps.test.conclusion != 'skipped' && steps.test.outcome == 'failure'}}
-        run: exit 1
-      - name: Clean tests
-        if: ${{ steps.test.conclusion != 'skipped' }}
-        run: rm -rf /tmp/test*
+    uses: ./.github/workflows/e2e.yml
+    with:
+      os: ubuntu-24.04
+      k8s_version: ""
+      bucket: 10
+      focus: ""
+    secrets: inherit
 
   mesh-retry-e2e-test:
-    name: Go retry test e2e
-    runs-on: ubuntu-22.04
+    name: Go retry test
     needs: mesh-statefulset-e2e-test
     strategy:
       matrix:
         k8s_version: [""]
         focus: [""]
         bucket: [9]
-    env:
-      CTR_TAG: ${{ github.sha }}
-      CTR_REGISTRY: "localhost:5000"
-    steps:
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: false
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
-      - name: Build test dependencies
-        env:
-          DOCKER_BUILDX_OUTPUT: type=docker
-        run: make docker-build-fsm build-fsm
-      - name: Run tests
-        id: test
-        env:
-          K8S_NAMESPACE: "fsm-system"
-        run: |
-          export PATH=$PWD/bin:$PATH
-          echo "PATH=$PATH"
-          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=${{ env.CLUSTER_INSTALL_TYPE }} -clusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
-        continue-on-error: true
-      - name: Set Logs name
-        if: ${{ steps.test.conclusion != 'skipped' }}
-        run: |
-          if [[ -n "${{ matrix.k8s_version }}" ]]; then
-            echo "ARTIFACT_NAME=test_logs_k8s_version_${{ matrix.k8s_version }}" >> $GITHUB_ENV
-          else
-            echo "ARTIFACT_NAME=test_logs_bucket_${{ matrix.bucket }}" >> $GITHUB_ENV
-          fi
-      - name: Upload test logs
-        if: ${{ steps.test.conclusion != 'skipped' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.ARTIFACT_NAME }}
-          path: /tmp/test**/*
-      - name: Check continue tests
-        if: ${{ steps.test.conclusion != 'skipped' && steps.test.outcome == 'failure'}}
-        run: exit 1
-      - name: Clean tests
-        if: ${{ steps.test.conclusion != 'skipped' }}
-        run: rm -rf /tmp/test*
+    uses: ./.github/workflows/e2e.yml
+    with:
+      os: ubuntu-24.04
+      k8s_version: ${{ matrix.k8s_version }}
+      bucket: ${{ matrix.bucket }}
+      focus: ${{ matrix.focus }}
+    secrets: inherit
 
   mesh-statefulset-e2e-test:
-    name: Go statefulset test e2e
-    runs-on: ubuntu-22.04
+    name: Go statefulset test
     needs: integration-tresor
     strategy:
       matrix:
         k8s_version: [""]
         focus: [""]
         bucket: [8]
-    env:
-      CTR_TAG: ${{ github.sha }}
-      CTR_REGISTRY: "localhost:5000"
-    steps:
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: false
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
-      - name: Build test dependencies
-        env:
-          DOCKER_BUILDX_OUTPUT: type=docker
-        run: make docker-build-fsm build-fsm
-      - name: Run tests
-        id: test
-        env:
-          K8S_NAMESPACE: "fsm-system"
-        run: |
-          export PATH=$PWD/bin:$PATH
-          echo "PATH=$PATH"
-          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=${{ env.CLUSTER_INSTALL_TYPE }} -clusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
-        continue-on-error: true
-      - name: Set Logs name
-        if: ${{ steps.test.conclusion != 'skipped' }}
-        run: |
-          if [[ -n "${{ matrix.k8s_version }}" ]]; then
-            echo "ARTIFACT_NAME=test_logs_k8s_version_${{ matrix.k8s_version }}" >> $GITHUB_ENV
-          else
-            echo "ARTIFACT_NAME=test_logs_bucket_${{ matrix.bucket }}" >> $GITHUB_ENV
-          fi
-      - name: Upload test logs
-        if: ${{ steps.test.conclusion != 'skipped' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.ARTIFACT_NAME }}
-          path: /tmp/test**/*
-      - name: Check continue tests
-        if: ${{ steps.test.conclusion != 'skipped' && steps.test.outcome == 'failure'}}
-        run: exit 1
-      - name: Clean tests
-        if: ${{ steps.test.conclusion != 'skipped' }}
-        run: rm -rf /tmp/test*
+    uses: ./.github/workflows/e2e.yml
+    with:
+      os: ubuntu-24.04
+      k8s_version: ${{ matrix.k8s_version }}
+      bucket: ${{ matrix.bucket }}
+      focus: ${{ matrix.focus }}
+    secrets: inherit
 
   integration-tresor:
     name: Integration Test with Tresor, SMI traffic policies, and egress disabled
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: [build]
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -555,7 +299,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
       - name: Install k3d CLI
         run: |
           curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
@@ -579,7 +323,7 @@ jobs:
 
   images:
     name: Docker Images
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-')) && github.event_name == 'push' }}
     env:
       DOCKER_USER: ${{ secrets.RELEASE_DOCKER_USER }}
