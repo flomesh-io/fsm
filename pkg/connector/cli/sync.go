@@ -192,13 +192,18 @@ func checkGatewayIPs(fgwSvc *corev1.Service, ingressIPSelector, egressIPSelector
 	if len(clusterIP) == 0 && len(fgwSvc.Spec.ClusterIPs) > 0 && len(fgwSvc.Spec.ClusterIPs[0]) > 0 {
 		clusterIP = fgwSvc.Spec.ClusterIPs[0]
 	}
+	if len(clusterIP) == 0 && len(fgwSvc.Spec.ClusterIP) > 0 {
+		clusterIP = fgwSvc.Spec.ClusterIP
+	}
 
 	ingressAddr = selectIP(ingressAddr, ingressIPSelector, ctv1.ExternalIP, fgwSvc.Spec.ExternalIPs)
 	ingressAddr = selectIngressIP(ingressAddr, ingressIPSelector, ctv1.ExternalIP, fgwSvc.Status.LoadBalancer.Ingress)
 	ingressAddr = selectIP(ingressAddr, ingressIPSelector, ctv1.ClusterIP, fgwSvc.Spec.ClusterIPs)
+	ingressAddr = selectIP(ingressAddr, ingressIPSelector, ctv1.ClusterIP, []string{fgwSvc.Spec.ClusterIP})
 	egressAddr = selectIP(egressAddr, egressIPSelector, ctv1.ExternalIP, fgwSvc.Spec.ExternalIPs)
 	egressAddr = selectIngressIP(egressAddr, egressIPSelector, ctv1.ExternalIP, fgwSvc.Status.LoadBalancer.Ingress)
 	egressAddr = selectIP(egressAddr, egressIPSelector, ctv1.ClusterIP, fgwSvc.Spec.ClusterIPs)
+	egressAddr = selectIP(egressAddr, egressIPSelector, ctv1.ClusterIP, []string{fgwSvc.Spec.ClusterIP})
 	return
 }
 
