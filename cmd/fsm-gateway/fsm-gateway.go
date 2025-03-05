@@ -35,6 +35,8 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/flomesh-io/fsm/pkg/repo"
+
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	gwscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
 
@@ -159,7 +161,7 @@ func main() {
 	spawn := calcPipySpawn(kubeClient)
 	log.Info().Msgf("PIPY SPAWN = %d", spawn)
 
-	startHTTPServer()
+	startHTTPServer(cfg)
 
 	startPipy(spawn, url, cfg)
 
@@ -268,7 +270,7 @@ func startPipy(spawn int64, url string, _ configurator.Configurator) {
 	}
 }
 
-func startHTTPServer() {
+func startHTTPServer(mc configurator.Configurator) {
 	// Initialize FSM's http service server
 	httpServer := httpserver.NewHTTPServer(constants.FSMGatewayHTTPServerPort)
 
@@ -278,6 +280,8 @@ func startHTTPServer() {
 	httpServer.AddHandler(constants.VersionPath, version.GetVersionHandler())
 	// Health Check
 	httpServer.AddHandler(constants.HealthCheckPath, healthCheckHandler())
+	// Readiness Check
+	httpServer.AddHandler(constants.ReadinessCheckPath, readinessCheckHandler(mc))
 
 	// Start HTTP server
 	err := httpServer.Start()
@@ -296,7 +300,7 @@ func metricsHandler() http.Handler {
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		requestURL := fmt.Sprintf("http://%s:%d", constants.LocalhostIPAddress, constants.FSMGatewayAdminPort)
+		requestURL := fmt.Sprintf("http://%s:%d%s", constants.LocalhostIPAddress, constants.FSMGatewayAdminPort, constants.MetricsPath)
 
 		newReq, err := http.NewRequest(http.MethodGet, requestURL, nil)
 		if err != nil {
@@ -347,5 +351,23 @@ func healthCheckHandler() http.Handler {
 		}
 
 		setHealthcheckResponse(w, http.StatusOK, "OK")
+	})
+}
+
+func readinessCheckHandler(mc configurator.Configurator) http.Handler {
+	setHealthcheckResponse := func(w http.ResponseWriter, responseCode int, msg string) {
+		w.WriteHeader(responseCode)
+		if _, err := w.Write([]byte(msg)); err != nil {
+			log.Error().Err(err).Msg("Failed to write response")
+		}
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		repoClient := repo.NewRepoClient(fmt.Sprintf("%s://%s:%d", "http", mc.GetRepoServerIPAddr(), mc.GetProxyServerPort()), mc.GetFSMGatewayLogLevel())
+		if repoClient.CodebaseExists(utils.GatewayCodebasePath(gatewayNamespace, gatewayName)) {
+			setHealthcheckResponse(w, http.StatusOK, "OK")
+		} else {
+			setHealthcheckResponse(w, http.StatusNotFound, "FAILED")
+		}
 	})
 }

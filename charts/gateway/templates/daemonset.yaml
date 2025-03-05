@@ -148,7 +148,7 @@ spec:
           timeoutSeconds: 5
           httpGet:
             scheme: HTTP
-            path: /healthz
+            path: /readyz
             port: 59091
       terminationGracePeriodSeconds: 60
       {{- with .Values.fsm.gateway.podSecurityContext }}
