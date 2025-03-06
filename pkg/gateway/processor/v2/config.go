@@ -32,7 +32,7 @@ func (c *GatewayProcessor) BuildConfigs() {
 		return
 	}
 
-	for _, gw := range gwutils.GetActiveGateways(c.client) {
+	for _, gw := range gwutils.GetGateways(c.client, gwutils.IsAcceptedGateway) {
 		cfg := NewGatewayConfigGenerator(gw, c, c.client, c.cfg).Generate()
 
 		go c.syncConfigDir(gw, cfg)
