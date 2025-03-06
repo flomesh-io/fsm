@@ -18,7 +18,7 @@ func (p *GatewaysTrigger) Insert(obj interface{}, processor processor.Processor)
 		return false
 	}
 
-	return utils.IsActiveGateway(gw)
+	return utils.IsAcceptedGateway(gw)
 }
 
 // Delete removes the Gateway object from the processor and returns true if the processor was modified

@@ -67,61 +67,41 @@ func IsListenerValid(s gwv1.ListenerStatus) bool {
 	return IsListenerAccepted(s) && IsListenerProgrammed(s) && !IsListenerConflicted(s) && IsListenerResolvedRefs(s)
 }
 
+// GetGateways returns the gateways filtered by filterFn
+func GetGateways(cache cache.Cache, filterFn func(*gwv1.Gateway) bool) []*gwv1.Gateway {
+	classes, err := findFSMGatewayClasses(cache)
+	if err != nil {
+		log.Error().Msgf("Failed to find GatewayClass: %v", err)
+		return nil
+	}
+
+	gateways := make([]*gwv1.Gateway, 0)
+	for _, cls := range classes {
+		list := &gwv1.GatewayList{}
+		if err := cache.List(context.Background(), list, &client.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, cls.Name),
+		}); err != nil {
+			log.Error().Msgf("Failed to list Gateways: %v", err)
+			continue
+		}
+
+		gateways = append(gateways, ToSlicePtr(list.Items)...)
+	}
+
+	return filterGateways(gateways, filterFn)
+}
+
 // GetActiveGateways returns the active gateways
 func GetActiveGateways(cache cache.Cache) []*gwv1.Gateway {
-	classes, err := findFSMGatewayClasses(cache)
-	if err != nil {
-		log.Error().Msgf("Failed to find GatewayClass: %v", err)
-		return nil
-	}
-
-	gateways := make([]*gwv1.Gateway, 0)
-	for _, cls := range classes {
-		list := &gwv1.GatewayList{}
-		if err := cache.List(context.Background(), list, &client.ListOptions{
-			FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, cls.Name),
-		}); err != nil {
-			log.Error().Msgf("Failed to list Gateways: %v", err)
-			continue
-		}
-
-		gateways = append(gateways, ToSlicePtr(list.Items)...)
-	}
-
-	return filterActiveGateways(gateways)
+	return GetGateways(cache, IsActiveGateway)
 }
 
-// GetActiveGatewaysInNamespace returns the active gateways in the namespace
-func GetActiveGatewaysInNamespace(cache cache.Cache, namespace string) []*gwv1.Gateway {
-	classes, err := findFSMGatewayClasses(cache)
-	if err != nil {
-		log.Error().Msgf("Failed to find GatewayClass: %v", err)
-		return nil
-	}
-
-	gateways := make([]*gwv1.Gateway, 0)
-	for _, cls := range classes {
-		list := &gwv1.GatewayList{}
-		if err := cache.List(context.Background(), list, &client.ListOptions{
-			FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, cls.Name),
-			Namespace:     namespace,
-		}); err != nil {
-			log.Error().Msgf("Failed to list Gateways: %v", err)
-			continue
-		}
-
-		gateways = append(gateways, ToSlicePtr(list.Items)...)
-	}
-
-	return filterActiveGateways(gateways)
-}
-
-// filterActiveGateways returns the active gateways from the list of gateways
-func filterActiveGateways(allGateways []*gwv1.Gateway) []*gwv1.Gateway {
+// filterGateways returns the gateways from the list of gateways by filterFn
+func filterGateways(allGateways []*gwv1.Gateway, filterFn func(*gwv1.Gateway) bool) []*gwv1.Gateway {
 	gateways := make([]*gwv1.Gateway, 0)
 
 	for _, gw := range allGateways {
-		if IsActiveGateway(gw) {
+		if filterFn(gw) {
 			gateways = append(gateways, gw)
 		}
 	}
