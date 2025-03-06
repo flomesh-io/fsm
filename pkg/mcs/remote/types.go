@@ -298,6 +298,8 @@ func (c *Connector) onDeleteFunc(_ *k8s.EventTypes) func(obj interface{}) {
 	}
 }
 
+const externalNameServiceErrorMsg = "[%s] ExternalName service %s/%s cannot be exported"
+
 func (c *Connector) getService(export *mcsv1alpha1.ServiceExport) (*corev1.Service, error) {
 	connectorCtx := c.context.(*conn.ConnectorContext)
 	connectorConfig := connectorCtx.ConnectorConfig
@@ -313,8 +315,8 @@ func (c *Connector) getService(export *mcsv1alpha1.ServiceExport) (*corev1.Servi
 	}
 
 	if svc.Spec.Type == corev1.ServiceTypeExternalName {
-		log.Error().Msgf(fmt.Sprintf("[%s] ExternalName service %s/%s cannot be exported", connectorConfig.Key(), export.Namespace, export.Name))
-		return nil, fmt.Errorf("[%s] ExternalName service %s/%s cannot be exported", connectorConfig.Key(), export.Namespace, export.Name)
+		log.Error().Msg(fmt.Sprintf(externalNameServiceErrorMsg, connectorConfig.Key(), export.Namespace, export.Name))
+		return nil, fmt.Errorf(externalNameServiceErrorMsg, connectorConfig.Key(), export.Namespace, export.Name)
 	}
 
 	return svc, nil

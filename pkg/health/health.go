@@ -83,7 +83,7 @@ func ReadinessHandler(probes []Probes, urlProbes []HTTPProbe) http.Handler {
 		for _, probe := range probes {
 			if !probe.Readiness() {
 				msg := fmt.Sprintf("Readiness probe for %s indicates it is not ready", probe.GetID())
-				log.Warn().Msgf(msg)
+				log.Warn().Msg(msg)
 				setProbeResponse(w, http.StatusServiceUnavailable, msg)
 				return
 			}
@@ -94,7 +94,7 @@ func ReadinessHandler(probes []Probes, urlProbes []HTTPProbe) http.Handler {
 			responseCode, err := urlProbe.Probe()
 			if err != nil || responseCode != http.StatusOK {
 				msg := fmt.Sprintf("Readiness probe failed for URL %s: %s", urlProbe.URL, err)
-				log.Warn().Msgf(msg)
+				log.Warn().Msg(msg)
 				setProbeResponse(w, responseCode, msg)
 				return
 			}
@@ -111,7 +111,7 @@ func LivenessHandler(probes []Probes, urlProbes []HTTPProbe) http.Handler {
 		for _, probe := range probes {
 			if !probe.Liveness() {
 				msg := fmt.Sprintf("Liveness probe for %s indicates it is not alive", probe.GetID())
-				log.Warn().Msgf(msg)
+				log.Warn().Msg(msg)
 				setProbeResponse(w, http.StatusServiceUnavailable, msg)
 				return
 			}
@@ -122,7 +122,7 @@ func LivenessHandler(probes []Probes, urlProbes []HTTPProbe) http.Handler {
 			responseCode, err := urlProbe.Probe()
 			if err != nil || responseCode != http.StatusOK {
 				msg := fmt.Sprintf("Liveness probe failed for URL %s: %s", urlProbe.URL, err)
-				log.Warn().Msgf(msg)
+				log.Warn().Msg(msg)
 				setProbeResponse(w, responseCode, msg)
 				return
 			}

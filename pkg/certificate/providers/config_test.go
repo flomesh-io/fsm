@@ -2,7 +2,6 @@ package providers
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -133,7 +132,7 @@ func TestGetCertificateManager(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf(tc.name), func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			assert := tassert.New(t)
 
 			oldCA := getCA
@@ -433,7 +432,7 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf(tc.name), func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			assert := tassert.New(t)
 
 			oldCA := getCA

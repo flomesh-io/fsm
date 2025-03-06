@@ -833,7 +833,7 @@ func (td *FsmTestData) InstallFSM(instOpts InstallFSMOpts) error {
 	}
 
 	if err := td.CreateNs(instOpts.ControlPlaneNS, nil); err != nil {
-		return fmt.Errorf("failed to create namespace " + instOpts.ControlPlaneNS)
+		return fmt.Errorf("failed to create namespace %s", instOpts.ControlPlaneNS)
 	}
 
 	var args []string
@@ -1261,7 +1261,7 @@ func (td *FsmTestData) installCertManager(instOpts InstallFSMOpts) error {
 	if err = Td.RetryFuncOnError(func() error {
 		_, err = cmClient.CertmanagerV1().Certificates(td.FsmNamespace).Create(context.TODO(), cert, metav1.CreateOptions{})
 		if err != nil {
-			return fmt.Errorf("failed to create Certificate " + cert.Name)
+			return fmt.Errorf("failed to create Certificate %s", cert.Name)
 		}
 		return nil
 	}, 5, 20*time.Second); err != nil {
@@ -1271,7 +1271,7 @@ func (td *FsmTestData) installCertManager(instOpts InstallFSMOpts) error {
 	if err = Td.RetryFuncOnError(func() error {
 		_, err = cmClient.CertmanagerV1().Issuers(td.FsmNamespace).Create(context.TODO(), selfsigned, metav1.CreateOptions{})
 		if err != nil {
-			return fmt.Errorf("failed to create Issuer " + selfsigned.Name)
+			return fmt.Errorf("failed to create Issuer %s", selfsigned.Name)
 		}
 		return nil
 	}, 5, 20*time.Second); err != nil {
@@ -1281,7 +1281,7 @@ func (td *FsmTestData) installCertManager(instOpts InstallFSMOpts) error {
 	if err = Td.RetryFuncOnError(func() error {
 		_, err = cmClient.CertmanagerV1().Issuers(td.FsmNamespace).Create(context.TODO(), ca, metav1.CreateOptions{})
 		if err != nil {
-			return fmt.Errorf("failed to create Issuer " + ca.Name)
+			return fmt.Errorf("failed to create Issuer %s", ca.Name)
 		}
 		return nil
 	}, 5, 20*time.Second); err != nil {
@@ -1339,7 +1339,7 @@ func (td *FsmTestData) CreateNs(nsName string, labels map[string]string) error {
 	td.T.Logf("Creating namespace %v", nsName)
 	_, err := td.Client.CoreV1().Namespaces().Create(context.Background(), namespaceObj, metav1.CreateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to create namespace " + nsName)
+		return fmt.Errorf("failed to create namespace %s", nsName)
 	}
 
 	// Check if we are using any specific creds
@@ -1381,7 +1381,7 @@ func (td *FsmTestData) DeleteNs(nsName string) error {
 	td.T.Logf("Deleting namespace %v", nsName)
 	err := td.Client.CoreV1().Namespaces().Delete(context.Background(), nsName, metav1.DeleteOptions{PropagationPolicy: &backgroundDelete, GracePeriodSeconds: ptr.To(int64(0))})
 	if err != nil {
-		return fmt.Errorf("failed to delete namespace " + nsName)
+		return fmt.Errorf("failed to delete namespace %s", nsName)
 	}
 	return nil
 }
