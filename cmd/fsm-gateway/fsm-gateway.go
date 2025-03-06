@@ -284,14 +284,16 @@ func startHTTPServer(mc configurator.Configurator) {
 	httpServer.AddHandler(constants.VersionPath, version.GetVersionHandler())
 	// Health Check
 	httpServer.AddHandler(constants.HealthCheckPath, healthCheckHandler())
+	// Readiness Check
+	httpServer.AddHandler(constants.ReadinessCheckPath, healthCheckHandler())
 
 	host := repoHost()
 	port := mc.GetProxyServerPort()
 	repoUrl := fmt.Sprintf("%s://%s:%d", "http", host, port)
 	repoClient := repo.NewRepoClient(repoUrl, mc.GetFSMLogLevel())
 
-	// Readiness Check
-	httpServer.AddHandler(constants.ReadinessCheckPath, readinessCheckHandler(repoClient))
+	// Startup Check
+	httpServer.AddHandler(constants.StartupCheckPath, startupCheckHandler(repoClient))
 
 	// Start HTTP server
 	err := httpServer.Start()
@@ -364,7 +366,7 @@ func healthCheckHandler() http.Handler {
 	})
 }
 
-func readinessCheckHandler(repoClient *repo.PipyRepoClient) http.Handler {
+func startupCheckHandler(repoClient *repo.PipyRepoClient) http.Handler {
 	setHealthcheckResponse := func(w http.ResponseWriter, responseCode int, msg string) {
 		w.WriteHeader(responseCode)
 		if _, err := w.Write([]byte(msg)); err != nil {

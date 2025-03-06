@@ -377,6 +377,9 @@ const (
 	// ReadinessCheckPath is the path at which serves readiness checks
 	ReadinessCheckPath = "/readyz"
 
+	// StartupCheckPath is the path at which serves startup checks
+	StartupCheckPath = "/startupz"
+
 	// WebhookHealthPath is the path at which the webooks serve health probes
 	WebhookHealthPath = HealthCheckPath
 )
