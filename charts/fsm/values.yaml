@@ -306,7 +306,7 @@ fsm:
                 mac: ee:ee:ee:ee:ee:ee
       image:
         # -- Registry for xnet image
-        registry: cybwan
+        registry: flomesh
         # -- xnet image name
         name: xnet
         # -- xnet image tag
