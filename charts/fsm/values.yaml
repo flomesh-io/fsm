@@ -275,8 +275,35 @@ fsm:
     # -- xnet
     xnet:
       features:
-        mesh: true
-        e4lb: false
+        mesh:
+          enable: true
+          filter:
+            ports:
+              inbound: "mesh"
+              outbound: "mesh"
+        e4lb:
+          enable: false
+          cnis:
+            flannel:
+              enable: true
+              bridge4:
+                enable: true
+                name: cni0
+                mac: ""
+              bridge6:
+                enable: false
+                name: cni0
+                mac: ""
+            calicoVxlan:
+              enable: false
+              bridge4:
+                enable: false
+                name: vxlan.calico
+                mac: ee:ee:ee:ee:ee:ee
+              bridge6:
+                enable: false
+                name: vxlan-v6.calico
+                mac: ee:ee:ee:ee:ee:ee
       image:
         # -- Registry for xnet image
         registry: flomesh
@@ -291,10 +318,6 @@ fsm:
         requests:
           cpu: "0.5"
           memory: "256M"
-      filter:
-        ports:
-          inbound: "mesh"
-          outbound: "mesh"
       flush:
         conntrack:
           tcp:
@@ -320,27 +343,6 @@ fsm:
           sysFs: "/opt"
           sysProc: "/proc"
           sysRun: "/var/run"
-      cnis:
-        flannel:
-          enable: true
-          bridge4:
-            enable: true
-            name: cni0
-            mac: ""
-          bridge6:
-            enable: false
-            name: cni0
-            mac: ""
-        calicoVxlan:
-          enable: false
-          bridge4:
-            enable: false
-            name: vxlan.calico
-            mac: ee:ee:ee:ee:ee:ee
-          bridge6:
-            enable: false
-            name: vxlan-v6.calico
-            mac: ee:ee:ee:ee:ee:ee
     ## Affinity settings for pod assignment
     ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
     affinity:

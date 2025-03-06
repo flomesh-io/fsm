@@ -79,10 +79,13 @@ spec:
           "--mesh-name", "{{.Values.fsm.meshName}}",
           "--fsm-version", "{{ .Chart.AppVersion }}",
           "--fsm-namespace", "{{ include "fsm.namespace" . }}",
-          "--enable-mesh={{.Values.fsm.fsmXnetwork.xnet.features.mesh}}",
-          "--enable-e4lb={{.Values.fsm.fsmXnetwork.xnet.features.e4lb}}",
-          "--filter-port-inbound", "{{.Values.fsm.fsmXnetwork.xnet.filter.ports.inbound}}",
-          "--filter-port-outbound", "{{.Values.fsm.fsmXnetwork.xnet.filter.ports.outbound}}",
+          "--enable-mesh={{.Values.fsm.fsmXnetwork.xnet.features.mesh.enable}}",
+          "--enable-e4lb={{.Values.fsm.fsmXnetwork.xnet.features.e4lb.enable}}",
+          "--mesh-filter-port-inbound", "{{.Values.fsm.fsmXnetwork.xnet.features.mesh.filter.ports.inbound}}",
+          "--mesh-filter-port-outbound", "{{.Values.fsm.fsmXnetwork.xnet.features.mesh.filter.ports.outbound}}",
+          {{- range $excludeNamespace := .Values.fsm.fsmXnetwork.xnet.features.mesh.excludeNamespaces }}
+          "--mesh-exclude-namespace={{ $excludeNamespace }}",
+          {{- end }}
           "--flush-tcp-conn-track-cron-tab", "{{.Values.fsm.fsmXnetwork.xnet.flush.conntrack.tcp.crontab}}",
           "--flush-tcp-conn-track-idle-seconds", "{{.Values.fsm.fsmXnetwork.xnet.flush.conntrack.tcp.idleSeconds}}",
           "--flush-tcp-conn-track-batch-size", "{{.Values.fsm.fsmXnetwork.xnet.flush.conntrack.tcp.batchSize}}",
@@ -107,6 +110,12 @@ spec:
             memory: "{{.Values.fsm.fsmXnetwork.xnet.resource.requests.memory}}"
         securityContext:
           privileged: true
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - "xnat"
+              - "wait"
         volumeMounts:
           - mountPath: /host/cni/bin
             name: host-cni-bin

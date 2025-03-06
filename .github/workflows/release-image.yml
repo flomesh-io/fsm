@@ -33,7 +33,8 @@ on:
         default: nonroot
 
 jobs:
-  build:
+  images:
+    name: Images
     runs-on: ubuntu-24.04
     env:
       VERSION: ${{ inputs.version }}
@@ -73,7 +74,7 @@ jobs:
         id: docker_meta
         uses: crazy-max/ghaction-docker-meta@v5.7.0
         with:
-          images: ${{ secrets.RELEASE_REGISTRY }}/${{ inputs.image }}
+          images: ${{ inputs.image }}
           tags: |
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}.{{minor}}.{{patch}}
