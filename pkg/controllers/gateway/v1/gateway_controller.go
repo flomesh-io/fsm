@@ -1142,7 +1142,7 @@ func (r *gatewayReconciler) gatewayClassToGateways(ctx context.Context, obj clie
 		var reconciles []reconcile.Request
 		for _, gwy := range gateways.Items {
 			gwy := gwy
-			if gwutils.IsActiveGateway(&gwy) {
+			if gwutils.IsAcceptedGateway(&gwy) {
 				reconciles = append(reconciles, reconcile.Request{
 					NamespacedName: types.NamespacedName{
 						Namespace: gwy.Namespace,
@@ -1182,7 +1182,7 @@ func (r *gatewayReconciler) configMapToGateways(ctx context.Context, object clie
 	reconciles := make([]reconcile.Request, 0)
 	for _, gwy := range gateways.Items {
 		gwy := gwy
-		if gwutils.IsActiveGateway(&gwy) {
+		if gwutils.IsAcceptedGateway(&gwy) {
 			reconciles = append(reconciles, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Namespace: gwy.Namespace,
@@ -1218,7 +1218,7 @@ func (r *gatewayReconciler) secretToGateways(ctx context.Context, object client.
 	reconciles := make([]reconcile.Request, 0)
 	for _, gwy := range gateways.Items {
 		gwy := gwy
-		if gwutils.IsActiveGateway(&gwy) {
+		if gwutils.IsAcceptedGateway(&gwy) {
 			reconciles = append(reconciles, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Namespace: gwy.Namespace,

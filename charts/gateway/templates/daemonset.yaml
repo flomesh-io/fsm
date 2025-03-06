@@ -136,19 +136,29 @@ spec:
         securityContext:
           {{- toYaml . | nindent 10 }}
         {{- end }}
-        livenessProbe:
+        startupProbe:
           initialDelaySeconds: 5
-          timeoutSeconds: 5
+          periodSeconds: 2
+          timeoutSeconds: 1
+          httpGet:
+            scheme: HTTP
+            path: /startupz
+            port: 59091
+        livenessProbe:
+          initialDelaySeconds: 1
+          periodSeconds: 10
+          timeoutSeconds: 1
           httpGet:
             scheme: HTTP
             path: /healthz
             port: 59091
         readinessProbe:
-          initialDelaySeconds: 5
-          timeoutSeconds: 5
+          initialDelaySeconds: 1
+          periodSeconds: 10
+          timeoutSeconds: 1
           httpGet:
             scheme: HTTP
-            path: /healthz
+            path: /readyz
             port: 59091
       terminationGracePeriodSeconds: 60
       {{- with .Values.fsm.gateway.podSecurityContext }}
