@@ -2,7 +2,6 @@ package providers
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -54,19 +53,19 @@ func TestGetCertificateManager(t *testing.T) {
 			options:           TresorOptions{SecretName: "fsm-ca-bundle"},
 			providerNamespace: "fsm-system",
 			cfg:               mockConfigurator,
-			kubeClient:        fake.NewSimpleClientset(),
+			kubeClient:        fake.NewClientset(),
 		},
 		{
 			name:              "tresor with no secret",
 			options:           TresorOptions{},
 			providerNamespace: "fsm-system",
 			cfg:               mockConfigurator,
-			kubeClient:        fake.NewSimpleClientset(),
+			kubeClient:        fake.NewClientset(),
 			expectError:       true,
 		},
 		{
 			name:              "certManager as the certificate manager",
-			kubeClient:        fake.NewSimpleClientset(),
+			kubeClient:        fake.NewClientset(),
 			restConfig:        &rest.Config{},
 			cfg:               mockConfigurator,
 			providerNamespace: "fsm-system",
@@ -99,7 +98,7 @@ func TestGetCertificateManager(t *testing.T) {
 				VaultTokenSecretKey:       "token",
 				VaultTokenSecretNamespace: "fsm-system",
 			},
-			kubeClient: fake.NewSimpleClientset(&v1.Secret{
+			kubeClient: fake.NewClientset(&v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "fsm-system",
@@ -133,7 +132,7 @@ func TestGetCertificateManager(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf(tc.name), func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			assert := tassert.New(t)
 
 			oldCA := getCA
@@ -188,7 +187,7 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 			options:           TresorOptions{SecretName: "fsm-ca-bundle"},
 			providerNamespace: "fsm-system",
 			cfg:               mockConfigurator,
-			kubeClient:        fake.NewSimpleClientset(),
+			kubeClient:        fake.NewClientset(),
 			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha3.MeshRootCertificate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "fsm-mesh-root-certificate",
@@ -216,7 +215,7 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 			options:           TresorOptions{},
 			providerNamespace: "fsm-system",
 			cfg:               mockConfigurator,
-			kubeClient:        fake.NewSimpleClientset(),
+			kubeClient:        fake.NewClientset(),
 			expectError:       true,
 			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha3.MeshRootCertificate{
 				ObjectMeta: metav1.ObjectMeta{
@@ -242,7 +241,7 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 		},
 		{
 			name:              "certManager as the certificate manager",
-			kubeClient:        fake.NewSimpleClientset(),
+			kubeClient:        fake.NewClientset(),
 			restConfig:        &rest.Config{},
 			cfg:               mockConfigurator,
 			providerNamespace: "fsm-system",
@@ -269,7 +268,7 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 		{
 			name:        "Fail to validate Config",
 			options:     VaultOptions{},
-			kubeClient:  fake.NewSimpleClientset(),
+			kubeClient:  fake.NewClientset(),
 			expectError: true,
 			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha3.MeshRootCertificate{
 				ObjectMeta: metav1.ObjectMeta{
@@ -301,7 +300,7 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 				VaultToken:    "vault-token",
 			},
 			cfg:        mockConfigurator,
-			kubeClient: fake.NewSimpleClientset(),
+			kubeClient: fake.NewClientset(),
 			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha3.MeshRootCertificate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "fsm-mesh-root-certificate",
@@ -381,7 +380,7 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 			},
 			expectError: true,
 			cfg:         mockConfigurator,
-			kubeClient:  fake.NewSimpleClientset(),
+			kubeClient:  fake.NewClientset(),
 			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha3.MeshRootCertificate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "fsm-mesh-root-certificate",
@@ -409,7 +408,7 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 				IssuerGroup: "cert-manager.io",
 			},
 			cfg:        mockConfigurator,
-			kubeClient: fake.NewSimpleClientset(),
+			kubeClient: fake.NewClientset(),
 			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha3.MeshRootCertificate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "fsm-mesh-root-certificate",
@@ -433,7 +432,7 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf(tc.name), func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			assert := tassert.New(t)
 
 			oldCA := getCA
@@ -503,7 +502,7 @@ func TestGetHashiVaultFSMToken(t *testing.T) {
 				Namespace: "fsm-system",
 				Key:       "token",
 			},
-			kubeClient:  fake.NewSimpleClientset(),
+			kubeClient:  fake.NewClientset(),
 			expectError: true,
 		},
 		{
@@ -513,7 +512,7 @@ func TestGetHashiVaultFSMToken(t *testing.T) {
 				Namespace: "fsm-system",
 				Key:       "token",
 			},
-			kubeClient:  fake.NewSimpleClientset([]runtime.Object{invalidVaultTokenSecret}...),
+			kubeClient:  fake.NewClientset([]runtime.Object{invalidVaultTokenSecret}...),
 			expectError: true,
 		},
 		{
@@ -523,7 +522,7 @@ func TestGetHashiVaultFSMToken(t *testing.T) {
 				Namespace: "fsm-system",
 				Key:       "token",
 			},
-			kubeClient:  fake.NewSimpleClientset([]runtime.Object{validVaultTokenSecret}...),
+			kubeClient:  fake.NewClientset([]runtime.Object{validVaultTokenSecret}...),
 			expectError: false,
 		},
 	}
