@@ -19,8 +19,8 @@ pull_request_rules:
       - check-success=Go mesh test (3, ubuntu-24.04) / e2e
       - check-success=Go mesh test (4, ubuntu-24.04) / e2e
       - check-success=Go mesh test (5, ubuntu-24.04) / e2e
-      - check-success=Go mesh test (v1.19.16-k3s1, Test traffic flowing from client to server with a Kubernetes Ser... / e2e
-      - check-success=Go mesh test (v1.27.16-k3s1, Test traffic flowing from client to server with a Kubernetes Ser... / e2e
+      - check-success=Go mesh test (v1.19.16-k3s1, Test traffic flowing from client to server with a Kubernetes Service... / e2e
+      - check-success=Go mesh test (v1.27.16-k3s1, Test traffic flowing from client to server with a Kubernetes Service... / e2e
       - check-success=Go gateway test (6, latest, ubuntu-24.04) / e2e
       - check-success=Go gateway test (6, v1.19.16-k3s1, ubuntu-20.04) / e2e
       - check-success=Go gateway test (6, v1.21.14-k3s1, ubuntu-24.04) / e2e
@@ -29,7 +29,7 @@ pull_request_rules:
       - check-success=Go gateway test (7, v1.19.16-k3s1, ubuntu-20.04) / e2e
       - check-success=Go statefulset test (8) / e2e
       - check-success=Go retry test (9) / e2e
-      - check-success=Go ingress test e2e / e2e
+      - check-success=Go ingress test / e2e
       - "#approved-reviews-by >= 1"
       - or:
           - and:
