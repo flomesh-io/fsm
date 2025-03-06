@@ -78,6 +78,47 @@ func (c *ConfigGenerator) calculateEndpoints(svc *corev1.Service, port *int32) [
 }
 
 func (c *ConfigGenerator) upstreamsByEndpoints(svc *corev1.Service, port *int32) []fgwv2.BackendTarget {
+	// cross cluster endpoints
+	if len(svc.Annotations) > 0 {
+		if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+			svcMeta := connector.Decode(svc, v)
+			found := false
+
+			targetPort := *port
+			for _, portSpec := range svc.Spec.Ports {
+				if portSpec.Port == *port {
+					targetPort = portSpec.TargetPort.IntVal
+					found = true
+					break
+				}
+			}
+			if found {
+				endpointSet := make(map[endpointContext]struct{})
+				for address, metadata := range svcMeta.Endpoints {
+					if len(metadata.Native.ViaGatewayHTTP) == 0 {
+						ep := endpointContext{address: string(address), port: targetPort}
+						endpointSet[ep] = struct{}{}
+					} else {
+						if segs := strings.Split(metadata.Native.ViaGatewayHTTP, ":"); len(segs) == 2 {
+							if portStr, convErr := strconv.Atoi(segs[1]); convErr == nil {
+								viaPort := int32(portStr & 0xFFFF)
+								viaAddr := segs[0]
+								ep := endpointContext{address: viaAddr, port: viaPort}
+								endpointSet[ep] = struct{}{}
+							}
+						}
+					}
+				}
+				if len(endpointSet) > 0 {
+					return toFGWBackendTargets(endpointSet)
+				} else {
+					log.Error().Msgf("no valid endpoints found for Service %s/%s and port %v", svc.Namespace, svc.Name, *port)
+					return nil
+				}
+			}
+		}
+	}
+
 	eps := &corev1.Endpoints{}
 	if err := c.client.Get(context.TODO(), client.ObjectKeyFromObject(svc), eps); err != nil {
 		log.Error().Msgf("Failed to get Endpoints of Service %s/%s: %s", svc.Namespace, svc.Name, err)
