@@ -277,12 +277,18 @@ fsm:
       features:
         mesh:
           enable: true
+          magic:
+            ipv4: "0400040"
+            ipv6: "02"
           filter:
             ports:
               inbound: "mesh"
               outbound: "mesh"
         e4lb:
           enable: false
+          magic:
+            ipv4: "0A50"
+            ipv6: "0A50"
           cnis:
             flannel:
               enable: true
