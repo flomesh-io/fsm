@@ -335,6 +335,28 @@
                                       "type": "boolean",
                                       "title": "The enable schema"
                                     },
+                                    "magic": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/mesh/properties/magic",
+                                      "type": "object",
+                                      "title": "The magic schema",
+                                      "required": [
+                                        "ipv4",
+                                        "ipv6"
+                                      ],
+                                      "properties": {
+                                        "ipv4": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/mesh/properties/magic/properties/ipv4",
+                                          "type": "string",
+                                          "title": "The ipv4 schema"
+                                        },
+                                        "ipv6": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/mesh/properties/magic/properties/ipv6",
+                                          "type": "string",
+                                          "title": "The ipv6 schema"
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    },
                                     "filter": {
                                       "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/mesh/properties/filter",
                                       "type": "object",
@@ -392,6 +414,28 @@
                                       "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/enable",
                                       "type": "boolean",
                                       "title": "The enable schema"
+                                    },
+                                    "magic": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/magic",
+                                      "type": "object",
+                                      "title": "The magic schema",
+                                      "required": [
+                                        "ipv4",
+                                        "ipv6"
+                                      ],
+                                      "properties": {
+                                        "ipv4": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/magic/properties/ipv4",
+                                          "type": "string",
+                                          "title": "The ipv4 schema"
+                                        },
+                                        "ipv6": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/magic/properties/ipv6",
+                                          "type": "string",
+                                          "title": "The ipv6 schema"
+                                        }
+                                      },
+                                      "additionalProperties": false
                                     },
                                     "cnis": {
                                       "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis",

@@ -81,6 +81,10 @@ spec:
           "--fsm-namespace", "{{ include "fsm.namespace" . }}",
           "--enable-mesh={{.Values.fsm.fsmXnetwork.xnet.features.mesh.enable}}",
           "--enable-e4lb={{.Values.fsm.fsmXnetwork.xnet.features.e4lb.enable}}",
+          "--mesh-cfg-ipv4-magic", "{{.Values.fsm.fsmXnetwork.xnet.features.mesh.magic.ipv4|toString}}",
+          "--mesh-cfg-ipv6-magic", "{{.Values.fsm.fsmXnetwork.xnet.features.mesh.magic.ipv6|toString}}",
+          "--e4lb-cfg-ipv4-magic", "{{.Values.fsm.fsmXnetwork.xnet.features.e4lb.magic.ipv4|toString}}",
+          "--e4lb-cfg-ipv6-magic", "{{.Values.fsm.fsmXnetwork.xnet.features.e4lb.magic.ipv6|toString}}",             
           "--mesh-filter-port-inbound", "{{.Values.fsm.fsmXnetwork.xnet.features.mesh.filter.ports.inbound}}",
           "--mesh-filter-port-outbound", "{{.Values.fsm.fsmXnetwork.xnet.features.mesh.filter.ports.outbound}}",
           {{- range $excludeNamespace := .Values.fsm.fsmXnetwork.xnet.features.mesh.excludeNamespaces }}
