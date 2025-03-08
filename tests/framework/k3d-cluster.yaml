@@ -13,11 +13,18 @@ registries:
       ghcr.io:
         endpoint:
           - http://ghcr.io
+      docker.io:
+        endpoint:
+          - http://docker.io
     configs:
       ghcr.io:
         auth:
           username: flomesh-io
           password: ${GITHUB_TOKEN}
+      docker.io:
+        auth:
+          username: ${DOCKER_USER}
+          password: ${DOCKER_PASS}
 ports:
   - port: 80:80
     nodeFilters:
