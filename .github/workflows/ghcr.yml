@@ -3,11 +3,59 @@ on:
   schedule:
     - cron: '0 0 * * *'
   workflow_dispatch:
+    inputs:
+      older-than:
+        description: 'Only include images for processing that are older than this interval (eg 5 days, 6 months or 1 year)'
+        required: false
+        default: '2 days'
+        type: string
+      delete-tags:
+        description: 'Comma-separated list of tags to delete (supports wildcard syntax), can be abbreviated as tags. A regular expression selector can be used instead by setting the use-regex option to true'
+        required: false
+        default: ''
+        type: string
+      exclude-tags:
+        description: 'Comma-separated list of tags strictly to be preserved/excluded from deletion (supports wildcard syntax). A regular expression selector can be used instead by setting the use-regex option to true'
+        required: false
+        default: ''
+        type: string
+      keep-n-untagged:
+        description: 'Number of untagged images to keep, sorted by date, keeping the latest'
+        required: false
+        default: 0
+        type: number
+      keep-n-tagged:
+        description: 'Number of tagged images to keep, sorted by date, keeping the latest'
+        required: false
+        default: 0
+        type: number
+      delete-untagged:
+        description: 'Delete all untagged images'
+        required: false
+        default: true
+        type: boolean
+      delete-ghost-images:
+        description: 'Delete multi-architecture images where all underlying platform images are missing'
+        required: false
+        default: false
+        type: boolean
+      delete-partial-images:
+        description: 'Delete multi-architecture images where some (but not all) underlying platform images are missing'
+        required: false
+        default: false
+        type: boolean
+      delete-orphaned-images:
+        description: 'Delete tagged images which have no parent (e.g. referrers and cosign tags missing their parent)'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   cleanup:
     name: Cleanup
     runs-on: ubuntu-24.04
+    concurrency:
+      group: cleanup-fsm-images
     steps:
       - uses: dataaxiom/ghcr-cleanup-action@v1
         with:
@@ -15,5 +63,12 @@ jobs:
           owner: flomesh-io
           packages: fsm-*
           expand-packages: true
-          older-than: 2 days
-          delete-untagged: true
+          older-than: ${{ github.event.inputs.older-than }}
+          delete-tags: ${{ github.event.inputs.delete-tags }}
+          exclude-tags: ${{ github.event.inputs.exclude-tags }}
+          keep-n-untagged: ${{ github.event.inputs.keep-n-untagged }}
+          keep-n-tagged: ${{ github.event.inputs.keep-n-tagged }}
+          delete-untagged: ${{ github.event.inputs.delete-untagged }}
+          delete-ghost-images: ${{ github.event.inputs.delete-ghost-images }}
+          delete-partial-images: ${{ github.event.inputs.delete-partial-images }}
+          delete-orphaned-images: ${{ github.event.inputs.delete-orphaned-images }}
