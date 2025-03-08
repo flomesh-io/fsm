@@ -87,7 +87,7 @@ registries:
 fi
 
 # create cluster
-k3d cluster create --config - <<EOF
+k3d cluster create --verbose --config - <<EOF
 apiVersion: k3d.io/v1alpha5
 kind: Simple
 metadata:
