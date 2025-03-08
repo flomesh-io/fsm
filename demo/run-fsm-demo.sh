@@ -128,6 +128,7 @@ if [ "$CERT_MANAGER" = "vault" ]; then
       --set=fsm.fsmGateway.logLevel="$GATEWAY_LOG_LEVEL" \
       --set=fsm.localProxyMode="$LOCAL_PROXY_MODE" \
       --timeout="$TIMEOUT" \
+      --verbose \
       $optionalInstallArgs
 else
   # shellcheck disable=SC2086
@@ -154,6 +155,7 @@ else
       --set=fsm.fsmGateway.logLevel="$GATEWAY_LOG_LEVEL" \
       --set=fsm.localProxyMode="$LOCAL_PROXY_MODE" \
       --timeout="$TIMEOUT" \
+      --verbose \
       $optionalInstallArgs
 fi
 
