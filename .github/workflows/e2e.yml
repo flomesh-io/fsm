@@ -82,7 +82,7 @@ jobs:
         if: ${{ steps.test.conclusion != 'skipped' }}
         run: |
           bucket=${{ inputs.bucket }}
-          if [[ bucket == '.*' ]]; then
+          if [[ "$bucket" == '.*' ]]; then
             bucket="any"
           fi
           
