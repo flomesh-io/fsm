@@ -205,6 +205,7 @@ func registerFlags(td *FsmTestData) {
 	flag.BoolVar(&td.RetryAppPodCreation, "retryAppPodCreation", true, "Retry app pod creation on error")
 
 	flag.BoolVar(&td.K3dNodeLogs, "k3dNodeLogs", utils.GetBoolEnv("K3D_NODE_LOGS"), "Collect and write k3d node logs to stdout")
+	flag.BoolVar(&td.LoadImagesIntoCluster, "loadImagesIntoCluster", utils.GetBoolEnv("LOAD_IMAGES_INTO_CLUSTER"), "Load images into cluster")
 }
 
 // ValidateStringParams validates input string parameters are valid
@@ -695,6 +696,11 @@ func (td *FsmTestData) LoadImagesToKind(imageNames []string) error {
 		return nil
 	}
 
+	if !td.LoadImagesIntoCluster {
+		td.T.Log("Not loading images into KIND cluster as LoadImagesIntoCluster is false")
+		return nil
+	}
+
 	td.T.Log("Getting image data")
 	docker, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -741,6 +747,11 @@ func (td *FsmTestData) LoadImagesToKind(imageNames []string) error {
 func (td *FsmTestData) LoadImagesToK3d(imageNames []string) error {
 	if td.InstType != K3dCluster {
 		td.T.Log("Not a K3d cluster, nothing to load")
+		return nil
+	}
+
+	if !td.LoadImagesIntoCluster {
+		td.T.Log("Not loading images into K3D cluster as LoadImagesIntoCluster is false")
 		return nil
 	}
 

@@ -170,7 +170,7 @@ jobs:
         with:
           registry: ghcr.io
           username: flomesh-io
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.WORKFLOW_PAT }}
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -182,7 +182,7 @@ jobs:
           go-version-file: go.mod
           cache: false
 
-      - name: Push images with sha tag
+      - name: Push images with SHA tag
         run: make docker-build-fsm docker-build-demo
 
   imagescan:
@@ -208,6 +208,7 @@ jobs:
         run: make trivy-ci-setup
       - name: Scan docker images for vulnerabilities
         run: make trivy-scan-images
+        token: ${{ secrets.WORKFLOW_PAT }}
 
   mesh-e2e-test:
     name: Go mesh test
