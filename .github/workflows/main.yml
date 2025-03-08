@@ -152,11 +152,11 @@ jobs:
           flags: unittests
 
   ghcr:
-    name: Docker Images to ghcr.io
+    name: Docker Images(ghcr.io)
     runs-on: ubuntu-24.04
     needs: build
     env:
-      CTR_REGISTRY: ghcr.io/flomesh-io
+      CTR_REGISTRY: "ghcr.io/flomesh-io"
       CTR_TAG: ${{ github.sha }}
     steps:
       - name: Set up QEMU
@@ -183,18 +183,18 @@ jobs:
           cache: false
 
       - name: Push images with sha tag
-        run: make docker-build-fsm
+        run: make docker-build-fsm docker-build-demo
 
   imagescan:
     name: Scan images for security vulnerabilities
     runs-on: ubuntu-24.04
     needs: ghcr
     env:
-      CTR_REGISTRY: ghcr.io/flomesh-io
+      CTR_REGISTRY: "ghcr.io/flomesh-io"
       CTR_TAG: ${{ github.sha }}
     steps:
-#      - name: Checkout
-#        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 #      - name: Setup Go
 #        uses: actions/setup-go@v5
 #        with:
@@ -211,7 +211,7 @@ jobs:
 
   mesh-e2e-test:
     name: Go mesh test
-    needs: build
+    needs: ghcr
     strategy:
       matrix:
         k8s_version: [""]
@@ -237,7 +237,7 @@ jobs:
 
   gateway-e2e-test:
     name: Go gateway test
-    needs: build
+    needs: ghcr
     strategy:
       matrix:
         focus: [""]
@@ -272,7 +272,7 @@ jobs:
 
   ingress-e2e-test:
     name: Go ingress test
-    needs: build
+    needs: ghcr
     uses: ./.github/workflows/e2e.yml
     with:
       os: ubuntu-24.04
@@ -283,7 +283,7 @@ jobs:
 
   mesh-retry-e2e-test:
     name: Go retry test
-    needs: mesh-statefulset-e2e-test
+    needs: ghcr
     strategy:
       matrix:
         k8s_version: [""]
@@ -299,7 +299,7 @@ jobs:
 
   mesh-statefulset-e2e-test:
     name: Go statefulset test
-    needs: integration-tresor
+    needs: ghcr
     strategy:
       matrix:
         k8s_version: [""]
@@ -316,7 +316,7 @@ jobs:
   integration-tresor:
     name: Integration Test with Tresor, SMI traffic policies, and egress disabled
     runs-on: ubuntu-24.04
-    needs: [build]
+    needs: ghcr
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -348,8 +348,10 @@ jobs:
           ENABLE_RECONCILER: "false"
           PERMISSIVE_MODE: "false"
           DEPLOY_TRAFFIC_SPLIT: "true"
+          CTR_REGISTRY: "ghcr.io/flomesh-io"
           CTR_TAG: ${{ github.sha }}
           USE_PRIVATE_REGISTRY: "false"
+          PUBLISH_IMAGES: "false"
         run: |
           touch .env
           make k3d-up

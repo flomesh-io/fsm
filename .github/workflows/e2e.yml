@@ -31,8 +31,8 @@ jobs:
     name: e2e
     runs-on: ${{ inputs.os }}
     env:
+      CTR_REGISTRY: "ghcr.io/flomesh-io"
       CTR_TAG: ${{ github.sha }}
-      CTR_REGISTRY: "localhost:5000"
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -53,9 +53,10 @@ jobs:
           go-version-file: go.mod
           cache: false
       - name: Build test dependencies
-        env:
-          DOCKER_BUILDX_OUTPUT: type=docker
-        run: make docker-build-fsm build-fsm
+        run: make build-fsm
+#        env:
+#          DOCKER_BUILDX_OUTPUT: type=docker
+#        run: make docker-build-fsm build-fsm
       - name: Add hosts to /etc/hosts
         run: |
           sudo echo "127.0.0.1 httptest.localhost" | sudo tee -a /etc/hosts
