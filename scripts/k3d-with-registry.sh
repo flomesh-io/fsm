@@ -54,12 +54,13 @@ else
   fi
 fi
 
-reg_config_file="$SHELL_FOLDER/k3d-registry.yaml"
-if [[ "$FSM_INTEGRATION_TEST" == "true" ]]; then
-  reg_config_file="$SHELL_FOLDER/k3d-registry-integration-test.yaml"
-fi
-# create cluster
 SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
+reg_config_file="${SHELL_FOLDER}/k3d-registry.yaml"
+if [[ "$FSM_INTEGRATION_TEST" == "true" ]]; then
+  reg_config_file="${SHELL_FOLDER}/k3d-registry-integration-test.yaml"
+fi
+
+# create cluster
 k3d cluster create "$K3D_CLUSTER_NAME" \
 	--registry-use $final_reg_name:$reg_port \
 	--registry-config "$reg_config_file" \
