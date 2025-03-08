@@ -379,7 +379,7 @@ jobs:
   ghcr-cleanup:
     name: ghcr.io cleanup
     runs-on: ubuntu-24.04
-    needs: [mesh-e2e-test, gateway-e2e-test, ingress-e2e-test, mesh-retry-e2e-test, mesh-statefulset-e2e-test, integration-tresor]
+    needs: [mesh-e2e-test, gateway-e2e-test, ingress-e2e-test, mesh-retry-e2e-test, mesh-statefulset-e2e-test, integration-tresor, imagescan]
     steps:
       - uses: dataaxiom/ghcr-cleanup-action@v1
         with:
