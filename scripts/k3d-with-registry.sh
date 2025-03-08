@@ -54,33 +54,110 @@ else
   fi
 fi
 
-SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
-reg_config_file="${SHELL_FOLDER}/k3d-registry.yaml"
+reg_config="
+registries:
+  use:
+    - $final_reg_name:$reg_port
+  config: |
+    mirrors:
+      'localhost:5000':
+        endpoint:
+          - http://$final_reg_name:$reg_port
+"
+
 if [ "${FSM_INTEGRATION_TEST}" = "true" ]; then
-  reg_config_file="${SHELL_FOLDER}/k3d-registry-integration-test.yaml"
+reg_config="
+registries:
+  config: |
+    mirrors:
+      ghcr.io:
+      docker.io:
+    configs:
+      ghcr.io:
+        auth:
+          username: flomesh-io
+          password: ${GITHUB_TOKEN}
+      docker.io:
+        tls:
+          insecure_skip_verify: true
+        auth:
+          username: ${DOCKER_USER}
+          password: ${DOCKER_PASS}
+"
 fi
 
-echo "Using k3d registry config: ${reg_config_file}"
 # create cluster
-k3d cluster create "${K3D_CLUSTER_NAME}" \
-	--registry-use ${final_reg_name}:${reg_port} \
-	--registry-config "${reg_config_file}" \
-	--image "${K3D_IMAGE}" \
-	--servers 1 \
-	--agents 0 \
-	--port 8090:80@loadbalancer \
-	--port 9090:9090@loadbalancer \
-	--port 7443:443@loadbalancer \
-	--port 8443:8443@loadbalancer \
-	--port 9443:9443@loadbalancer \
-	--port 3000:3000/tcp@loadbalancer \
-	--port 4000:4000/udp@loadbalancer \
-	--port 3001:3001/tcp@loadbalancer \
-  --port 4001:4001/udp@loadbalancer \
-  --port 5053:5053/udp@loadbalancer \
-	--k3s-arg '--disable=traefik@server:*' \
-	--network "${k3d_network}" \
-	--wait \
-	--timeout 60s \
-	--verbose
-#	--k3s-arg '--disable=servicelb@server:*' \
+k3d cluster create --config - <<EOF
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: ${K3D_CLUSTER_NAME}
+servers: 1
+agents: 0
+image: ${K3D_IMAGE}
+${reg_config}
+ports:
+  - port: 80:80
+    nodeFilters:
+      - loadbalancer
+  - port: 8090:8090
+    nodeFilters:
+      - loadbalancer
+  - port: 9090:9090
+    nodeFilters:
+      - loadbalancer
+  - port: 7443:7443
+    nodeFilters:
+      - loadbalancer
+  - port: 8443:8443
+    nodeFilters:
+      - loadbalancer
+  - port: 9443:9443
+    nodeFilters:
+      - loadbalancer
+  - port: 3000:3000
+    nodeFilters:
+      - loadbalancer
+  - port: 4000:4000/udp
+    nodeFilters:
+      - loadbalancer
+  - port: 3001:3001
+    nodeFilters:
+      - loadbalancer
+  - port: 4001:4001/udp
+    nodeFilters:
+      - loadbalancer
+  - port: 5053:5053/udp
+    nodeFilters:
+      - loadbalancer
+options:
+  k3d:
+    wait: true
+    timeout: "300s"
+    disableLoadbalancer: false
+    disableImageVolume: false
+    disableRollback: false
+    loadbalancer:
+      configOverrides:
+        - settings.workerConnections=2048
+  k3s:
+    extraArgs:
+      - arg: --disable=traefik
+        nodeFilters:
+          - server:*
+      - arg: --kubelet-arg=eviction-hard=imagefs.available<1%,nodefs.available<1%
+        nodeFilters:
+          - server:*
+          - agent:*
+      - arg: --kubelet-arg=eviction-minimum-reclaim=imagefs.available=1%,nodefs.available=1%
+        nodeFilters:
+          - server:*
+          - agent:*
+    nodeLabels:
+      - label: ingress-ready=true
+        nodeFilters:
+          - agent:*
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true
+EOF
