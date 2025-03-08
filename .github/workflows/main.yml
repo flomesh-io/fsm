@@ -155,7 +155,7 @@ jobs:
     name: Docker Images to ghcr.io
     runs-on: ubuntu-24.04
     env:
-      CTR_REGISTRY: ghcr.io
+      CTR_REGISTRY: ghcr.io/flomesh-io
       CTR_TAG: ${{ github.sha }}
     steps:
       - name: Set up QEMU
