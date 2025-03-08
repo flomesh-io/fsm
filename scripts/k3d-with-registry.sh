@@ -12,7 +12,7 @@ K3D_GATEWAY_API_ENABLE="${K3D_GATEWAY_API_ENABLE:-false}"
 K3D_FLB_ENABLE="${K3D_FLB_ENABLE:-false}"
 K3D_SERVICELB_ENABLE="${K3D_SERVICELB_ENABLE:-false}"
 K3D_IMAGE="${K3D_IMAGE:-rancher/k3s:v1.25.16-k3s4}"
-FSM_INTEGRATION_TEST="${FSM_INTEGRATION_TEST:-false}"
+CI_INTEGRATION_TEST="${CI_INTEGRATION_TEST:-false}"
 
 # shellcheck disable=SC2086
 jq_cluster_exists=".[] | select(.name == \"${K3D_CLUSTER_NAME}\")"
@@ -65,7 +65,7 @@ registries:
           - http://${final_reg_name}:${reg_port}
 "
 
-if [ "${FSM_INTEGRATION_TEST}" = "true" ]; then
+if [ "${CI_INTEGRATION_TEST}" = "true" ]; then
 reg_config="
 registries:
   config: |

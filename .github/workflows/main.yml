@@ -364,7 +364,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
           DOCKER_USER: ${{ secrets.RELEASE_DOCKER_USER }}
           DOCKER_PASS: ${{ secrets.RELEASE_DOCKER_PASS }}
-          FSM_INTEGRATION_TEST: "true"
+          CI_INTEGRATION_TEST: "true"
         run: |
           touch .env
           make k3d-up
