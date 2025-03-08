@@ -81,10 +81,17 @@ jobs:
       - name: Set Logs name
         if: ${{ steps.test.conclusion != 'skipped' }}
         run: |
+          bucket=${{ inputs.bucket }}
+          if [[ bucket == '.*' ]]; then
+            bucket="any"
+          fi
+          
+          echo "bucket: $bucket"
+          
           if [[ -n "${{ inputs.k8s_version }}" ]]; then
-            echo "ARTIFACT_NAME=test_logs_os_${{ inputs.os }}_bucket_${{ inputs.bucket }}_k8s_version_${{ inputs.k8s_version }}" >> $GITHUB_ENV
+            echo "ARTIFACT_NAME=test_logs_os_${{ inputs.os }}_bucket_${{ bucket }}_k8s_version_${{ inputs.k8s_version }}" >> $GITHUB_ENV
           else
-            echo "ARTIFACT_NAME=test_logs_os_${{ inputs.os }}_bucket_${{ inputs.bucket }}" >> $GITHUB_ENV
+            echo "ARTIFACT_NAME=test_logs_os_${{ inputs.os }}_bucket_${{ bucket }}" >> $GITHUB_ENV
           fi
       - name: Upload test logs
         if: ${{ steps.test.conclusion != 'skipped' }}
