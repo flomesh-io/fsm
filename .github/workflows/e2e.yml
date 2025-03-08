@@ -66,6 +66,12 @@ jobs:
       - name: Install gRPCurl
         run: |
           go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: flomesh-io
+          password: ${{ secrets.WORKFLOW_PAT }}
       - name: Run tests
         id: test
         env:
