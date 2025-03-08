@@ -81,9 +81,9 @@ jobs:
       - name: Set Logs name
         if: ${{ steps.test.conclusion != 'skipped' }}
         run: |
-          bucket=${{ inputs.bucket }}
+          export bucket=${{ inputs.bucket }}
           if [[ "$bucket" == '.*' ]]; then
-            bucket="any"
+            export bucket="any"
           fi
           
           echo "bucket: $bucket"
