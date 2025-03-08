@@ -57,12 +57,12 @@ fi
 reg_config="
 registries:
   use:
-    - $final_reg_name:$reg_port
+    - ${final_reg_name}:${reg_port}
   config: |
     mirrors:
       'localhost:5000':
         endpoint:
-          - http://$final_reg_name:$reg_port
+          - http://${final_reg_name}:${reg_port}
 "
 
 if [ "${FSM_INTEGRATION_TEST}" = "true" ]; then
@@ -95,6 +95,7 @@ metadata:
 servers: 1
 agents: 0
 image: ${K3D_IMAGE}
+network: ${k3d_network}
 ${reg_config}
 ports:
   - port: 80:80
