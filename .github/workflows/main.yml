@@ -350,12 +350,6 @@ jobs:
         run: |
           curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
           k3d version
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: flomesh-io
-          password: ${{ secrets.WORKFLOW_PAT }}
       - name: Run Simulation w/ Tresor, SMI policies, egress disabled and reconciler disabled
         env:
           CERT_MANAGER: "tresor"
@@ -370,6 +364,9 @@ jobs:
           USE_PRIVATE_REGISTRY: "false"
           PUBLISH_IMAGES: "false"
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+          DOCKER_USER: ${{ secrets.RELEASE_DOCKER_USER }}
+          DOCKER_PASS: ${{ secrets.RELEASE_DOCKER_PASS }}
+          FSM_INTEGRATION_TEST: "true"
         run: |
           touch .env
           make k3d-up

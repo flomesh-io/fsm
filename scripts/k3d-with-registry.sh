@@ -12,6 +12,7 @@ K3D_GATEWAY_API_ENABLE="${K3D_GATEWAY_API_ENABLE:-false}"
 K3D_FLB_ENABLE="${K3D_FLB_ENABLE:-false}"
 K3D_SERVICELB_ENABLE="${K3D_SERVICELB_ENABLE:-false}"
 K3D_IMAGE="${K3D_IMAGE:-rancher/k3s:v1.25.16-k3s4}"
+FSM_INTEGRATION_TEST="${FSM_INTEGRATION_TEST:-false}"
 
 # shellcheck disable=SC2086
 jq_cluster_exists=".[] | select(.name == \"$K3D_CLUSTER_NAME\")"
@@ -53,11 +54,15 @@ else
   fi
 fi
 
+reg_config_file="$SHELL_FOLDER/k3d-registry.yaml"
+if [[ "$FSM_INTEGRATION_TEST" == "true" ]]; then
+  reg_config_file="$SHELL_FOLDER/k3d-registry-integration-test.yaml"
+fi
 # create cluster
 SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
 k3d cluster create "$K3D_CLUSTER_NAME" \
 	--registry-use $final_reg_name:$reg_port \
-	--registry-config "$SHELL_FOLDER/k3d-registry.yaml" \
+	--registry-config "$reg_config_file" \
 	--image "$K3D_IMAGE" \
 	--servers 1 \
 	--agents 0 \
