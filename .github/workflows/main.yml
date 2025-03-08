@@ -202,15 +202,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-#      - name: Setup Go
-#        uses: actions/setup-go@v5
-#        with:
-#          go-version-file: go.mod
-#          cache: false
-#      - name: Build docker images
-#        env:
-#          DOCKER_BUILDX_OUTPUT: type=docker
-#        run: make docker-build-fsm
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:

@@ -60,6 +60,7 @@ if [[ "$FSM_INTEGRATION_TEST" == "true" ]]; then
   reg_config_file="${SHELL_FOLDER}/k3d-registry-integration-test.yaml"
 fi
 
+echo "Using k3d registry config: $reg_config_file"
 # create cluster
 k3d cluster create "$K3D_CLUSTER_NAME" \
 	--registry-use $final_reg_name:$reg_port \
@@ -80,5 +81,6 @@ k3d cluster create "$K3D_CLUSTER_NAME" \
 	--k3s-arg '--disable=traefik@server:*' \
 	--network "$k3d_network" \
 	--wait \
-	--timeout 60s
+	--timeout 60s \
+	--verbose
 #	--k3s-arg '--disable=servicelb@server:*' \
