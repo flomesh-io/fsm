@@ -151,24 +151,63 @@ jobs:
         with:
           flags: unittests
 
-  imagescan:
-    name: Scan images for security vulnerabilities
+  ghcr:
+    name: Docker Images(ghcr.io)
     runs-on: ubuntu-24.04
+    needs: build
     env:
+      CTR_REGISTRY: "ghcr.io/flomesh-io"
       CTR_TAG: ${{ github.sha }}
-      CTR_REGISTRY: "localhost:5000"
     steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3.6.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.10.0
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: flomesh-io
+          password: ${{ secrets.WORKFLOW_PAT }}
+
+      # to avoid dockerhub anonymous rate limit
+      - name: Login to DockerHub
+        uses: docker/login-action@v3.3.0
+        with:
+          username: ${{ secrets.RELEASE_DOCKER_USER }}
+          password: ${{ secrets.RELEASE_DOCKER_PASS }}
+
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Go
+        id: setup-go
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
           cache: false
-      - name: Build docker images
-        env:
-          DOCKER_BUILDX_OUTPUT: type=docker
-        run: make docker-build-fsm
+
+      - name: Push images with SHA tag
+        run: make docker-build-fsm docker-build-demo
+
+  imagescan:
+    name: Scan images for security vulnerabilities
+    runs-on: ubuntu-24.04
+    needs: ghcr
+    env:
+      CTR_REGISTRY: "ghcr.io/flomesh-io"
+      CTR_TAG: ${{ github.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: flomesh-io
+          password: ${{ secrets.WORKFLOW_PAT }}
       - name: Setup Trivy
         run: make trivy-ci-setup
       - name: Scan docker images for vulnerabilities
@@ -176,7 +215,7 @@ jobs:
 
   mesh-e2e-test:
     name: Go mesh test
-    needs: build
+    needs: ghcr
     strategy:
       matrix:
         k8s_version: [""]
@@ -202,7 +241,7 @@ jobs:
 
   gateway-e2e-test:
     name: Go gateway test
-    needs: build
+    needs: ghcr
     strategy:
       matrix:
         focus: [""]
@@ -237,18 +276,23 @@ jobs:
 
   ingress-e2e-test:
     name: Go ingress test
-    needs: build
+    needs: ghcr
+    strategy:
+      matrix:
+        k8s_version: [ "" ]
+        focus: [ "" ]
+        bucket: [ 10 ]
     uses: ./.github/workflows/e2e.yml
     with:
       os: ubuntu-24.04
-      k8s_version: ""
-      bucket: 10
-      focus: ""
+      k8s_version: ${{ matrix.k8s_version }}
+      bucket: ${{ matrix.bucket }}
+      focus: ${{ matrix.focus }}
     secrets: inherit
 
   mesh-retry-e2e-test:
     name: Go retry test
-    needs: mesh-statefulset-e2e-test
+    needs: ghcr
     strategy:
       matrix:
         k8s_version: [""]
@@ -264,7 +308,7 @@ jobs:
 
   mesh-statefulset-e2e-test:
     name: Go statefulset test
-    needs: integration-tresor
+    needs: ghcr
     strategy:
       matrix:
         k8s_version: [""]
@@ -281,7 +325,7 @@ jobs:
   integration-tresor:
     name: Integration Test with Tresor, SMI traffic policies, and egress disabled
     runs-on: ubuntu-24.04
-    needs: [build]
+    needs: ghcr
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -313,13 +357,32 @@ jobs:
           ENABLE_RECONCILER: "false"
           PERMISSIVE_MODE: "false"
           DEPLOY_TRAFFIC_SPLIT: "true"
+          CTR_REGISTRY: "ghcr.io/flomesh-io"
           CTR_TAG: ${{ github.sha }}
           USE_PRIVATE_REGISTRY: "false"
+          PUBLISH_IMAGES: "false"
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+          DOCKER_USER: ${{ secrets.RELEASE_DOCKER_USER }}
+          DOCKER_PASS: ${{ secrets.RELEASE_DOCKER_PASS }}
+          CI_INTEGRATION_TEST: "true"
         run: |
           touch .env
           make k3d-up
           ./demo/run-fsm-demo.sh
           go run ./ci/cmd/maestro.go
+
+  ghcr-cleanup:
+    name: ghcr.io cleanup
+    runs-on: ubuntu-24.04
+    needs: [mesh-e2e-test, gateway-e2e-test, ingress-e2e-test, mesh-retry-e2e-test, mesh-statefulset-e2e-test, integration-tresor, imagescan]
+    steps:
+      - uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          token: ${{ secrets.WORKFLOW_PAT }}
+          owner: flomesh-io
+          packages: fsm-*
+          expand-packages: true
+          delete-tags: ${{ github.sha }}
 
   images:
     name: Docker Images

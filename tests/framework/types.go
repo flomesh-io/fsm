@@ -108,7 +108,8 @@ type FsmTestData struct {
 
 	RetryAppPodCreation bool // Whether to retry app pod creation due to issue #3973
 
-	K3dNodeLogs bool // Whether to collect logs from k3d nodes
+	K3dNodeLogs           bool // Whether to collect logs from k3d nodes
+	LoadImagesIntoCluster bool // Whether to load images into the cluster
 }
 
 // InstallFSMOpts describes install options for FSM

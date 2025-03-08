@@ -329,8 +329,8 @@ build-ci: embed-files
 
 .PHONY: trivy-ci-setup
 trivy-ci-setup:
-	wget https://github.com/aquasecurity/trivy/releases/download/v0.57.0/trivy_0.57.0_Linux-64bit.tar.gz
-	tar zxvf trivy_0.57.0_Linux-64bit.tar.gz
+	wget https://github.com/aquasecurity/trivy/releases/download/v0.60.0/trivy_0.60.0_Linux-64bit.tar.gz
+	tar zxvf trivy_0.60.0_Linux-64bit.tar.gz
 	echo $$(pwd) >> $(GITHUB_PATH)
 
 # Show all vulnerabilities in logs
@@ -338,7 +338,6 @@ trivy-scan-verbose-%: NAME=$(@:trivy-scan-verbose-%=%)
 trivy-scan-verbose-%:
 	trivy image --scanners vuln,secret \
 	  --pkg-types os \
-	  --db-repository aquasec/trivy-db:2 \
 	  "$(CTR_REGISTRY)/$(NAME):$(CTR_TAG)"
 
 # Exit if vulnerability exists

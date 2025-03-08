@@ -7,6 +7,22 @@ agents: 1
 kubeAPI:
   hostIP: "0.0.0.0"
   hostPort: "6443"
+registries:
+  config: |
+    mirrors:
+      ghcr.io:
+      docker.io:
+    configs:
+      ghcr.io:
+        auth:
+          username: flomesh-io
+          password: ${GITHUB_TOKEN}
+      docker.io:
+        tls:
+          insecure_skip_verify: true
+        auth:
+          username: ${DOCKER_USER}
+          password: ${DOCKER_PASS}
 ports:
   - port: 80:80
     nodeFilters:

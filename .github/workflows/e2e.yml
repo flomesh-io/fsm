@@ -31,8 +31,8 @@ jobs:
     name: e2e
     runs-on: ${{ inputs.os }}
     env:
+      CTR_REGISTRY: "ghcr.io/flomesh-io"
       CTR_TAG: ${{ github.sha }}
-      CTR_REGISTRY: "localhost:5000"
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -53,9 +53,10 @@ jobs:
           go-version-file: go.mod
           cache: false
       - name: Build test dependencies
-        env:
-          DOCKER_BUILDX_OUTPUT: type=docker
-        run: make docker-build-fsm build-fsm
+        run: make build-fsm
+#        env:
+#          DOCKER_BUILDX_OUTPUT: type=docker
+#        run: make docker-build-fsm build-fsm
       - name: Add hosts to /etc/hosts
         run: |
           sudo echo "127.0.0.1 httptest.localhost" | sudo tee -a /etc/hosts
@@ -69,6 +70,9 @@ jobs:
         id: test
         env:
           K8S_NAMESPACE: "fsm-system"
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+          DOCKER_USER: ${{ secrets.RELEASE_DOCKER_USER }}
+          DOCKER_PASS: ${{ secrets.RELEASE_DOCKER_PASS }}
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
@@ -78,9 +82,9 @@ jobs:
         if: ${{ steps.test.conclusion != 'skipped' }}
         run: |
           if [[ -n "${{ inputs.k8s_version }}" ]]; then
-            echo "ARTIFACT_NAME=test_logs_os_${{ inputs.os }}_bucket_${{ inputs.bucket }}_k8s_version_${{ inputs.k8s_version }}" >> $GITHUB_ENV
+            echo "ARTIFACT_NAME=test_logs_os_${{ inputs.os }}_bucket_${{ inputs.bucket == '.*' && 'any' || inputs.bucket }}_k8s_version_${{ inputs.k8s_version }}" >> $GITHUB_ENV
           else
-            echo "ARTIFACT_NAME=test_logs_os_${{ inputs.os }}_bucket_${{ inputs.bucket }}" >> $GITHUB_ENV
+            echo "ARTIFACT_NAME=test_logs_os_${{ inputs.os }}_bucket_${{ inputs.bucket == '.*' && 'any' || inputs.bucket }}" >> $GITHUB_ENV
           fi
       - name: Upload test logs
         if: ${{ steps.test.conclusion != 'skipped' }}
