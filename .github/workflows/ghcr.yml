@@ -4,14 +4,15 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-  name: Cleanup
-  runs-on: ubuntu-24.04
-  steps:
-    - uses: dataaxiom/ghcr-cleanup-action@v1
-      with:
-        token: ${{ secrets.WORKFLOW_PAT }}
-        owner: flomesh-io
-        packages: fsm-*
-        expand-packages: true
-        older-than: 2 days
-        delete-untagged: true
+  cleanup:
+    name: Cleanup
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          token: ${{ secrets.WORKFLOW_PAT }}
+          owner: flomesh-io
+          packages: fsm-*
+          expand-packages: true
+          older-than: 2 days
+          delete-untagged: true
