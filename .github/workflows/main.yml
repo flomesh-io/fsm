@@ -151,9 +151,10 @@ jobs:
         with:
           flags: unittests
 
-  images-ghcr:
+  ghcr:
     name: Docker Images to ghcr.io
     runs-on: ubuntu-24.04
+    needs: build
     env:
       CTR_REGISTRY: ghcr.io/flomesh-io
       CTR_TAG: ${{ github.sha }}
@@ -184,25 +185,25 @@ jobs:
       - name: Push images with sha tag
         run: make docker-build-fsm
 
-
   imagescan:
     name: Scan images for security vulnerabilities
     runs-on: ubuntu-24.04
+    needs: ghcr
     env:
+      CTR_REGISTRY: ghcr.io/flomesh-io
       CTR_TAG: ${{ github.sha }}
-      CTR_REGISTRY: "localhost:5000"
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: false
-      - name: Build docker images
-        env:
-          DOCKER_BUILDX_OUTPUT: type=docker
-        run: make docker-build-fsm
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#      - name: Setup Go
+#        uses: actions/setup-go@v5
+#        with:
+#          go-version-file: go.mod
+#          cache: false
+#      - name: Build docker images
+#        env:
+#          DOCKER_BUILDX_OUTPUT: type=docker
+#        run: make docker-build-fsm
       - name: Setup Trivy
         run: make trivy-ci-setup
       - name: Scan docker images for vulnerabilities
