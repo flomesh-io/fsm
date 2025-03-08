@@ -76,6 +76,7 @@ jobs:
         id: test
         env:
           K8S_NAMESPACE: "fsm-system"
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"

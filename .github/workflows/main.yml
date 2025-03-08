@@ -279,12 +279,17 @@ jobs:
   ingress-e2e-test:
     name: Go ingress test
     needs: ghcr
+    strategy:
+      matrix:
+        k8s_version: [ "" ]
+        focus: [ "" ]
+        bucket: [ 10 ]
     uses: ./.github/workflows/e2e.yml
     with:
       os: ubuntu-24.04
-      k8s_version: ""
-      bucket: 10
-      focus: ""
+      k8s_version: ${{ matrix.k8s_version }}
+      bucket: ${{ matrix.bucket }}
+      focus: ${{ matrix.focus }}
     secrets: inherit
 
   mesh-retry-e2e-test:
@@ -364,11 +369,25 @@ jobs:
           CTR_TAG: ${{ github.sha }}
           USE_PRIVATE_REGISTRY: "false"
           PUBLISH_IMAGES: "false"
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
         run: |
           touch .env
           make k3d-up
           ./demo/run-fsm-demo.sh
           go run ./ci/cmd/maestro.go
+
+  ghcr-cleanup:
+    name: ghcr.io cleanup
+    runs-on: ubuntu-latest
+    needs: [mesh-e2e-test, gateway-e2e-test, ingress-e2e-test, mesh-retry-e2e-test, mesh-statefulset-e2e-test, integration-tresor]
+    steps:
+      - uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          token: ${{ secrets.WORKFLOW_PAT }}
+          owner: flomesh-io
+          packages: fsm-*
+          expand-packages: true
+          delete-tags: ${{ github.sha }}
 
   images:
     name: Docker Images
