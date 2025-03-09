@@ -156,7 +156,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs: build
     env:
-      CTR_REGISTRY: "ghcr.io/flomesh-io"
+      CTR_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
       CTR_TAG: ${{ github.sha }}
     steps:
       - name: Set up QEMU
@@ -169,7 +169,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: flomesh-io
+          username: ${{ github.repository_owner }}
           password: ${{ secrets.WORKFLOW_PAT }}
 
       # to avoid dockerhub anonymous rate limit
@@ -197,7 +197,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs: ghcr
     env:
-      CTR_REGISTRY: "ghcr.io/flomesh-io"
+      CTR_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
       CTR_TAG: ${{ github.sha }}
     steps:
       - name: Checkout
@@ -206,7 +206,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: flomesh-io
+          username: ${{ github.repository_owner }}
           password: ${{ secrets.WORKFLOW_PAT }}
       - name: Setup Trivy
         run: make trivy-ci-setup
@@ -357,10 +357,11 @@ jobs:
           ENABLE_RECONCILER: "false"
           PERMISSIVE_MODE: "false"
           DEPLOY_TRAFFIC_SPLIT: "true"
-          CTR_REGISTRY: "ghcr.io/flomesh-io"
+          CTR_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
           CTR_TAG: ${{ github.sha }}
           USE_PRIVATE_REGISTRY: "false"
           PUBLISH_IMAGES: "false"
+          GITHUB_REPO_OWNER: ${{ github.repository_owner }}
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
           DOCKER_USER: ${{ secrets.RELEASE_DOCKER_USER }}
           DOCKER_PASS: ${{ secrets.RELEASE_DOCKER_PASS }}
@@ -379,7 +380,7 @@ jobs:
       - uses: dataaxiom/ghcr-cleanup-action@v1
         with:
           token: ${{ secrets.WORKFLOW_PAT }}
-          owner: flomesh-io
+          owner: ${{ github.repository_owner }}
           packages: fsm-*
           expand-packages: true
           delete-tags: ${{ github.sha }}
