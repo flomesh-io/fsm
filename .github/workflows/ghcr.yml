@@ -60,7 +60,7 @@ jobs:
       - uses: dataaxiom/ghcr-cleanup-action@v1
         with:
           token: ${{ secrets.WORKFLOW_PAT }}
-          owner: flomesh-io
+          owner: ${{ github.repository_owner }}
           packages: fsm-*
           expand-packages: true
           older-than: ${{ github.event.inputs.older-than }}

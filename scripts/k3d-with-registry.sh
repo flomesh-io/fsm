@@ -75,7 +75,7 @@ registries:
     configs:
       ghcr.io:
         auth:
-          username: flomesh-io
+          username: ${GITHUB_REPO_OWNER}
           password: ${GITHUB_TOKEN}
       docker.io:
         tls:
