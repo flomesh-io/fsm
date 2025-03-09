@@ -140,6 +140,7 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 2
           timeoutSeconds: 1
+          failureThreshold: 20
           httpGet:
             scheme: HTTP
             path: /startupz
