@@ -30,6 +30,8 @@ DOCKER_BUILDX_PLATFORM ?= linux/amd64
 # https://docs.docker.com/engine/reference/commandline/buildx_build/#output
 DOCKER_BUILDX_OUTPUT ?= type=registry
 
+DOCKER_TAR_PATH ?= /tmp/fsm-docker-tar
+
 LDFLAGS ?= "-X $(BUILD_DATE_VAR)=$(BUILD_DATE) -X $(BUILD_VERSION_VAR)=$(VERSION) -X $(BUILD_GITCOMMIT_VAR)=$(GIT_SHA) -s -w"
 
 # These two values are combined and passed to go test
@@ -234,6 +236,19 @@ $(DOCKER_DEMO_TARGETS):
 .PHONY: docker-build-demo
 docker-build-demo: $(DOCKER_DEMO_TARGETS)
 
+.PHONY: docker-tar-path
+docker-tar-path:
+	mkdir -p $(DOCKER_TAR_PATH)
+
+DOCKER_SAVE_DEMO_TARGETS = $(addprefix docker-save-, $(DEMO_TARGETS))
+.PHONY: $(DOCKER_SAVE_DEMO_TARGETS)
+$(DOCKER_SAVE_DEMO_TARGETS): NAME=$(@:docker-save-%=%)
+$(DOCKER_SAVE_DEMO_TARGETS):
+	docker save $(CTR_REGISTRY)/fsm-demo-$(NAME):$(CTR_TAG) -o $(DOCKER_TAR_PATH)/fsm-demo-$(NAME).tar
+
+.PHONY: docker-save-demo
+docker-save-demo: docker-tar-path $(DOCKER_SAVE_DEMO_TARGETS)
+
 .PHONY: docker-build-fsm-curl
 docker-build-fsm-curl:
 	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-curl:$(CTR_TAG) - < dockerfiles/Dockerfile.fsm-curl
@@ -288,6 +303,15 @@ DOCKER_FSM_TARGETS = $(addprefix docker-build-, $(FSM_TARGETS))
 
 .PHONY: docker-build-fsm
 docker-build-fsm: charts-tgz $(DOCKER_FSM_TARGETS)
+
+DOCKER_SAVE_FSM_TARGETS = $(addprefix docker-save-, $(FSM_TARGETS))
+.PHONY: $(DOCKER_SAVE_FSM_TARGETS)
+$(DOCKER_SAVE_FSM_TARGETS): NAME=$(@:docker-save-%=%)
+$(DOCKER_SAVE_FSM_TARGETS):
+	docker save $(CTR_REGISTRY)/$(NAME):$(CTR_TAG) -o $(DOCKER_TAR_PATH)/$(NAME).tar
+
+.PHONY: docker-save-fsm
+docker-save-fsm: docker-tar-path $(DOCKER_SAVE_FSM_TARGETS)
 
 .PHONY: buildx-context
 buildx-context:
