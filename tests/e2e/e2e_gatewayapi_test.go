@@ -1390,11 +1390,25 @@ func testFSMGatewayDNSModifierFilterTraffic() {
 		},
 
 		Spec: extv1alpha1.DNSModifierSpec{
-			Domains: []extv1alpha1.DNSDomain{
-				{
-					Name: gwv1.PreciseHostname("test.flomesh.io"),
-					Answer: extv1alpha1.DNSAnswer{
-						RData: "1.11.11.111",
+			Zones: map[string]extv1alpha1.DNSZoneConfig{
+				"test.flomesh.io.": {
+					Domains: []extv1alpha1.DNSDomain{
+						{
+							Name: gwv1.PreciseHostname("test.flomesh.io"),
+							Answer: extv1alpha1.DNSAnswer{
+								RData: "1.11.11.111",
+							},
+						},
+					},
+				},
+				"test.io.": {
+					Domains: []extv1alpha1.DNSDomain{
+						{
+							Name: gwv1.PreciseHostname("test.io"),
+							Answer: extv1alpha1.DNSAnswer{
+								RData: "1.12.123.456",
+							},
+						},
 					},
 				},
 			},
