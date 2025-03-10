@@ -158,7 +158,7 @@ jobs:
     env:
       CTR_REGISTRY: "localhost:5000"
       CTR_TAG: ${{ github.sha }}
-      DOCKER_BUILDX_OUTPUT: type=local,dest=/tmp/docker-images/${{ github.sha }}
+      DOCKER_BUILDX_OUTPUT: type=tar,dest=/tmp/docker-images/${{ github.sha }}
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.6.0
