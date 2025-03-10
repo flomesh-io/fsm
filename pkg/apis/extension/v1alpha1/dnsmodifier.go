@@ -24,10 +24,10 @@ type DNSZoneConfig struct {
 }
 
 type DNSDomain struct {
-	// CN is the fully qualified domain name of a network host. This
+	// Name is the fully qualified domain name of a network host. This
 	// matches the RFC 1123 definition of a hostname with 1 notable exception that
 	// numeric IP addresses are not allowed.
-	CN gwv1.PreciseHostname `json:"name"`
+	Name gwv1.PreciseHostname `json:"name"`
 
 	// Answer is the DNS answer to be returned for the domain Name
 	Answer DNSAnswer `json:"answer"`
