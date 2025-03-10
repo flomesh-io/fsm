@@ -300,15 +300,15 @@ securityContext:
 
 {{/* fsm-xnet bridge4 name of cni */}}
 {{- define "fsmXnetwork.xnet.cni.bridge4.name" -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.calicoVxlan.enable -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.calicoVxlan.bridge4.enable -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.calicoVxlan.bridge4.name -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge4.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge4.name -}}
 {{- else -}}
 {{- printf "" -}}
 {{- end -}}
-{{- else if .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.flannel.enable -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.flannel.bridge4.enable -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.flannel.bridge4.name -}}
+{{- else if .Values.fsm.fsmXnetwork.xnet.cnis.flannel.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.flannel.bridge4.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.flannel.bridge4.name -}}
 {{- else -}}
 {{- printf "" -}}
 {{- end -}}
@@ -319,15 +319,15 @@ securityContext:
 
 {{/* fsm-xnet bridge4 mac of cni */}}
 {{- define "fsmXnetwork.xnet.cni.bridge4.mac" -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.calicoVxlan.enable -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.calicoVxlan.bridge4.enable -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.calicoVxlan.bridge4.mac -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge4.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge4.mac -}}
 {{- else -}}
 {{- printf "" -}}
 {{- end -}}
-{{- else if .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.flannel.enable -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.flannel.bridge4.enable -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.flannel.bridge4.mac -}}
+{{- else if .Values.fsm.fsmXnetwork.xnet.cnis.flannel.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.flannel.bridge4.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.flannel.bridge4.mac -}}
 {{- else -}}
 {{- printf "" -}}
 {{- end -}}
@@ -338,15 +338,15 @@ securityContext:
 
 {{/* fsm-xnet bridge6 name of cni */}}
 {{- define "fsmXnetwork.xnet.cni.bridge6.name" -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.calicoVxlan.enable -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.calicoVxlan.bridge6.enable -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.calicoVxlan.bridge6.name -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge6.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge6.name -}}
 {{- else -}}
 {{- printf "" -}}
 {{- end -}}
-{{- else if .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.flannel.enable -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.flannel.bridge6.enable -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.flannel.bridge6.name -}}
+{{- else if .Values.fsm.fsmXnetwork.xnet.cnis.flannel.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.flannel.bridge6.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.flannel.bridge6.name -}}
 {{- else -}}
 {{- printf "" -}}
 {{- end -}}
@@ -357,15 +357,15 @@ securityContext:
 
 {{/* fsm-xnet bridge6 mac of cni */}}
 {{- define "fsmXnetwork.xnet.cni.bridge6.mac" -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.calicoVxlan.enable -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.calicoVxlan.bridge6.enable -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.calicoVxlan.bridge4.mac -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge6.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge4.mac -}}
 {{- else -}}
 {{- printf "" -}}
 {{- end -}}
-{{- else if .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.flannel.enable -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.flannel.bridge6.enable -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.features.e4lb.cnis.flannel.bridge6.mac -}}
+{{- else if .Values.fsm.fsmXnetwork.xnet.cnis.flannel.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.flannel.bridge6.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.flannel.bridge6.mac -}}
 {{- else -}}
 {{- printf "" -}}
 {{- end -}}

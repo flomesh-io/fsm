@@ -79,7 +79,5 @@ type client struct {
 
 	serviceInstanceIDFunc connector.ServiceInstanceIDFunc
 
-	toK8sServiceCnt, fromK8sServiceCnt int
-
 	cache
 }

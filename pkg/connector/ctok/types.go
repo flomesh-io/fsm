@@ -16,5 +16,5 @@ const (
 // Aggregator aggregates micro services
 type Aggregator interface {
 	// Aggregate micro services
-	Aggregate(context.Context, connector.MicroSvcName) map[connector.MicroSvcName]*connector.MicroSvcMeta
+	Aggregate(ctx context.Context, kubeSvcName connector.KubeSvcName) map[connector.KubeSvcName]*connector.MicroSvcMeta
 }

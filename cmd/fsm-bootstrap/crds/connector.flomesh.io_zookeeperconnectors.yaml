@@ -289,6 +289,28 @@ spec:
                   clusterId:
                     default: ""
                     type: string
+                  conversionStrategy:
+                    properties:
+                      enable:
+                        default: false
+                        type: boolean
+                      serviceConversions:
+                        items:
+                          properties:
+                            convertName:
+                              type: string
+                            externalName:
+                              type: string
+                            namespace:
+                              type: string
+                            service:
+                              type: string
+                          required:
+                          - convertName
+                          - service
+                          type: object
+                        type: array
+                    type: object
                   enable:
                     type: boolean
                   excludeIpRanges:
@@ -357,21 +379,31 @@ spec:
           status:
             description: Status is the status of the Zookeeper Connector configuration.
             properties:
+              catalogServices:
+                items:
+                  properties:
+                    namespace:
+                      type: string
+                    service:
+                      type: string
+                  required:
+                  - service
+                  type: object
+                type: array
+              catalogServicesHash:
+                type: string
               currentStatus:
-                description: CurrentStatus defines the current status of a Zookeeper
-                  Connector resource.
+                description: CurrentStatus defines the current status of a Connector
+                  resource.
                 type: string
               fromK8SServiceCnt:
                 type: integer
               reason:
                 description: Reason defines the reason for the current status of a
-                  Zookeeper Connector resource.
+                  Connector resource.
                 type: string
               toK8SServiceCnt:
                 type: integer
-            required:
-            - fromK8SServiceCnt
-            - toK8SServiceCnt
             type: object
         required:
         - spec

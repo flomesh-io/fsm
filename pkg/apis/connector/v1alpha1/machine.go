@@ -29,7 +29,7 @@ type MachineConnector struct {
 
 	// Status is the status of the Machine Connector configuration.
 	// +optional
-	Status MachineStatus `json:"status,omitempty"`
+	Status ConnectorStatus `json:"status,omitempty"`
 }
 
 func (c *MachineConnector) GetProvider() DiscoveryServiceProvider {
@@ -86,6 +86,9 @@ type MachineSyncToK8SSpec struct {
 	// +kubebuilder:default={enable: false, multiGateways: true}
 	// +optional
 	WithGateway C2KGateway `json:"withGateway,omitempty"`
+
+	// +optional
+	ConversionStrategy *ConversionStrategy `json:"conversionStrategy,omitempty"`
 }
 
 // MachineSpec is the type used to represent the Machine Connector specification.
@@ -124,19 +127,6 @@ type MachineSpec struct {
 	// +kubebuilder:default=true
 	// +optional
 	LeaderElection *bool `json:"leaderElection,omitempty"`
-}
-
-// MachineStatus is the type used to represent the status of a Machine Connector resource.
-type MachineStatus struct {
-	// CurrentStatus defines the current status of a Machine Connector resource.
-	// +optional
-	CurrentStatus string `json:"currentStatus,omitempty"`
-
-	// Reason defines the reason for the current status of a Machine Connector resource.
-	// +optional
-	Reason string `json:"reason,omitempty"`
-
-	ToK8SServiceCnt int `json:"toK8SServiceCnt"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

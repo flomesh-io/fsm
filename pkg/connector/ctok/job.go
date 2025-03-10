@@ -8,6 +8,8 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+
+	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
 // SyncJob is the job to sync
@@ -51,8 +53,8 @@ func (job *DeleteSyncJob) Run() {
 	} else {
 		job.syncer.lock.Lock()
 		defer job.syncer.lock.Unlock()
-		delete(job.syncer.controller.GetC2KContext().ServiceHashMap, job.serviceName)
-		delete(job.syncer.controller.GetC2KContext().ServiceMapCache, job.serviceName)
+		delete(job.syncer.controller.GetC2KContext().SyncedKubeServiceHash, connector.KubeSvcName(job.serviceName))
+		delete(job.syncer.controller.GetC2KContext().SyncedKubeServiceCache, connector.KubeSvcName(job.serviceName))
 	}
 }
 
@@ -91,7 +93,7 @@ func (job *CreateSyncJob) Run() {
 		job.syncer.lock.Lock()
 		defer job.syncer.lock.Unlock()
 		curHash := job.syncer.serviceHash(svc)
-		job.syncer.controller.GetC2KContext().ServiceHashMap[job.service.Name] = curHash
-		job.syncer.controller.GetC2KContext().ServiceMapCache[job.service.Name] = svc
+		job.syncer.controller.GetC2KContext().SyncedKubeServiceHash[connector.KubeSvcName(job.service.Name)] = curHash
+		job.syncer.controller.GetC2KContext().SyncedKubeServiceCache[connector.KubeSvcName(job.service.Name)] = svc
 	}
 }

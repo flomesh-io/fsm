@@ -5,17 +5,12 @@ import (
 
 	mapset "github.com/deckarep/golang-set"
 	corev1 "k8s.io/api/core/v1"
+
+	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 )
 
 // C2KContext is the c2k context for connector controller
 type C2KContext struct {
-	//
-	// Resource Context
-	//
-
-	//
-	// Endpoint Context
-	//
 
 	// EndpointsKeyToName maps from Kube controller keys to Kube endpoints names.
 	// Controller keys are in the form <kube namespace>/<kube endpoints name>
@@ -23,29 +18,28 @@ type C2KContext struct {
 	// changed.
 	EndpointsKeyToName map[string]string
 
-	//
-	// Syncer Context
-	//
+	// SourceServices maps from k8s service name to cloud service name.
+	// Holds all services extended by prefix and suffix that should be synced to Kube.
+	SourceServices map[KubeSvcName]CloudSvcName
 
-	// SourceServices holds cloud services that should be synced to Kube.
-	// It maps from cloud service names to cloud DNS entry, e.g.
-	// We lowercase the cloud service names and DNS entries
-	// because Kube names must be lowercase.
-	SourceServices map[string]string
-	RawServices    map[string]string
+	// NativeServices maps from k8s service name to cloud service name.
+	// Holds native services without extended by prefix and suffix.
+	NativeServices map[KubeSvcName]CloudSvcName
 
-	// ServiceKeyToName maps from Kube controller keys to Kube service names.
-	// Controller keys are in the form <kube namespace>/<kube svc name>
-	// e.g. default/foo, and are the keys Kube uses to inform that something
-	// changed.
-	ServiceKeyToName map[string]string
+	// NativeServices maps from k8s service name to cloud service name.
+	// Holds native services without extended by prefix and suffix.
+	ExternalServices map[CloudSvcName]ExternalName
 
-	// ServiceMapCache is a subset of serviceMap. It holds all Kube services
-	// that were created by this sync process. Keys are Kube service names.
-	// It's populated from Kubernetes data.
-	ServiceMapCache map[string]*corev1.Service
+	// CatalogServices holds catalog services
+	CatalogServices     []ctv1.NamespacedService
+	CatalogServicesHash uint64
 
-	ServiceHashMap map[string]uint64
+	// holds all Kube service
+	KubeServiceCache map[KubeSvcKey]*corev1.Service
+
+	// SyncedKubeServiceCache holds all Kube services that were created by this sync process. Keys are Kube service names.
+	SyncedKubeServiceCache map[KubeSvcName]*corev1.Service
+	SyncedKubeServiceHash  map[KubeSvcName]uint64
 }
 
 // K2CContext is the k2c context for connector controller
@@ -112,12 +106,13 @@ type K2GContext struct {
 
 func NewC2KContext() *C2KContext {
 	return &C2KContext{
-		EndpointsKeyToName: make(map[string]string),
-		SourceServices:     make(map[string]string),
-		RawServices:        make(map[string]string),
-		ServiceKeyToName:   make(map[string]string),
-		ServiceMapCache:    make(map[string]*corev1.Service),
-		ServiceHashMap:     make(map[string]uint64),
+		EndpointsKeyToName:     make(map[string]string),
+		SourceServices:         make(map[KubeSvcName]CloudSvcName),
+		NativeServices:         make(map[KubeSvcName]CloudSvcName),
+		ExternalServices:       make(map[CloudSvcName]ExternalName),
+		KubeServiceCache:       make(map[KubeSvcKey]*corev1.Service),
+		SyncedKubeServiceCache: make(map[KubeSvcName]*corev1.Service),
+		SyncedKubeServiceHash:  make(map[KubeSvcName]uint64),
 	}
 }
 
