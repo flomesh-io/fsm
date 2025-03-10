@@ -151,7 +151,7 @@ jobs:
         with:
           flags: unittests
 
-  ghcr:
+  docker-tar:
     name: Docker Images(local)
     runs-on: ubuntu-24.04
     needs: build
@@ -160,44 +160,19 @@ jobs:
       CTR_TAG: ${{ github.sha }}
       DOCKER_BUILDX_OUTPUT: type=docker
       DOCKER_TAR_PATH: /tmp/docker-images/${{ github.sha }}
-#      DOCKER_BUILDX_OUTPUT: type=tar,dest=/tmp/docker-images/${{ github.sha }}
     steps:
-#      - name: Set up QEMU
-#        uses: docker/setup-qemu-action@v3.6.0
-#
-#      - name: Set up Docker Buildx
-#        uses: docker/setup-buildx-action@v3.10.0
-
-#      - name: Login to GitHub Container Registry
-#        uses: docker/login-action@v3
-#        with:
-#          registry: ghcr.io
-#          username: ${{ github.repository_owner }}
-#          password: ${{ secrets.WORKFLOW_PAT }}
-#
-#      # to avoid dockerhub anonymous rate limit
-#      - name: Login to DockerHub
-#        uses: docker/login-action@v3.3.0
-#        with:
-#          username: ${{ secrets.RELEASE_DOCKER_USER }}
-#          password: ${{ secrets.RELEASE_DOCKER_PASS }}
-
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Go
         id: setup-go
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
           cache: false
-
       - name: Build images with SHA tag
         run: make docker-build-fsm docker-build-demo
-
       - name: Save docker images
         run: make docker-save-fsm docker-save-demo
-
       - name: Upload docker images
         uses: actions/upload-artifact@v4
         with:
@@ -209,7 +184,7 @@ jobs:
   imagescan:
     name: Scan images for security vulnerabilities
     runs-on: ubuntu-24.04
-    needs: ghcr
+    needs: docker-tar
     env:
       CTR_REGISTRY: "localhost:5000"
       CTR_TAG: ${{ github.sha }}
@@ -221,12 +196,6 @@ jobs:
         with:
           name: docker-images
           path: /tmp/fsm-docker-images
-#      - name: Login to GitHub Container Registry
-#        uses: docker/login-action@v3
-#        with:
-#          registry: ghcr.io
-#          username: ${{ github.repository_owner }}
-#          password: ${{ secrets.WORKFLOW_PAT }}
       - name: Load images
         run: |
           cd /tmp/fsm-docker-images
@@ -239,7 +208,7 @@ jobs:
 
   mesh-e2e-test:
     name: Go mesh test
-    needs: ghcr
+    needs: docker-tar
     strategy:
       matrix:
         k8s_version: [""]
@@ -265,7 +234,7 @@ jobs:
 
   gateway-e2e-test:
     name: Go gateway test
-    needs: ghcr
+    needs: docker-tar
     strategy:
       matrix:
         focus: [""]
@@ -300,7 +269,7 @@ jobs:
 
   ingress-e2e-test:
     name: Go ingress test
-    needs: ghcr
+    needs: docker-tar
     strategy:
       matrix:
         k8s_version: [ "" ]
@@ -316,7 +285,7 @@ jobs:
 
   mesh-retry-e2e-test:
     name: Go retry test
-    needs: ghcr
+    needs: docker-tar
     strategy:
       matrix:
         k8s_version: [""]
@@ -332,7 +301,7 @@ jobs:
 
   mesh-statefulset-e2e-test:
     name: Go statefulset test
-    needs: ghcr
+    needs: docker-tar
     strategy:
       matrix:
         k8s_version: [""]
@@ -349,7 +318,7 @@ jobs:
   integration-tresor:
     name: Integration Test with Tresor, SMI traffic policies, and egress disabled
     runs-on: ubuntu-24.04
-    needs: ghcr
+    needs: docker-tar
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -372,6 +341,16 @@ jobs:
         run: |
           curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
           k3d version
+      - name: Download docker image artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-images
+          path: /tmp/fsm-docker-images
+      - name: Load images
+        run: |
+          cd /tmp/fsm-docker-images
+          ls -1 *.tar | xargs --no-run-if-empty -L 1 docker load -i
+          docker image ls -a
       - name: Run Simulation w/ Tresor, SMI policies, egress disabled and reconciler disabled
         env:
           CERT_MANAGER: "tresor"
@@ -381,33 +360,29 @@ jobs:
           ENABLE_RECONCILER: "false"
           PERMISSIVE_MODE: "false"
           DEPLOY_TRAFFIC_SPLIT: "true"
-          CTR_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
+          CTR_REGISTRY: "localhost:5000"
           CTR_TAG: ${{ github.sha }}
           USE_PRIVATE_REGISTRY: "false"
           PUBLISH_IMAGES: "false"
-          GITHUB_REPO_OWNER: ${{ github.repository_owner }}
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
-          DOCKER_USER: ${{ secrets.RELEASE_DOCKER_USER }}
-          DOCKER_PASS: ${{ secrets.RELEASE_DOCKER_PASS }}
-          CI_INTEGRATION_TEST: "true"
+          LOAD_IMAGES_INTO_CLUSTER: "true"
         run: |
           touch .env
           make k3d-up
           ./demo/run-fsm-demo.sh
           go run ./ci/cmd/maestro.go
 
-  ghcr-cleanup:
-    name: ghcr.io cleanup
-    runs-on: ubuntu-24.04
-    needs: [mesh-e2e-test, gateway-e2e-test, ingress-e2e-test, mesh-retry-e2e-test, mesh-statefulset-e2e-test, integration-tresor, imagescan]
-    steps:
-      - uses: dataaxiom/ghcr-cleanup-action@v1
-        with:
-          token: ${{ secrets.WORKFLOW_PAT }}
-          owner: ${{ github.repository_owner }}
-          packages: fsm-*
-          expand-packages: true
-          delete-tags: ${{ github.sha }}
+#  ghcr-cleanup:
+#    name: ghcr.io cleanup
+#    runs-on: ubuntu-24.04
+#    needs: [mesh-e2e-test, gateway-e2e-test, ingress-e2e-test, mesh-retry-e2e-test, mesh-statefulset-e2e-test, integration-tresor, imagescan]
+#    steps:
+#      - uses: dataaxiom/ghcr-cleanup-action@v1
+#        with:
+#          token: ${{ secrets.WORKFLOW_PAT }}
+#          owner: ${{ github.repository_owner }}
+#          packages: fsm-*
+#          expand-packages: true
+#          delete-tags: ${{ github.sha }}
 
   images:
     name: Docker Images
