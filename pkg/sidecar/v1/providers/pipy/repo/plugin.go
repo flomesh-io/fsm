@@ -66,7 +66,7 @@ func (s *Server) updatePlugins() (pluginSet mapset.Set, pluginPri map[string]flo
 			},
 		})
 		if err != nil {
-			log.Error().Err(err)
+			log.Error().Err(err).Msg(err.Error())
 		} else {
 			s.pluginSet = pluginSet
 			s.pluginPri = pluginPri

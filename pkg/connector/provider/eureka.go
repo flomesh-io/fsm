@@ -171,12 +171,12 @@ func (dc *EurekaDiscoveryClient) CatalogInstances(service string, _ *connector.Q
 	return agentServices, nil
 }
 
-func (dc *EurekaDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]connector.NamespacedService, error) {
+func (dc *EurekaDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]ctv1.NamespacedService, error) {
 	servicesMap, err := dc.selectServices()
 	if err != nil {
 		return nil, err
 	}
-	var catalogServices []connector.NamespacedService
+	var catalogServices []ctv1.NamespacedService
 	if len(servicesMap) > 0 {
 		for svc, svcApp := range servicesMap {
 			svc := strings.ToLower(svc)
@@ -248,7 +248,7 @@ func (dc *EurekaDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]con
 						continue
 					}
 				}
-				catalogServices = append(catalogServices, connector.NamespacedService{Service: svc})
+				catalogServices = append(catalogServices, ctv1.NamespacedService{Service: svc})
 				break
 			}
 		}
@@ -256,12 +256,12 @@ func (dc *EurekaDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]con
 	return catalogServices, nil
 }
 
-func (dc *EurekaDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]connector.NamespacedService, error) {
+func (dc *EurekaDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]ctv1.NamespacedService, error) {
 	servicesMap, err := dc.selectServices()
 	if err != nil {
 		return nil, err
 	}
-	var registeredServices []connector.NamespacedService
+	var registeredServices []ctv1.NamespacedService
 	if len(servicesMap) > 0 {
 		for svc, svcApp := range servicesMap {
 			svc := strings.ToLower(svc)
@@ -309,7 +309,7 @@ func (dc *EurekaDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]
 				}
 			}
 			if hasLocalInstances {
-				registeredServices = append(registeredServices, connector.NamespacedService{Service: svc})
+				registeredServices = append(registeredServices, ctv1.NamespacedService{Service: svc})
 			}
 		}
 	}

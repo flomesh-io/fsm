@@ -215,7 +215,7 @@ func (as *AgentService) FromVM(vm machinev1alpha1.VirtualMachine, svc machinev1a
 }
 
 type CatalogDeregistration struct {
-	NamespacedService
+	ctv1.NamespacedService
 
 	Node       string
 	ServiceID  string
@@ -499,10 +499,10 @@ func (o *QueryOptions) ToConsul() *consul.QueryOptions {
 }
 
 type ServiceDiscoveryClient interface {
-	CatalogServices(q *QueryOptions) ([]NamespacedService, error)
+	CatalogServices(q *QueryOptions) ([]ctv1.NamespacedService, error)
 	CatalogInstances(service string, q *QueryOptions) ([]*AgentService, error)
 	RegisteredInstances(service string, q *QueryOptions) ([]*CatalogService, error)
-	RegisteredServices(q *QueryOptions) ([]NamespacedService, error)
+	RegisteredServices(q *QueryOptions) ([]ctv1.NamespacedService, error)
 	Register(reg *CatalogRegistration) error
 	Deregister(dereg *CatalogDeregistration) error
 	EnableNamespaces() bool

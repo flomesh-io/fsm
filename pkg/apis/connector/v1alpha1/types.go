@@ -1,6 +1,8 @@
 package v1alpha1
 
 import (
+	"strings"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -98,4 +100,66 @@ type Metadata struct {
 type Limiter struct {
 	Limit uint32 `json:"limit"`
 	Burst uint32 `json:"burst"`
+}
+
+type NamespacedServiceSlice []NamespacedService
+
+func (x NamespacedServiceSlice) Len() int      { return len(x) }
+func (x NamespacedServiceSlice) Swap(i, j int) { x[i], x[j] = x[j], x[i] }
+func (x NamespacedServiceSlice) Less(i, j int) bool {
+	if cmp := strings.Compare(x[i].Namespace, x[j].Namespace); cmp > 0 {
+		return strings.Compare(x[i].Service, x[j].Service) < 0
+	}
+	return true
+}
+
+type NamespacedService struct {
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
+
+	Service string `json:"service"`
+}
+
+type ServiceConversion struct {
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
+
+	Service string `json:"service"`
+
+	ConvertName string `json:"convertName"`
+
+	// +optional
+	ExternalName string `json:"externalName,omitempty"`
+}
+
+type ConversionStrategy struct {
+	// +kubebuilder:default=false
+	// +optional
+	Enable bool `json:"enable,omitempty"`
+
+	// +optional
+	ServiceConversions []ServiceConversion `json:"serviceConversions,omitempty"`
+}
+
+// ConnectorStatus is the type used to represent the status of a Connector resource.
+type ConnectorStatus struct {
+	// CurrentStatus defines the current status of a Connector resource.
+	// +optional
+	CurrentStatus string `json:"currentStatus,omitempty"`
+
+	// Reason defines the reason for the current status of a Connector resource.
+	// +optional
+	Reason string `json:"reason,omitempty"`
+
+	// +optional
+	ToK8SServiceCnt int `json:"toK8SServiceCnt,omitempty"`
+
+	// +optional
+	FromK8SServiceCnt int `json:"fromK8SServiceCnt,omitempty"`
+
+	// +optional
+	CatalogServicesHash string `json:"catalogServicesHash,omitempty"`
+
+	// +optional
+	CatalogServices []NamespacedService `json:"catalogServices,omitempty"`
 }

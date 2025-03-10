@@ -32,7 +32,7 @@ type ZookeeperConnector struct {
 
 	// Status is the status of the Zookeeper Connector configuration.
 	// +optional
-	Status ZookeeperStatus `json:"status,omitempty"`
+	Status ConnectorStatus `json:"status,omitempty"`
 }
 
 func (c *ZookeeperConnector) GetProvider() DiscoveryServiceProvider {
@@ -87,6 +87,9 @@ type ZookeeperSyncToK8SSpec struct {
 	// +kubebuilder:default={enable: false, multiGateways: true}
 	// +optional
 	WithGateway C2KGateway `json:"withGateway,omitempty"`
+
+	// +optional
+	ConversionStrategy *ConversionStrategy `json:"conversionStrategy,omitempty"`
 }
 
 // ZookeeperSyncFromK8SSpec is the type used to represent the sync from K8S to Zookeeper specification.
@@ -211,21 +214,6 @@ type ZookeeperAuthSpec struct {
 	// +kubebuilder:default=""
 	// +optional
 	Password string `json:"password,omitempty"`
-}
-
-// ZookeeperStatus is the type used to represent the status of a Zookeeper Connector resource.
-type ZookeeperStatus struct {
-	// CurrentStatus defines the current status of a Zookeeper Connector resource.
-	// +optional
-	CurrentStatus string `json:"currentStatus,omitempty"`
-
-	// Reason defines the reason for the current status of a Zookeeper Connector resource.
-	// +optional
-	Reason string `json:"reason,omitempty"`
-
-	ToK8SServiceCnt int `json:"toK8SServiceCnt"`
-
-	FromK8SServiceCnt int `json:"fromK8SServiceCnt"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
