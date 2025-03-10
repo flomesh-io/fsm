@@ -160,11 +160,11 @@ jobs:
       CTR_TAG: ${{ github.sha }}
       DOCKER_BUILDX_OUTPUT: type=tar,dest=/tmp/docker-images/${{ github.sha }}
     steps:
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3.6.0
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3.10.0
+#      - name: Set up QEMU
+#        uses: docker/setup-qemu-action@v3.6.0
+#
+#      - name: Set up Docker Buildx
+#        uses: docker/setup-buildx-action@v3.10.0
 
 #      - name: Login to GitHub Container Registry
 #        uses: docker/login-action@v3
@@ -189,6 +189,9 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
+
+      - name: MkDir
+        run: mkdir -p /tmp/docker-images/${{ github.sha }}
 
       - name: Build images with SHA tag
         run: make docker-build-fsm docker-build-demo
