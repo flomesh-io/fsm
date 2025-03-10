@@ -7,6 +7,10 @@ import (
 
 // DNSModifierSpec defines the desired state of DNSModifier
 type DNSModifierSpec struct {
+	Zones map[string]DNSZoneConfig `json:"zones,omitempty"`
+}
+
+type DNSZoneConfig struct {
 	// +optional
 	// +listType=map
 	// +listMapKey=name

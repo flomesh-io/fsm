@@ -80,14 +80,18 @@ func (r *DNSModifierWebhook) doValidation(ctx context.Context, obj runtime.Objec
 func (r *DNSModifierWebhook) validateSpec(ctx context.Context, spec extv1alpha1.DNSModifierSpec, path *field.Path) field.ErrorList {
 	var errs field.ErrorList
 
-	if len(spec.Domains) == 0 && len(spec.BlacklistDomains) == 0 {
-		errs = append(errs, field.Invalid(path.Child("domains"), spec.Domains, "at least one of domains or blacklistDomains must be set"))
-	}
+	for z, cfg := range spec.Zones {
+		p := path.Child("zones").Key(z)
 
-	if len(spec.Domains) > 0 {
-		for i, domain := range spec.Domains {
-			if _, err := netip.ParseAddr(domain.Answer.RData); err != nil {
-				errs = append(errs, field.Invalid(path.Child("domains").Index(i).Child("answer").Child("rdata"), domain.Answer.RData, "invalid IP address"))
+		if len(cfg.Domains) == 0 && len(cfg.BlacklistDomains) == 0 {
+			errs = append(errs, field.Invalid(p.Child("domains"), cfg.Domains, "at least one of domains or blacklistDomains must be set for zone"))
+		}
+
+		if len(cfg.Domains) > 0 {
+			for i, domain := range cfg.Domains {
+				if _, err := netip.ParseAddr(domain.Answer.RData); err != nil {
+					errs = append(errs, field.Invalid(p.Child("domains").Index(i).Child("answer").Child("rdata"), domain.Answer.RData, "invalid IP address"))
+				}
 			}
 		}
 	}
