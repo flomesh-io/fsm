@@ -31,6 +31,9 @@ env:
   FSM_HUMAN_DEBUG_LOG: ${{ vars.FSM_HUMAN_DEBUG_LOG || 'false' }}
   CLUSTER_INSTALL_TYPE: ${{ vars.CLUSTER_INSTALL_TYPE || 'K3dCluster' }}
   K3D_NODE_LOGS: ${{ vars.K3D_NODE_LOGS || 'false' }}
+  IMAGES_DOWNLOAD_PATH: /tmp/fsm-docker-images
+  CTR_REGISTRY: "localhost:5000"
+  CTR_TAG: ${{ github.sha }}
 
 jobs:
   shellcheck:
@@ -156,8 +159,6 @@ jobs:
     runs-on: ubuntu-24.04
     needs: build
     env:
-      CTR_REGISTRY: "localhost:5000"
-      CTR_TAG: ${{ github.sha }}
       DOCKER_BUILDX_OUTPUT: type=docker
       DOCKER_TAR_PATH: /tmp/docker-images/${{ github.sha }}
     steps:
@@ -185,9 +186,6 @@ jobs:
     name: Scan images for security vulnerabilities
     runs-on: ubuntu-24.04
     needs: docker-tar
-    env:
-      CTR_REGISTRY: "localhost:5000"
-      CTR_TAG: ${{ github.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -195,11 +193,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: docker-images
-          path: /tmp/fsm-docker-images
+          path: ${{ env.IMAGES_DOWNLOAD_PATH }}
       - name: Load images
         run: |
-          cd /tmp/fsm-docker-images
-          ls -1 *.tar | xargs --no-run-if-empty -L 1 docker load -i
+          ls -1 ${{ env.IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
           docker image ls -a
       - name: Setup Trivy
         run: make trivy-ci-setup
@@ -230,6 +227,12 @@ jobs:
       k8s_version: ${{ matrix.k8s_version }}
       bucket: ${{ matrix.bucket }}
       focus: ${{ matrix.focus }}
+      cluster_install_type: ${{ env.CLUSTER_INSTALL_TYPE }}
+      container_registry: ${{ env.CTR_REGISTRY }}
+      container_tag: ${{ env.CTR_TAG }}
+      images_download_path: ${{ env.IMAGES_DOWNLOAD_PATH }}
+      fsm_human_debug_log: ${{ env.FSM_HUMAN_DEBUG_LOG }}
+      k3d_node_logs: ${{ env.K3D_NODE_LOGS }}
     secrets: inherit
 
   gateway-e2e-test:
@@ -265,6 +268,12 @@ jobs:
       k8s_version: ${{ matrix.k8s.version }}
       bucket: ${{ matrix.bucket }}
       focus: ${{ matrix.focus }}
+      cluster_install_type: ${{ env.CLUSTER_INSTALL_TYPE }}
+      container_registry: ${{ env.CTR_REGISTRY }}
+      container_tag: ${{ env.CTR_TAG }}
+      images_download_path: ${{ env.IMAGES_DOWNLOAD_PATH }}
+      fsm_human_debug_log: ${{ env.FSM_HUMAN_DEBUG_LOG }}
+      k3d_node_logs: ${{ env.K3D_NODE_LOGS }}
     secrets: inherit
 
   ingress-e2e-test:
@@ -281,6 +290,12 @@ jobs:
       k8s_version: ${{ matrix.k8s_version }}
       bucket: ${{ matrix.bucket }}
       focus: ${{ matrix.focus }}
+      cluster_install_type: ${{ env.CLUSTER_INSTALL_TYPE }}
+      container_registry: ${{ env.CTR_REGISTRY }}
+      container_tag: ${{ env.CTR_TAG }}
+      images_download_path: ${{ env.IMAGES_DOWNLOAD_PATH }}
+      fsm_human_debug_log: ${{ env.FSM_HUMAN_DEBUG_LOG }}
+      k3d_node_logs: ${{ env.K3D_NODE_LOGS }}
     secrets: inherit
 
   mesh-retry-e2e-test:
@@ -297,6 +312,12 @@ jobs:
       k8s_version: ${{ matrix.k8s_version }}
       bucket: ${{ matrix.bucket }}
       focus: ${{ matrix.focus }}
+      cluster_install_type: ${{ env.CLUSTER_INSTALL_TYPE }}
+      container_registry: ${{ env.CTR_REGISTRY }}
+      container_tag: ${{ env.CTR_TAG }}
+      images_download_path: ${{ env.IMAGES_DOWNLOAD_PATH }}
+      fsm_human_debug_log: ${{ env.FSM_HUMAN_DEBUG_LOG }}
+      k3d_node_logs: ${{ env.K3D_NODE_LOGS }}
     secrets: inherit
 
   mesh-statefulset-e2e-test:
@@ -313,6 +334,12 @@ jobs:
       k8s_version: ${{ matrix.k8s_version }}
       bucket: ${{ matrix.bucket }}
       focus: ${{ matrix.focus }}
+      cluster_install_type: ${{ env.CLUSTER_INSTALL_TYPE }}
+      container_registry: ${{ env.CTR_REGISTRY }}
+      container_tag: ${{ env.CTR_TAG }}
+      images_download_path: ${{ env.IMAGES_DOWNLOAD_PATH }}
+      fsm_human_debug_log: ${{ env.FSM_HUMAN_DEBUG_LOG }}
+      k3d_node_logs: ${{ env.K3D_NODE_LOGS }}
     secrets: inherit
 
   integration-tresor:
@@ -345,12 +372,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: docker-images
-          path: /tmp/fsm-docker-images
-      - name: Load images
-        run: |
-          cd /tmp/fsm-docker-images
-          ls -1 *.tar | xargs --no-run-if-empty -L 1 docker load -i
-          docker image ls -a
+          path: ${{ env.IMAGES_DOWNLOAD_PATH }}
       - name: Run Simulation w/ Tresor, SMI policies, egress disabled and reconciler disabled
         env:
           CERT_MANAGER: "tresor"
@@ -360,29 +382,16 @@ jobs:
           ENABLE_RECONCILER: "false"
           PERMISSIVE_MODE: "false"
           DEPLOY_TRAFFIC_SPLIT: "true"
-          CTR_REGISTRY: "localhost:5000"
-          CTR_TAG: ${{ github.sha }}
           USE_PRIVATE_REGISTRY: "false"
           PUBLISH_IMAGES: "false"
           LOAD_IMAGES_INTO_CLUSTER: "true"
+          K3D_CLUSTER_NAME: "fsm"
         run: |
           touch .env
           make k3d-up
+          ls -1 ${{ env.IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 k3d image import -c ${K3D_CLUSTER_NAME} --verbose
           ./demo/run-fsm-demo.sh
           go run ./ci/cmd/maestro.go
-
-#  ghcr-cleanup:
-#    name: ghcr.io cleanup
-#    runs-on: ubuntu-24.04
-#    needs: [mesh-e2e-test, gateway-e2e-test, ingress-e2e-test, mesh-retry-e2e-test, mesh-statefulset-e2e-test, integration-tresor, imagescan]
-#    steps:
-#      - uses: dataaxiom/ghcr-cleanup-action@v1
-#        with:
-#          token: ${{ secrets.WORKFLOW_PAT }}
-#          owner: ${{ github.repository_owner }}
-#          packages: fsm-*
-#          expand-packages: true
-#          delete-tags: ${{ github.sha }}
 
   images:
     name: Docker Images
