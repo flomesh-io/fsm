@@ -193,7 +193,7 @@ jobs:
           retention-days: 1
           overwrite: true
 
-  imagescan:
+  image-scan:
     name: Scan images for security vulnerabilities
     runs-on: ubuntu-24.04
     needs: fsm-artifacts
