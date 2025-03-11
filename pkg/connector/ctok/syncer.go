@@ -57,6 +57,8 @@ type CtoKSyncer struct {
 
 	microAggregator Aggregator
 
+	fillEndpoints bool
+
 	// ctx is used to cancel the CtoKSyncer.
 	ctx context.Context
 
@@ -250,6 +252,14 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 	}
 	s.lock.Unlock()
 
+	if deriveNamespace, err := s.kubeClient.CoreV1().Namespaces().Get(s.ctx, s.namespace(), metav1.GetOptions{}); err == nil {
+		if IsSyncCloudNamespace(deriveNamespace) {
+			s.fillEndpoints = false
+		} else {
+			s.fillEndpoints = true
+		}
+	}
+
 	svcClient := s.kubeClient.CoreV1().Services(s.namespace())
 	eptClient := s.kubeClient.CoreV1().Endpoints(s.namespace())
 
@@ -339,12 +349,15 @@ func (s *CtoKSyncer) crudList() (createSvcs []*syncCreate, deleteSvcs []connecto
 			continue
 		}
 
+		fillEndpoints := s.fillEndpoints
+
 		var serviceSpec *corev1.ServiceSpec
 		if externalName := s.controller.GetC2KContext().ExternalServices[cloudSvcName]; len(externalName) > 0 {
 			serviceSpec = &corev1.ServiceSpec{
 				Type:         corev1.ServiceTypeExternalName,
 				ExternalName: string(externalName),
 			}
+			fillEndpoints = false
 		} else {
 			serviceSpec = &corev1.ServiceSpec{
 				Type:           corev1.ServiceTypeClusterIP,
@@ -389,7 +402,7 @@ func (s *CtoKSyncer) crudList() (createSvcs []*syncCreate, deleteSvcs []connecto
 					svc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
 					svc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
 				}
-				s.fillService(svcMeta, svc, false)
+				s.fillService(svcMeta, svc, fillEndpoints)
 				preHv := s.controller.GetC2KContext().SyncedKubeServiceHash[k8sSvcName]
 				if preHv == s.serviceHash(svc) {
 					log.Trace().Msgf("service already registered in K8S, not registering, name:%s", k8sSvcName)
@@ -418,7 +431,7 @@ func (s *CtoKSyncer) crudList() (createSvcs []*syncCreate, deleteSvcs []connecto
 				createSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
 				createSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
 			}
-			endpoints := s.fillService(svcMeta, createSvc, true)
+			endpoints := s.fillService(svcMeta, createSvc, fillEndpoints)
 			preHv := s.controller.GetC2KContext().SyncedKubeServiceHash[k8sSvcName]
 			if preHv == s.serviceHash(createSvc) {
 				log.Debug().Msgf("service already registered in K8S, not registering, name:%s", k8sSvcName)
