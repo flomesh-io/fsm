@@ -377,7 +377,7 @@ jobs:
           LOAD_IMAGES_INTO_CLUSTER: "true"
           K3D_CLUSTER_NAME: "fsm"
           BUILD_FSM_CLI: "false"
-          CI_INTEGRATION_TEST: "true"
+          CREATE_LOCAL_REGISTRY: "false"
           IMAGE_PULL_POLICY: "IfNotPresent"
         run: |
           touch .env
