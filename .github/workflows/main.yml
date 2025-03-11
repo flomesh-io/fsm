@@ -325,7 +325,7 @@ jobs:
 
   integration-tresor:
     name: Integration Test with Tresor, SMI traffic policies, and egress disabled
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     needs: fsm-artifacts
     steps:
       - name: Free Disk Space (Ubuntu)
