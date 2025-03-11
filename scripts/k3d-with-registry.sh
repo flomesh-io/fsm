@@ -58,94 +58,107 @@ if [ "${CREATE_LOCAL_REGISTRY}" = "true" ]; then
   fi
 fi
 
-reg_config=""
+k3d_opts=""
 
+SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
 if [ "${CREATE_LOCAL_REGISTRY}" = "true" ]; then
-reg_config="
-registries:
-  use:
-    - ${final_reg_name}:${reg_port}
-  config: |
-    mirrors:
-      'localhost:5000':
-        endpoint:
-          - http://${final_reg_name}:${reg_port}
-"
+  k3d_opts+=" --registry-use $final_reg_name:$reg_port --registry-config $SHELL_FOLDER/k3d-registry.yaml"
 fi
 
 # create cluster
-k3d cluster create --verbose --config - <<EOF
-apiVersion: k3d.io/v1alpha5
-kind: Simple
-metadata:
-  name: ${K3D_CLUSTER_NAME}
-servers: ${NUMBER_OF_K3D_SERVERS}
-agents: ${NUMBER_OF_K3D_AGENTS}
-image: ${K3D_IMAGE}
-network: ${k3d_network}
-${reg_config}
-ports:
-  - port: 80:80
-    nodeFilters:
-      - loadbalancer
-  - port: 8090:8090
-    nodeFilters:
-      - loadbalancer
-  - port: 9090:9090
-    nodeFilters:
-      - loadbalancer
-  - port: 7443:7443
-    nodeFilters:
-      - loadbalancer
-  - port: 8443:8443
-    nodeFilters:
-      - loadbalancer
-  - port: 9443:9443
-    nodeFilters:
-      - loadbalancer
-  - port: 3000:3000
-    nodeFilters:
-      - loadbalancer
-  - port: 4000:4000/udp
-    nodeFilters:
-      - loadbalancer
-  - port: 3001:3001
-    nodeFilters:
-      - loadbalancer
-  - port: 4001:4001/udp
-    nodeFilters:
-      - loadbalancer
-  - port: 5053:5053/udp
-    nodeFilters:
-      - loadbalancer
-options:
-  k3d:
-    wait: true
-    timeout: "300s"
-    disableLoadbalancer: false
-    disableImageVolume: false
-    disableRollback: false
-    loadbalancer:
-      configOverrides:
-        - settings.workerConnections=2048
-  k3s:
-    extraArgs:
-      - arg: --disable=traefik
-        nodeFilters:
-          - server:*
-      - arg: --kubelet-arg=eviction-hard=imagefs.available<1%,nodefs.available<1%
-        nodeFilters:
-          - server:*
-          - agent:*
-      - arg: --kubelet-arg=eviction-minimum-reclaim=imagefs.available=1%,nodefs.available=1%
-        nodeFilters:
-          - server:*
-          - agent:*
-    nodeLabels:
-      - label: ingress-ready=true
-        nodeFilters:
-          - agent:*
-  kubeconfig:
-    updateDefaultKubeconfig: true
-    switchCurrentContext: true
-EOF
+# shellcheck disable=SC2086
+k3d cluster create "$K3D_CLUSTER_NAME" \
+	--image "$K3D_IMAGE" \
+	--servers "${NUMBER_OF_K3D_SERVERS}" \
+	--agents "${NUMBER_OF_K3D_AGENTS}" \
+	--port 8090:80@loadbalancer \
+	--port 9090:9090@loadbalancer \
+	--port 7443:443@loadbalancer \
+	--port 8443:8443@loadbalancer \
+	--port 9443:9443@loadbalancer \
+	--port 3000:3000/tcp@loadbalancer \
+	--port 4000:4000/udp@loadbalancer \
+	--port 3001:3001/tcp@loadbalancer \
+  --port 4001:4001/udp@loadbalancer \
+  --port 5053:5053/udp@loadbalancer \
+	--k3s-arg '--disable=traefik@server:*' \
+	--network "$k3d_network" \
+	--wait \
+	--timeout 60s \
+	$k3d_opts
+
+#k3d cluster create --verbose --config - <<EOF
+#apiVersion: k3d.io/v1alpha5
+#kind: Simple
+#metadata:
+#  name: ${K3D_CLUSTER_NAME}
+#servers: ${NUMBER_OF_K3D_SERVERS}
+#agents: ${NUMBER_OF_K3D_AGENTS}
+#image: ${K3D_IMAGE}
+#network: ${k3d_network}
+#${reg_config}
+#ports:
+#  - port: 80:80
+#    nodeFilters:
+#      - loadbalancer
+#  - port: 8090:8090
+#    nodeFilters:
+#      - loadbalancer
+#  - port: 9090:9090
+#    nodeFilters:
+#      - loadbalancer
+#  - port: 7443:7443
+#    nodeFilters:
+#      - loadbalancer
+#  - port: 8443:8443
+#    nodeFilters:
+#      - loadbalancer
+#  - port: 9443:9443
+#    nodeFilters:
+#      - loadbalancer
+#  - port: 3000:3000
+#    nodeFilters:
+#      - loadbalancer
+#  - port: 4000:4000/udp
+#    nodeFilters:
+#      - loadbalancer
+#  - port: 3001:3001
+#    nodeFilters:
+#      - loadbalancer
+#  - port: 4001:4001/udp
+#    nodeFilters:
+#      - loadbalancer
+#  - port: 5053:5053/udp
+#    nodeFilters:
+#      - loadbalancer
+#options:
+#  k3d:
+#    wait: true
+#    timeout: "300s"
+#    disableLoadbalancer: false
+#    disableImageVolume: false
+#    disableRollback: false
+#    loadbalancer:
+#      configOverrides:
+#        - settings.workerConnections=2048
+#  k3s:
+#    extraArgs:
+#      - arg: --disable=traefik
+#        nodeFilters:
+#          - server:*
+#      - arg: --kubelet-arg=eviction-hard=imagefs.available<1%,nodefs.available<1%
+#        nodeFilters:
+#          - server:*
+#          - agent:*
+#      - arg: --kubelet-arg=eviction-minimum-reclaim=imagefs.available=1%,nodefs.available=1%
+#        nodeFilters:
+#          - server:*
+#          - agent:*
+#    nodeLabels:
+#      - label: ingress-ready=true
+#        nodeFilters:
+#          - agent:*
+#  kubeconfig:
+#    updateDefaultKubeconfig: true
+#    switchCurrentContext: true
+#EOF
