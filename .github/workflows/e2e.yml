@@ -31,7 +31,9 @@ jobs:
       FSM_HUMAN_DEBUG_LOG: ${{ vars.FSM_HUMAN_DEBUG_LOG || 'false' }}
       CLUSTER_INSTALL_TYPE: ${{ vars.CLUSTER_INSTALL_TYPE || 'K3dCluster' }}
       K3D_NODE_LOGS: ${{ vars.K3D_NODE_LOGS || 'false' }}
-      IMAGES_DOWNLOAD_PATH: /tmp/fsm-docker-images
+      DOCKER_IMAGES_DOWNLOAD_PATH: /tmp/fsm-docker-images
+      DOCKER_IMAGE_ARTIFACTS_NAME: docker-images
+      FSM_CLI_ARTIFACTS_NAME: fsm-cli
       CTR_REGISTRY: "localhost:5000"
       CTR_TAG: ${{ github.sha }}
     steps:
@@ -53,8 +55,8 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-      - name: Build test dependencies
-        run: make build-fsm
+#      - name: Build test dependencies
+#        run: make build-fsm
       - name: Add hosts to /etc/hosts
         run: |
           sudo echo "127.0.0.1 httptest.localhost" | sudo tee -a /etc/hosts
@@ -67,12 +69,17 @@ jobs:
       - name: Download docker image artifacts
         uses: actions/download-artifact@v4
         with:
-          name: docker-images
-          path: ${{ env.IMAGES_DOWNLOAD_PATH }}
+          name: ${{ env.DOCKER_IMAGE_ARTIFACTS_NAME }}
+          path: ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}
       - name: Load images
         run: |
-          ls -1 ${{ env.IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
+          ls -1 ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
           docker image ls -a
+      - name: Download fsm CLI
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.FSM_CLI_ARTIFACTS_NAME }}
+          path: ./bin
       - name: Run tests
         id: test
         env:

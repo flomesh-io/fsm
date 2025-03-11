@@ -31,9 +31,11 @@ env:
   FSM_HUMAN_DEBUG_LOG: ${{ vars.FSM_HUMAN_DEBUG_LOG || 'false' }}
   CLUSTER_INSTALL_TYPE: ${{ vars.CLUSTER_INSTALL_TYPE || 'K3dCluster' }}
   K3D_NODE_LOGS: ${{ vars.K3D_NODE_LOGS || 'false' }}
-  IMAGES_DOWNLOAD_PATH: /tmp/fsm-docker-images
+  DOCKER_IMAGES_DOWNLOAD_PATH: /tmp/fsm-docker-images
   CTR_REGISTRY: "localhost:5000"
   CTR_TAG: ${{ github.sha }}
+  DOCKER_IMAGE_ARTIFACTS_NAME: docker-images
+  FSM_CLI_ARTIFACTS_NAME: fsm-cli
 
 jobs:
   shellcheck:
@@ -177,10 +179,20 @@ jobs:
       - name: Upload docker images
         uses: actions/upload-artifact@v4
         with:
-          name: docker-images
+          name: ${{ env.DOCKER_IMAGE_ARTIFACTS_NAME }}
           path: ${{ env.DOCKER_TAR_PATH }}
           retention-days: 1
           overwrite: true
+      - name: Build fsm CLI
+        run: make build-fsm
+      - name: Upload fsm CLI
+        uses: actions/upload-artifact@v4
+        with:
+          name: fsm-cli
+          path: ./bin/fsm
+          retention-days: 1
+          overwrite: true
+
 
   imagescan:
     name: Scan images for security vulnerabilities
@@ -192,11 +204,11 @@ jobs:
       - name: Download docker image artifacts
         uses: actions/download-artifact@v4
         with:
-          name: docker-images
-          path: ${{ env.IMAGES_DOWNLOAD_PATH }}
+          name: ${{ env.DOCKER_IMAGE_ARTIFACTS_NAME }}
+          path: ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}
       - name: Load images
         run: |
-          ls -1 ${{ env.IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
+          ls -1 ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
           docker image ls -a
       - name: Setup Trivy
         run: make trivy-ci-setup
@@ -341,8 +353,13 @@ jobs:
       - name: Download docker image artifacts
         uses: actions/download-artifact@v4
         with:
-          name: docker-images
-          path: ${{ env.IMAGES_DOWNLOAD_PATH }}
+          name: ${{ env.DOCKER_IMAGE_ARTIFACTS_NAME }}
+          path: ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}
+      - name: Download fsm CLI
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.FSM_CLI_ARTIFACTS_NAME }}
+          path: ./bin
       - name: Run Simulation w/ Tresor, SMI policies, egress disabled and reconciler disabled
         env:
           CERT_MANAGER: "tresor"
@@ -356,10 +373,12 @@ jobs:
           PUBLISH_IMAGES: "false"
           LOAD_IMAGES_INTO_CLUSTER: "true"
           K3D_CLUSTER_NAME: "fsm"
+          BUILD_FSM_CLI: "false"
+          CI_INTEGRATION_TEST: "true"
         run: |
           touch .env
           make k3d-up
-          ls -1 ${{ env.IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 k3d image import -c ${K3D_CLUSTER_NAME} --verbose
+          ls -1 ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 k3d image import -c ${K3D_CLUSTER_NAME} --verbose
           ./demo/run-fsm-demo.sh
           go run ./ci/cmd/maestro.go
 

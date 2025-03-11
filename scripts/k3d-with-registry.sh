@@ -12,6 +12,7 @@ K3D_GATEWAY_API_ENABLE="${K3D_GATEWAY_API_ENABLE:-false}"
 K3D_FLB_ENABLE="${K3D_FLB_ENABLE:-false}"
 K3D_SERVICELB_ENABLE="${K3D_SERVICELB_ENABLE:-false}"
 K3D_IMAGE="${K3D_IMAGE:-rancher/k3s:v1.25.16-k3s4}"
+CI_INTEGRATION_TEST="${CI_INTEGRATION_TEST:-false}"
 
 # shellcheck disable=SC2086
 jq_cluster_exists=".[] | select(.name == \"${K3D_CLUSTER_NAME}\")"
@@ -53,6 +54,21 @@ else
   fi
 fi
 
+reg_config="
+registries:
+  use:
+    - ${final_reg_name}:${reg_port}
+  config: |
+    mirrors:
+      'localhost:5000':
+        endpoint:
+          - http://${final_reg_name}:${reg_port}
+"
+
+if [ "${CI_INTEGRATION_TEST}" = "true" ]; then
+reg_config=""
+fi
+
 # create cluster
 k3d cluster create --verbose --config - <<EOF
 apiVersion: k3d.io/v1alpha5
@@ -63,14 +79,7 @@ servers: 1
 agents: 0
 image: ${K3D_IMAGE}
 network: ${k3d_network}
-registries:
-  use:
-    - ${final_reg_name}:${reg_port}
-  config: |
-    mirrors:
-      'localhost:5000':
-        endpoint:
-          - http://${final_reg_name}:${reg_port}
+${reg_config}
 ports:
   - port: 80:80
     nodeFilters:
