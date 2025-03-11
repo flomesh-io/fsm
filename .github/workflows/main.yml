@@ -378,6 +378,7 @@ jobs:
           K3D_CLUSTER_NAME: "fsm"
           BUILD_FSM_CLI: "false"
           CI_INTEGRATION_TEST: "true"
+          IMAGE_PULL_POLICY: "IfNotPresent"
         run: |
           touch .env
           make k3d-up
