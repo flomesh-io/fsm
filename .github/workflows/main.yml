@@ -354,6 +354,10 @@ jobs:
         with:
           name: ${{ env.DOCKER_IMAGE_ARTIFACTS_NAME }}
           path: ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}
+      - name: Load images
+        run: |
+          ls -1 ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
+          docker image ls -a
       - name: Download fsm CLI
         uses: actions/download-artifact@v4
         with:
@@ -381,7 +385,7 @@ jobs:
         run: |
           touch .env
           make k3d-up
-          ls -1 ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty printf -- '%s ' | xargs --no-run-if-empty k3d image import -c ${K3D_CLUSTER_NAME} --verbose
+          docker image list --format "{{.Repository}}:{{.Tag}}" | grep "^localhost" | xargs --no-run-if-empty printf -- '%s '| xargs --no-run-if-empty k3d image import -c ${K3D_CLUSTER_NAME} --verbose
           ./demo/run-fsm-demo.sh
           go run ./ci/cmd/maestro.go
 
