@@ -380,14 +380,14 @@ jobs:
           PUBLISH_IMAGES: "false"
           K3D_CLUSTER_NAME: "fsm"
           BUILD_FSM_CLI: "false"
-          CREATE_LOCAL_REGISTRY: "false"
+          CREATE_LOCAL_REGISTRY: "true"
           IMAGE_PULL_POLICY: "IfNotPresent"
           NUMBER_OF_K3D_SERVERS: "1"
-          NUMBER_OF_K3D_AGENTS: "1"
+          NUMBER_OF_K3D_AGENTS: "0"
         run: |
           touch .env
           make k3d-up
-          docker image list --format "{{.Repository}}:{{.Tag}}" | grep "^localhost" | xargs --no-run-if-empty printf -- '%s '| xargs --no-run-if-empty k3d image import -c ${K3D_CLUSTER_NAME} --verbose
+          docker image list --format "{{.Repository}}:{{.Tag}}" | grep "^localhost" | xargs --no-run-if-empty -L 1 docker push
           ./demo/run-fsm-demo.sh
           go run ./ci/cmd/maestro.go
 
