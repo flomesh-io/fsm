@@ -24,7 +24,7 @@ if [ "${num_of_cluster_exists}" = "1" ] ; then
   exit 0
 fi
 
-k3d_network='fsm'
+#k3d_network='fsm'
 k3d_prefix='k3d'
 reg_name='registry.localhost'
 final_reg_name="${k3d_prefix}-${reg_name}"
@@ -82,7 +82,6 @@ metadata:
 servers: ${NUMBER_OF_K3D_SERVERS}
 agents: ${NUMBER_OF_K3D_AGENTS}
 image: ${K3D_IMAGE}
-network: ${k3d_network}
 ${reg_config}
 ports:
   - port: 80:80
