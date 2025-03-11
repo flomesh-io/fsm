@@ -156,8 +156,8 @@ jobs:
         with:
           flags: unittests
 
-  docker-tar:
-    name: Docker Images(local)
+  fsm-artifacts:
+    name: FSM artifacts(images, cli...)
     runs-on: ubuntu-24.04
     needs: build
     env:
@@ -193,11 +193,10 @@ jobs:
           retention-days: 1
           overwrite: true
 
-
   imagescan:
     name: Scan images for security vulnerabilities
     runs-on: ubuntu-24.04
-    needs: docker-tar
+    needs: fsm-artifacts
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -217,7 +216,7 @@ jobs:
 
   mesh-e2e-test:
     name: Go mesh test
-    needs: docker-tar
+    needs: fsm-artifacts
     strategy:
       matrix:
         k8s_version: [""]
@@ -243,7 +242,7 @@ jobs:
 
   gateway-e2e-test:
     name: Go gateway test
-    needs: docker-tar
+    needs: fsm-artifacts
     strategy:
       matrix:
         focus: [""]
@@ -278,7 +277,7 @@ jobs:
 
   ingress-e2e-test:
     name: Go ingress test
-    needs: docker-tar
+    needs: fsm-artifacts
     strategy:
       matrix:
         k8s_version: [ "" ]
@@ -294,7 +293,7 @@ jobs:
 
   mesh-retry-e2e-test:
     name: Go retry test
-    needs: docker-tar
+    needs: fsm-artifacts
     strategy:
       matrix:
         k8s_version: [""]
@@ -310,7 +309,7 @@ jobs:
 
   mesh-statefulset-e2e-test:
     name: Go statefulset test
-    needs: docker-tar
+    needs: fsm-artifacts
     strategy:
       matrix:
         k8s_version: [""]
@@ -327,7 +326,7 @@ jobs:
   integration-tresor:
     name: Integration Test with Tresor, SMI traffic policies, and egress disabled
     runs-on: ubuntu-24.04
-    needs: docker-tar
+    needs: fsm-artifacts
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
