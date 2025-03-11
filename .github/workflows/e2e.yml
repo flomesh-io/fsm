@@ -3,12 +3,6 @@ name: Run e2e tests
 on:
   workflow_call:
     inputs:
-      container_registry:
-        required: true
-        type: string
-      container_tag:
-        required: true
-        type: string
       os:
         required: true
         type: string
@@ -21,21 +15,6 @@ on:
       focus:
         required: true
         type: string
-      images_download_path:
-        required: true
-        type: string
-      fsm_human_debug_log:
-        required: false
-        type: boolean
-        default: true
-      k3d_node_logs:
-        required: false
-        type: boolean
-        default: false
-      cluster_install_type:
-        required: false
-        type: string
-        default: "K3dCluster"
 
 env:
   CI_WAIT_FOR_OK_SECONDS: 60
@@ -49,11 +28,12 @@ jobs:
     name: e2e
     runs-on: ${{ inputs.os }}
     env:
-      CTR_REGISTRY: ${{ inputs.container_registry }}
-      CTR_TAG: ${{ inputs.container_tag }}
-      FSM_HUMAN_DEBUG_LOG: ${{ inputs.fsm_human_debug_log }}
-      CLUSTER_INSTALL_TYPE: ${{ inputs.cluster_install_type }}
-      K3D_NODE_LOGS: ${{ inputs.k3d_node_logs }}
+      FSM_HUMAN_DEBUG_LOG: ${{ vars.FSM_HUMAN_DEBUG_LOG || 'false' }}
+      CLUSTER_INSTALL_TYPE: ${{ vars.CLUSTER_INSTALL_TYPE || 'K3dCluster' }}
+      K3D_NODE_LOGS: ${{ vars.K3D_NODE_LOGS || 'false' }}
+      IMAGES_DOWNLOAD_PATH: /tmp/fsm-docker-images
+      CTR_REGISTRY: "localhost:5000"
+      CTR_TAG: ${{ github.sha }}
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -88,10 +68,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: docker-images
-          path: ${{ inputs.images_download_path }}
+          path: ${{ env.IMAGES_DOWNLOAD_PATH }}
       - name: Load images
         run: |
-          ls -1 ${{ inputs.images_download_path }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
+          ls -1 ${{ env.IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
           docker image ls -a
       - name: Run tests
         id: test

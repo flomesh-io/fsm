@@ -227,12 +227,6 @@ jobs:
       k8s_version: ${{ matrix.k8s_version }}
       bucket: ${{ matrix.bucket }}
       focus: ${{ matrix.focus }}
-      cluster_install_type: ${{ env.CLUSTER_INSTALL_TYPE }}
-      container_registry: ${{ env.CTR_REGISTRY }}
-      container_tag: ${{ env.CTR_TAG }}
-      images_download_path: ${{ env.IMAGES_DOWNLOAD_PATH }}
-      fsm_human_debug_log: ${{ env.FSM_HUMAN_DEBUG_LOG }}
-      k3d_node_logs: ${{ env.K3D_NODE_LOGS }}
     secrets: inherit
 
   gateway-e2e-test:
@@ -268,12 +262,6 @@ jobs:
       k8s_version: ${{ matrix.k8s.version }}
       bucket: ${{ matrix.bucket }}
       focus: ${{ matrix.focus }}
-      cluster_install_type: ${{ env.CLUSTER_INSTALL_TYPE }}
-      container_registry: ${{ env.CTR_REGISTRY }}
-      container_tag: ${{ env.CTR_TAG }}
-      images_download_path: ${{ env.IMAGES_DOWNLOAD_PATH }}
-      fsm_human_debug_log: ${{ env.FSM_HUMAN_DEBUG_LOG }}
-      k3d_node_logs: ${{ env.K3D_NODE_LOGS }}
     secrets: inherit
 
   ingress-e2e-test:
@@ -290,12 +278,6 @@ jobs:
       k8s_version: ${{ matrix.k8s_version }}
       bucket: ${{ matrix.bucket }}
       focus: ${{ matrix.focus }}
-      cluster_install_type: ${{ env.CLUSTER_INSTALL_TYPE }}
-      container_registry: ${{ env.CTR_REGISTRY }}
-      container_tag: ${{ env.CTR_TAG }}
-      images_download_path: ${{ env.IMAGES_DOWNLOAD_PATH }}
-      fsm_human_debug_log: ${{ env.FSM_HUMAN_DEBUG_LOG }}
-      k3d_node_logs: ${{ env.K3D_NODE_LOGS }}
     secrets: inherit
 
   mesh-retry-e2e-test:
@@ -312,12 +294,6 @@ jobs:
       k8s_version: ${{ matrix.k8s_version }}
       bucket: ${{ matrix.bucket }}
       focus: ${{ matrix.focus }}
-      cluster_install_type: ${{ env.CLUSTER_INSTALL_TYPE }}
-      container_registry: ${{ env.CTR_REGISTRY }}
-      container_tag: ${{ env.CTR_TAG }}
-      images_download_path: ${{ env.IMAGES_DOWNLOAD_PATH }}
-      fsm_human_debug_log: ${{ env.FSM_HUMAN_DEBUG_LOG }}
-      k3d_node_logs: ${{ env.K3D_NODE_LOGS }}
     secrets: inherit
 
   mesh-statefulset-e2e-test:
@@ -334,12 +310,6 @@ jobs:
       k8s_version: ${{ matrix.k8s_version }}
       bucket: ${{ matrix.bucket }}
       focus: ${{ matrix.focus }}
-      cluster_install_type: ${{ env.CLUSTER_INSTALL_TYPE }}
-      container_registry: ${{ env.CTR_REGISTRY }}
-      container_tag: ${{ env.CTR_TAG }}
-      images_download_path: ${{ env.IMAGES_DOWNLOAD_PATH }}
-      fsm_human_debug_log: ${{ env.FSM_HUMAN_DEBUG_LOG }}
-      k3d_node_logs: ${{ env.K3D_NODE_LOGS }}
     secrets: inherit
 
   integration-tresor:
