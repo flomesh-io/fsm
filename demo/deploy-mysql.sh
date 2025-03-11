@@ -49,7 +49,7 @@ spec:
       nodeSelector:
         kubernetes.io/os: linux
       containers:
-      - image: devilbox/mysql:mysql-8.0
+      - image: mysql:8.0
         name: mysql
         env:
         - name: MYSQL_ROOT_PASSWORD
