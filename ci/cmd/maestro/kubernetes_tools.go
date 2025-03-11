@@ -254,6 +254,7 @@ func WaitForPodToBeReady(kubeClient kubernetes.Interface, totalWait time.Duratio
 		fmt.Printf("Pod conditions: %#v\n", pod.Status.Conditions)
 		fmt.Printf("Pod status message: %#v\n", pod.Status.Message)
 		fmt.Printf("Pod status reason: %#v\n", pod.Status.Reason)
+		fmt.Printf("Pod container status: %#v\n", pod.Status.ContainerStatuses)
 		fmt.Println("<<<=================================")
 
 		for _, condition := range pod.Status.Conditions {
