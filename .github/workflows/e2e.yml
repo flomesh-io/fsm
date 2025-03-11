@@ -80,9 +80,8 @@ jobs:
         with:
           name: ${{ env.FSM_CLI_ARTIFACTS_NAME }}
           path: ./bin
-      - name: Check fsm CLI
+      - name: Grant execute permission to fsm CLI
         run: |
-          ls -l ./bin/fsm
           chmod a+x ./bin/fsm
           ls -l ./bin/fsm
       - name: Run tests
