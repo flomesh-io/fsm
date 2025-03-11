@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
@@ -98,7 +98,7 @@ func (s *Server) broadcastListener() {
 	}
 }
 
-func (s *Server) fireNewConnectProxy(pod *v1.Pod, proxyNewWorkQueues *workerpool.WorkerPool) {
+func (s *Server) fireNewConnectProxy(pod *corev1.Pod, proxyNewWorkQueues *workerpool.WorkerPool) {
 	if proxy, err := s.fireExistProxy(pod); err == nil {
 		if proxy.Metadata == nil || proxy.Addr == nil {
 			_ = s.recordPodMetadata(proxy, pod)
@@ -117,7 +117,7 @@ func (s *Server) fireNewConnectProxy(pod *v1.Pod, proxyNewWorkQueues *workerpool
 	}
 }
 
-func (s *Server) fireTermConnectProxy(pod *v1.Pod) {
+func (s *Server) fireTermConnectProxy(pod *corev1.Pod) {
 	if uuid, exists := pod.Labels[constants.SidecarUniqueIDLabelName]; exists {
 		s.proxyRegistry.MarkDeletionProxy(uuid)
 	}
@@ -209,7 +209,7 @@ func (s *Server) fireExistProxies() []*pipy.Proxy {
 	return allProxies
 }
 
-func (s *Server) fireExistProxy(pod *v1.Pod) (*pipy.Proxy, error) {
+func (s *Server) fireExistProxy(pod *corev1.Pod) (*pipy.Proxy, error) {
 	return GetProxyFromPod(pod)
 }
 
@@ -242,7 +242,7 @@ func (s *Server) informProxy(proxyPtr **pipy.Proxy, callback func(**pipy.Proxy))
 // however snapshotcache has no need to provide visibility on proxies whatsoever.
 // All verticals use the proxy structure to infer the pod later, so the actual only mandatory
 // data for the verticals to be functional is the common name, which links proxy <-> pod
-func GetProxyFromPod(pod *v1.Pod) (*pipy.Proxy, error) {
+func GetProxyFromPod(pod *corev1.Pod) (*pipy.Proxy, error) {
 	uuidString, uuidFound := pod.Labels[constants.SidecarUniqueIDLabelName]
 	if !uuidFound {
 		return nil, fmt.Errorf("UUID not found for pod %s/%s, not a mesh pod", pod.Namespace, pod.Name)
@@ -286,7 +286,7 @@ func GetProxyFromVm(vm *machinev1alpha1.VirtualMachine) (*pipy.Proxy, error) {
 }
 
 // GetProxyUUIDFromPod infers and creates a Proxy UUID from a Pod.
-func GetProxyUUIDFromPod(pod *v1.Pod) (string, error) {
+func GetProxyUUIDFromPod(pod *corev1.Pod) (string, error) {
 	uuidString, uuidFound := pod.Labels[constants.SidecarUniqueIDLabelName]
 	if !uuidFound {
 		return "", fmt.Errorf("UUID not found for pod %s/%s, not a mesh pod", pod.Namespace, pod.Name)

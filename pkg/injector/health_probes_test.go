@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	tassert "github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -12,20 +12,20 @@ func TestGetPort(t *testing.T) {
 	tests := []struct {
 		name           string
 		port           intstr.IntOrString
-		containerPorts *[]v1.ContainerPort
+		containerPorts *[]corev1.ContainerPort
 		expectedPort   int32
 		expectedErr    error
 	}{
 		{
 			name:           "no container ports",
 			port:           intstr.FromString("-some-port-"),
-			containerPorts: &[]v1.ContainerPort{},
+			containerPorts: &[]corev1.ContainerPort{},
 			expectedErr:    errNoMatchingPort,
 		},
 		{
 			name: "named port",
 			port: intstr.FromString("-some-port-"),
-			containerPorts: &[]v1.ContainerPort{
+			containerPorts: &[]corev1.ContainerPort{
 				{Name: "-some-port-", ContainerPort: 2344},
 				{Name: "-some-other-port-", ContainerPort: 8877},
 			},
@@ -34,7 +34,7 @@ func TestGetPort(t *testing.T) {
 		{
 			name: "numbered port",
 			port: intstr.FromInt(9955),
-			containerPorts: &[]v1.ContainerPort{
+			containerPorts: &[]corev1.ContainerPort{
 				{Name: "-some-port-", ContainerPort: 2344},
 				{Name: "-some-other-port-", ContainerPort: 8877},
 			},
@@ -43,7 +43,7 @@ func TestGetPort(t *testing.T) {
 		{
 			name: "no matching named ports",
 			port: intstr.FromString("-another-port-"),
-			containerPorts: &[]v1.ContainerPort{
+			containerPorts: &[]corev1.ContainerPort{
 				{Name: "-some-port-", ContainerPort: 2344},
 				{Name: "-some-other-port-", ContainerPort: 8877},
 			},

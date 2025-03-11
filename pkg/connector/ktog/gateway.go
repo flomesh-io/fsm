@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/mitchellh/hashstructure/v2"
-	apiv1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
@@ -89,7 +89,7 @@ func (gw *GatewaySource) Upsert(key string, raw interface{}) error {
 		return nil
 	}
 	for _, serviceEntry := range serviceList {
-		service := serviceEntry.(*apiv1.Service)
+		service := serviceEntry.(*corev1.Service)
 		if !svcResource.shouldSync(service) {
 			continue
 		}
@@ -104,7 +104,7 @@ func (gw *GatewaySource) Delete(_ string, _ interface{}) error {
 	return nil
 }
 
-func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
+func (gw *GatewaySource) updateGatewayRoute(k8sSvc *corev1.Service) {
 	_ = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		svcResource := gw.serviceResource
 		gatewayList := gw.gatewaysInformer.GetIndexer().List()
@@ -220,7 +220,7 @@ func (gw *GatewaySource) findParentRefs(gatewayList []interface{}, internalSourc
 	return parentRefs
 }
 
-func (gw *GatewaySource) checkServiceType(k8sSvc *apiv1.Service) (internalSource, externalSource bool, svcMeta *connector.MicroSvcMeta) {
+func (gw *GatewaySource) checkServiceType(k8sSvc *corev1.Service) (internalSource, externalSource bool, svcMeta *connector.MicroSvcMeta) {
 	externalSource = false
 	internalSource = true
 	if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
@@ -248,7 +248,7 @@ func (gw *GatewaySource) checkServiceType(k8sSvc *apiv1.Service) (internalSource
 	return
 }
 
-func (gw *GatewaySource) updateGatewayHTTPRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort,
+func (gw *GatewaySource) updateGatewayHTTPRoute(k8sSvc *corev1.Service, portSpec corev1.ServicePort,
 	parentRefs []gwv1.ParentReference) {
 	svcResource := gw.serviceResource
 	httpRouteClient := svcResource.gatewayClient.GatewayV1().HTTPRoutes(k8sSvc.Namespace)
@@ -313,7 +313,7 @@ func (gw *GatewaySource) updateGatewayHTTPRoute(k8sSvc *apiv1.Service, portSpec 
 	}
 }
 
-func (gw *GatewaySource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort,
+func (gw *GatewaySource) updateGatewayGRPCRoute(k8sSvc *corev1.Service, portSpec corev1.ServicePort,
 	parentRefs []gwv1.ParentReference, grpcRouteMatches []gwv1.GRPCRouteMatch) {
 	svcResource := gw.serviceResource
 	grpcRouteClient := svcResource.gatewayClient.GatewayV1().GRPCRoutes(k8sSvc.Namespace)
@@ -374,7 +374,7 @@ func (gw *GatewaySource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpec 
 	}
 }
 
-func (gw *GatewaySource) updateGatewayTCPRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort,
+func (gw *GatewaySource) updateGatewayTCPRoute(k8sSvc *corev1.Service, portSpec corev1.ServicePort,
 	parentRefs []gwv1.ParentReference) {
 	svcResource := gw.serviceResource
 	tcpRouteClient := svcResource.gatewayClient.GatewayV1alpha2().TCPRoutes(k8sSvc.Namespace)
@@ -449,7 +449,7 @@ func (gw *GatewaySource) deleteGatewayRoute(name, namespace string) {
 	}
 }
 
-func (gw *GatewaySource) getGatewayRouteHostnamesForService(k8sSvc *apiv1.Service) []gwv1.Hostname {
+func (gw *GatewaySource) getGatewayRouteHostnamesForService(k8sSvc *corev1.Service) []gwv1.Hostname {
 	svcResource := gw.serviceResource
 	var hostnames []gwv1.Hostname
 	cloudService := false

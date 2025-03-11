@@ -11,11 +11,6 @@ import (
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
-	"github.com/flomesh-io/fsm/pkg/logger"
-)
-
-var (
-	log = logger.New("connector-c2k")
 )
 
 // CtoKSource is the source for the sync that watches cloud services and

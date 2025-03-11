@@ -6,7 +6,7 @@ import (
 	"time"
 
 	tassert "github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -334,24 +334,24 @@ func TestCreateUpdateConfig(t *testing.T) {
 			},
 			updatedMeshConfigData: &configv1alpha3.MeshConfigSpec{
 				Sidecar: configv1alpha3.SidecarSpec{
-					Resources: v1.ResourceRequirements{
-						Requests: v1.ResourceList{
-							v1.ResourceCPU:    resource.MustParse("1"),
-							v1.ResourceMemory: resource.MustParse("256M"),
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("1"),
+							corev1.ResourceMemory: resource.MustParse("256M"),
 						},
-						Limits: v1.ResourceList{
-							v1.ResourceCPU:    resource.MustParse("2"),
-							v1.ResourceMemory: resource.MustParse("512M"),
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("2"),
+							corev1.ResourceMemory: resource.MustParse("512M"),
 						},
 					},
 				},
 			},
 			checkUpdate: func(assert *tassert.Assertions, cfg Configurator) {
 				res := cfg.GetProxyResources()
-				assert.Equal(resource.MustParse("1"), res.Requests[v1.ResourceCPU])
-				assert.Equal(resource.MustParse("256M"), res.Requests[v1.ResourceMemory])
-				assert.Equal(resource.MustParse("2"), res.Limits[v1.ResourceCPU])
-				assert.Equal(resource.MustParse("512M"), res.Limits[v1.ResourceMemory])
+				assert.Equal(resource.MustParse("1"), res.Requests[corev1.ResourceCPU])
+				assert.Equal(resource.MustParse("256M"), res.Requests[corev1.ResourceMemory])
+				assert.Equal(resource.MustParse("2"), res.Limits[corev1.ResourceCPU])
+				assert.Equal(resource.MustParse("512M"), res.Limits[corev1.ResourceMemory])
 			},
 		},
 		{

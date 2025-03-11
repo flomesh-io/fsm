@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/mitchellh/hashstructure/v2"
-	apiv1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -168,7 +168,7 @@ func (s *CtoKSyncer) Informer() cache.SharedIndexInformer {
 					return service, err
 				},
 			},
-			&apiv1.Service{},
+			&corev1.Service{},
 			0,
 			cache.Indexers{},
 		)
@@ -179,7 +179,7 @@ func (s *CtoKSyncer) Informer() cache.SharedIndexInformer {
 // Upsert implements the controller.Resource interface.
 func (s *CtoKSyncer) Upsert(key string, raw interface{}) error {
 	// We expect a Service. If it isn't a service then just ignore it.
-	service, ok := raw.(*apiv1.Service)
+	service, ok := raw.(*corev1.Service)
 	if !ok {
 		log.Warn().Msgf("UpsertService got invalid type, raw:%v", raw)
 		return nil
@@ -251,6 +251,7 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 	s.lock.Unlock()
 
 	svcClient := s.kubeClient.CoreV1().Services(s.namespace())
+	eptClient := s.kubeClient.CoreV1().Endpoints(s.namespace())
 
 	for {
 		select {
@@ -300,7 +301,7 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 		if len(creates) > 0 {
 			var wg sync.WaitGroup
 			wg.Add(len(creates))
-			for _, service := range creates {
+			for _, create := range creates {
 				syncJob := &CreateSyncJob{
 					SyncJob: &SyncJob{
 						done: make(chan struct{}),
@@ -309,7 +310,8 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 					wg:        &wg,
 					syncer:    s,
 					svcClient: svcClient,
-					service:   *service,
+					eptClient: eptClient,
+					create:    create,
 				}
 				s.syncWorkQueues.AddJob(syncJob)
 			}
@@ -322,9 +324,9 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 }
 
 // crudList returns the services to create, update, and delete (respectively).
-func (s *CtoKSyncer) crudList() (createSvcs []*apiv1.Service, deleteSvcs []connector.KubeSvcName) {
+func (s *CtoKSyncer) crudList() (createSvcs []*syncCreate, deleteSvcs []connector.KubeSvcName) {
 	extendServices := make(map[connector.KubeSvcName]connector.CloudSvcName, 0)
-	ipFamilyPolicy := apiv1.IPFamilyPolicySingleStack
+	ipFamilyPolicy := corev1.IPFamilyPolicySingleStack
 	// Determine what needs to be created or updated
 	for kubeSvcName, cloudSvcName := range s.controller.GetC2KContext().SourceServices {
 		svcMetaMap := s.microAggregator.Aggregate(s.ctx, kubeSvcName)
@@ -337,17 +339,17 @@ func (s *CtoKSyncer) crudList() (createSvcs []*apiv1.Service, deleteSvcs []conne
 			continue
 		}
 
-		var serviceSpec *apiv1.ServiceSpec
+		var serviceSpec *corev1.ServiceSpec
 		if externalName := s.controller.GetC2KContext().ExternalServices[cloudSvcName]; len(externalName) > 0 {
-			serviceSpec = &apiv1.ServiceSpec{
-				Type:         apiv1.ServiceTypeExternalName,
+			serviceSpec = &corev1.ServiceSpec{
+				Type:         corev1.ServiceTypeExternalName,
 				ExternalName: string(externalName),
 			}
 		} else {
-			serviceSpec = &apiv1.ServiceSpec{
-				Type:           apiv1.ServiceTypeClusterIP,
-				ClusterIP:      apiv1.ClusterIPNone,
-				IPFamilies:     []apiv1.IPFamily{apiv1.IPv4Protocol},
+			serviceSpec = &corev1.ServiceSpec{
+				Type:           corev1.ServiceTypeClusterIP,
+				ClusterIP:      corev1.ClusterIPNone,
+				IPFamilies:     []corev1.IPFamily{corev1.IPv4Protocol},
 				IPFamilyPolicy: &ipFamilyPolicy,
 			}
 		}
@@ -373,8 +375,6 @@ func (s *CtoKSyncer) crudList() (createSvcs []*apiv1.Service, deleteSvcs []conne
 				extendServices[k8sSvcName] = cloudSvcName
 			}
 
-			serviceSpec.Selector = map[string]string{CloudServiceLabel: string(k8sSvcName)}
-
 			// If this is an already registered service, then update it
 			if svc, ok := s.controller.GetC2KContext().SyncedKubeServiceCache[k8sSvcName]; ok {
 				svc.Spec = *serviceSpec
@@ -389,7 +389,7 @@ func (s *CtoKSyncer) crudList() (createSvcs []*apiv1.Service, deleteSvcs []conne
 					svc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
 					svc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
 				}
-				s.fillService(svcMeta, svc)
+				s.fillService(svcMeta, svc, false)
 				preHv := s.controller.GetC2KContext().SyncedKubeServiceHash[k8sSvcName]
 				if preHv == s.serviceHash(svc) {
 					log.Trace().Msgf("service already registered in K8S, not registering, name:%s", k8sSvcName)
@@ -400,7 +400,7 @@ func (s *CtoKSyncer) crudList() (createSvcs []*apiv1.Service, deleteSvcs []conne
 			}
 
 			// Register!
-			createSvc := &apiv1.Service{
+			createSvc := &corev1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   string(k8sSvcName),
 					Labels: map[string]string{constants.CloudSourcedServiceLabel: True},
@@ -418,14 +418,18 @@ func (s *CtoKSyncer) crudList() (createSvcs []*apiv1.Service, deleteSvcs []conne
 				createSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
 				createSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
 			}
-			s.fillService(svcMeta, createSvc)
+			endpoints := s.fillService(svcMeta, createSvc, true)
 			preHv := s.controller.GetC2KContext().SyncedKubeServiceHash[k8sSvcName]
 			if preHv == s.serviceHash(createSvc) {
 				log.Debug().Msgf("service already registered in K8S, not registering, name:%s", k8sSvcName)
 				continue
 			}
 
-			createSvcs = append(createSvcs, createSvc)
+			syncCreate := &syncCreate{
+				service:   createSvc,
+				endpoints: endpoints,
+			}
+			createSvcs = append(createSvcs, syncCreate)
 		}
 	}
 
@@ -445,12 +449,15 @@ func (s *CtoKSyncer) crudList() (createSvcs []*apiv1.Service, deleteSvcs []conne
 	return createSvcs, deleteSvcs
 }
 
-func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *apiv1.Service) {
+func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *corev1.Service, fillEndpoints bool) (endpoints *corev1.Endpoints) {
+	var endpointPorts []corev1.EndpointPort
+	var endpointAddresses []corev1.EndpointAddress
+
 	for targetPort, appProtocol := range svcMeta.TargetPorts {
 		if exists := s.existPort(createSvc, targetPort, appProtocol); !exists {
-			specPort := apiv1.ServicePort{
+			specPort := corev1.ServicePort{
 				Name:       fmt.Sprintf("%s%d", appProtocol, targetPort),
-				Protocol:   apiv1.ProtocolTCP,
+				Protocol:   corev1.ProtocolTCP,
 				Port:       int32(targetPort),
 				TargetPort: intstr.FromInt32(int32(targetPort)),
 			}
@@ -470,9 +477,16 @@ func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *api
 			}
 			createSvc.Spec.Ports = append(createSvc.Spec.Ports, specPort)
 		}
+
+		if fillEndpoints {
+			endpointPorts = append(endpointPorts, corev1.EndpointPort{Port: int32(targetPort)})
+		}
 	}
-	for _, endpointMeta := range svcMeta.Endpoints {
+	for addr, endpointMeta := range svcMeta.Endpoints {
 		endpointMeta.Init(s.controller, s.discClient)
+		if fillEndpoints {
+			endpointAddresses = append(endpointAddresses, corev1.EndpointAddress{IP: string(addr)})
+		}
 	}
 
 	enc, hash := connector.Encode(svcMeta)
@@ -481,9 +495,26 @@ func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *api
 	if svcMeta.GRPCMeta != nil && len(svcMeta.GRPCMeta.Interface) > 0 {
 		createSvc.ObjectMeta.Labels[constants.GRPCServiceInterfaceLabel] = svcMeta.GRPCMeta.Interface
 	}
+
+	if fillEndpoints && len(endpointAddresses) > 0 && len(endpointPorts) > 0 {
+		endpoints = &corev1.Endpoints{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   createSvc.Name,
+				Labels: createSvc.Labels,
+			},
+			Subsets: []corev1.EndpointSubset{
+				{
+					Addresses: endpointAddresses,
+					Ports:     endpointPorts,
+				},
+			},
+		}
+	}
+
+	return endpoints
 }
 
-func (s *CtoKSyncer) existPort(svc *apiv1.Service, port connector.MicroServicePort, appProtocol connector.MicroServiceProtocol) bool {
+func (s *CtoKSyncer) existPort(svc *corev1.Service, port connector.MicroServicePort, appProtocol connector.MicroServiceProtocol) bool {
 	if len(svc.Spec.Ports) > 0 {
 		for _, specPort := range svc.Spec.Ports {
 			if specPort.Port == int32(port) ||
@@ -522,7 +553,7 @@ func (s *CtoKSyncer) trigger() {
 	}
 }
 
-func (s *CtoKSyncer) serviceHash(service *apiv1.Service) uint64 {
+func (s *CtoKSyncer) serviceHash(service *corev1.Service) uint64 {
 	bytes := make([]byte, 0)
 	if len(service.Labels) > 0 {
 		labelBytes, _ := json.Marshal(service.Labels)
