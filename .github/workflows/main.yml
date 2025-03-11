@@ -374,7 +374,6 @@ jobs:
           DEPLOY_TRAFFIC_SPLIT: "true"
           USE_PRIVATE_REGISTRY: "false"
           PUBLISH_IMAGES: "false"
-          LOAD_IMAGES_INTO_CLUSTER: "true"
           K3D_CLUSTER_NAME: "fsm"
           BUILD_FSM_CLI: "false"
           CREATE_LOCAL_REGISTRY: "false"

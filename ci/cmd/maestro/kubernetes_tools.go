@@ -249,6 +249,13 @@ func WaitForPodToBeReady(kubeClient kubernetes.Interface, totalWait time.Duratio
 			os.Exit(1)
 		}
 
+		fmt.Println("=================================>>>")
+		fmt.Printf("Pod phase: %#v\n", pod.Status.Phase)
+		fmt.Printf("Pod conditions: %#v\n", pod.Status.Conditions)
+		fmt.Printf("Pod status message: %#v\n", pod.Status.Message)
+		fmt.Printf("Pod status reason: %#v\n", pod.Status.Reason)
+		fmt.Println("<<<=================================")
+
 		for _, condition := range pod.Status.Conditions {
 			if condition.Type != corev1.PodReady {
 				continue
