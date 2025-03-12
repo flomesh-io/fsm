@@ -94,7 +94,7 @@ func initDb() {
 		db, err = database.GetMySQLConnection()
 
 		if err != nil {
-			log.Info().Msg("Booksdemo database is not ready. Wait for 10s ...")
+			log.Error().Msgf("Booksdemo database is not ready: %v. Wait for 10s ...", err)
 			time.Sleep(10 * time.Second)
 		} else {
 			break
