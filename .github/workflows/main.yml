@@ -384,6 +384,7 @@ jobs:
           IMAGE_PULL_POLICY: "IfNotPresent"
           NUMBER_OF_K3D_SERVERS: "1"
           NUMBER_OF_K3D_AGENTS: "0"
+          K3D_FIX_DNS: 0
         run: |
           touch .env
           make k3d-up
