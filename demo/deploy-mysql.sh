@@ -49,7 +49,7 @@ spec:
       nodeSelector:
         kubernetes.io/os: linux
       containers:
-      - image: mysql:8.0
+      - image: devilbox/mysql:mysql-8.0
         name: mysql
         env:
         - name: MYSQL_ROOT_PASSWORD
@@ -59,9 +59,6 @@ spec:
         ports:
         - containerPort: 3306
           name: mysql
-        args:
-          - --lc_messages=en_US
-          - --lc_messages_dir=/usr/share/mysql-8.0/english
         volumeMounts:
         - mountPath: /mysql-data
           name: data
