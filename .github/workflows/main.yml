@@ -383,13 +383,14 @@ jobs:
           ENABLE_RECONCILER: "false"
           PERMISSIVE_MODE: "false"
           DEPLOY_TRAFFIC_SPLIT: "true"
+          CTR_REGISTRY: ${{ vars.CI_CTR_REGISTRY || 'localhost:5000' }}
           CTR_TAG: ${{ github.sha }}
           USE_PRIVATE_REGISTRY: "false"
           PUBLISH_IMAGES: "false"
           K3D_CLUSTER_NAME: "fsm"
           BUILD_FSM_CLI: "false"
           CREATE_LOCAL_REGISTRY: "true"
-          IMAGE_PULL_POLICY: "IfNotPresent"
+#          IMAGE_PULL_POLICY: "IfNotPresent"
           NUMBER_OF_K3D_SERVERS: "1"
           NUMBER_OF_K3D_AGENTS: "0"
         run: |
