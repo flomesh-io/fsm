@@ -61,7 +61,7 @@ spec:
           name: mysql
         args:
           - --lc_messages=en_US
-          - --lc_messages_dir=/usr/share/mysql-8.0
+          - --lc_messages_dir=/usr/share/mysql-8.0/english
         volumeMounts:
         - mountPath: /mysql-data
           name: data
