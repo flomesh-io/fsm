@@ -85,8 +85,8 @@ require (
 	gomodules.xyz/jsonpatch/v2 v2.4.0
 	google.golang.org/grpc v1.71.0
 	gopkg.in/yaml.v2 v2.4.0
-	gorm.io/driver/mysql v1.5.7
-	gorm.io/gorm v1.25.12
+	gorm.io/driver/mysql v1.1.1
+	gorm.io/gorm v1.21.12
 	helm.sh/helm/v3 v3.16.4
 	k8s.io/api v0.31.6
 	k8s.io/apiextensions-apiserver v0.31.6
