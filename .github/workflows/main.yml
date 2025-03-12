@@ -384,10 +384,9 @@ jobs:
           IMAGE_PULL_POLICY: "IfNotPresent"
           NUMBER_OF_K3D_SERVERS: "1"
           NUMBER_OF_K3D_AGENTS: "0"
-          K3D_FIX_DNS: 0
         run: |
           touch .env
-          make k3d-up
+          make kind-up
           docker image list --format "{{.Repository}}:{{.Tag}}" | grep "^localhost" | xargs --no-run-if-empty -L 1 docker push
           ./demo/run-fsm-demo.sh
           go run ./ci/cmd/maestro.go
