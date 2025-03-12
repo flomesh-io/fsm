@@ -59,6 +59,9 @@ spec:
         ports:
         - containerPort: 3306
           name: mysql
+        args:
+          - --lc_messages=en_US
+          - --lc_messages_dir=/usr/share/mysql-8.0
         volumeMounts:
         - mountPath: /mysql-data
           name: data
