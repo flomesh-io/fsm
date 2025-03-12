@@ -387,12 +387,7 @@ jobs:
           CTR_TAG: ${{ github.sha }}
           USE_PRIVATE_REGISTRY: "false"
           PUBLISH_IMAGES: "false"
-          K3D_CLUSTER_NAME: "fsm"
           BUILD_FSM_CLI: "false"
-          CREATE_LOCAL_REGISTRY: "true"
-#          IMAGE_PULL_POLICY: "IfNotPresent"
-          NUMBER_OF_K3D_SERVERS: "1"
-          NUMBER_OF_K3D_AGENTS: "0"
         run: |
           touch .env
           make k3d-up
