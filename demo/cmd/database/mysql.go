@@ -19,7 +19,7 @@ const (
 
 // GetMySQLConnection returns a MySQL connection using default configuration
 func GetMySQLConnection() (*gorm.DB, error) {
-	connStr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&timeout=20s", dbuser, dbpass, "mysql.bookwarehouse.svc", dbport, dbname)
+	connStr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&timeout=20s", dbuser, dbpass, "mysql", dbport, dbname)
 	db, err := gorm.Open(mysql.Open(connStr), &gorm.Config{})
 
 	return db, err
