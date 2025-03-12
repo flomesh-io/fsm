@@ -31,11 +31,11 @@ env:
   FSM_HUMAN_DEBUG_LOG: ${{ vars.FSM_HUMAN_DEBUG_LOG || 'false' }}
   CLUSTER_INSTALL_TYPE: ${{ vars.CLUSTER_INSTALL_TYPE || 'K3dCluster' }}
   K3D_NODE_LOGS: ${{ vars.K3D_NODE_LOGS || 'false' }}
-  DOCKER_IMAGES_DOWNLOAD_PATH: /tmp/fsm-docker-images
-  CTR_REGISTRY: "localhost:5000"
+  DOCKER_IMAGES_DOWNLOAD_PATH: ${{ vars.DOCKER_IMAGES_DOWNLOAD_PATH || '/tmp/fsm-docker-images' }}
+  CTR_REGISTRY: ${{ vars.CI_CTR_REGISTRY || 'localhost:5000' }}
   CTR_TAG: ${{ github.sha }}
-  DOCKER_IMAGE_ARTIFACTS_NAME: docker-images
-  FSM_CLI_ARTIFACTS_NAME: fsm-cli
+  DOCKER_IMAGE_ARTIFACTS_NAME: ${{ vars.DOCKER_IMAGE_ARTIFACTS_NAME || 'docker-images' }}
+  FSM_CLI_ARTIFACTS_NAME: ${{ vars.FSM_CLI_ARTIFACTS_NAME || 'fsm-cli' }}
 
 jobs:
   shellcheck:
@@ -273,6 +273,8 @@ jobs:
       k8s_version: ${{ matrix.k8s.version }}
       bucket: ${{ matrix.bucket }}
       focus: ${{ matrix.focus }}
+      install_grpcurl: true
+      add_hosts: true
     secrets: inherit
 
   ingress-e2e-test:
@@ -289,6 +291,8 @@ jobs:
       k8s_version: ${{ matrix.k8s_version }}
       bucket: ${{ matrix.bucket }}
       focus: ${{ matrix.focus }}
+      install_grpcurl: true
+      add_hosts: true
     secrets: inherit
 
   mesh-retry-e2e-test:
@@ -328,16 +332,16 @@ jobs:
     runs-on: ubuntu-24.04
     needs: fsm-artifacts
     steps:
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: false
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
+#      - name: Free Disk Space (Ubuntu)
+#        uses: jlumbroso/free-disk-space@main
+#        with:
+#          tool-cache: false
+#          android: true
+#          dotnet: true
+#          haskell: true
+#          large-packages: true
+#          docker-images: false
+#          swap-storage: true
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go

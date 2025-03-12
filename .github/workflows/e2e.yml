@@ -15,31 +15,37 @@ on:
       focus:
         required: true
         type: string
+      install_grpcurl:
+        required: false
+        type: boolean
+        default: false
+      add_hosts:
+        required: false
+        type: boolean
+        default: false
+      free_disk_space:
+        required: false
+        type: boolean
+        default: false
 
 env:
-  CI_WAIT_FOR_OK_SECONDS: 60
-  CI_MAX_ITERATIONS_THRESHOLD: 60
-  CI_CLIENT_CONCURRENT_CONNECTIONS: 1
-  CI_MAX_WAIT_FOR_POD_TIME_SECONDS: 60
-  CI_MIN_SUCCESS_THRESHOLD: 1
+  FSM_HUMAN_DEBUG_LOG: ${{ vars.FSM_HUMAN_DEBUG_LOG || 'false' }}
+  CLUSTER_INSTALL_TYPE: ${{ vars.CLUSTER_INSTALL_TYPE || 'K3dCluster' }}
+  K3D_NODE_LOGS: ${{ vars.K3D_NODE_LOGS || 'false' }}
+  DOCKER_IMAGES_DOWNLOAD_PATH: ${{ vars.DOCKER_IMAGES_DOWNLOAD_PATH || '/tmp/fsm-docker-images' }}
+  DOCKER_IMAGE_ARTIFACTS_NAME: ${{ vars.DOCKER_IMAGE_ARTIFACTS_NAME || 'docker-images' }}
+  FSM_CLI_ARTIFACTS_NAME: ${{ vars.FSM_CLI_ARTIFACTS_NAME || 'fsm-cli' }}
+  CTR_REGISTRY: ${{ vars.CI_CTR_REGISTRY || 'localhost:5000' }}
+  CTR_TAG: ${{ github.sha }}
 
 jobs:
   e2e-test:
     name: e2e
     runs-on: ${{ inputs.os }}
-    env:
-      FSM_HUMAN_DEBUG_LOG: ${{ vars.FSM_HUMAN_DEBUG_LOG || 'false' }}
-      CLUSTER_INSTALL_TYPE: ${{ vars.CLUSTER_INSTALL_TYPE || 'K3dCluster' }}
-      K3D_NODE_LOGS: ${{ vars.K3D_NODE_LOGS || 'false' }}
-      DOCKER_IMAGES_DOWNLOAD_PATH: /tmp/fsm-docker-images
-      DOCKER_IMAGE_ARTIFACTS_NAME: docker-images
-      FSM_CLI_ARTIFACTS_NAME: fsm-cli
-      CTR_REGISTRY: "localhost:5000"
-      CTR_TAG: ${{ github.sha }}
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
-        if: inputs.os == 'ubuntu-24.04'
+        if: inputs.free_disk_space == true && startsWith(matrix.os, 'ubuntu')
         with:
           tool-cache: false
           android: true
@@ -55,15 +61,15 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-#      - name: Build test dependencies
-#        run: make build-fsm
       - name: Add hosts to /etc/hosts
+        if: inputs.add_hosts == true
         run: |
           sudo echo "127.0.0.1 httptest.localhost" | sudo tee -a /etc/hosts
           sudo echo "127.0.0.1 grpctest.localhost" | sudo tee -a /etc/hosts
           sudo echo "127.0.0.1 tcptest.localhost" | sudo tee -a /etc/hosts
           sudo echo "127.0.0.1 udptest.localhost" | sudo tee -a /etc/hosts
       - name: Install gRPCurl
+        if: inputs.install_grpcurl == true
         run: |
           go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
       - name: Download docker image artifacts
