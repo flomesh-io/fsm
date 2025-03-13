@@ -23,10 +23,10 @@ on:
       - "CODEOWNERS"
       - "OWNERS"
 env:
-  CI_WAIT_FOR_OK_SECONDS: 60
+  CI_WAIT_FOR_OK_SECONDS: 180
   CI_MAX_ITERATIONS_THRESHOLD: 60
   CI_CLIENT_CONCURRENT_CONNECTIONS: 1
-  CI_MAX_WAIT_FOR_POD_TIME_SECONDS: 60
+  CI_MAX_WAIT_FOR_POD_TIME_SECONDS: 180
   CI_MIN_SUCCESS_THRESHOLD: 1
   FSM_HUMAN_DEBUG_LOG: ${{ vars.FSM_HUMAN_DEBUG_LOG || 'false' }}
   CLUSTER_INSTALL_TYPE: ${{ vars.CLUSTER_INSTALL_TYPE || 'K3dCluster' }}
@@ -388,6 +388,7 @@ jobs:
           USE_PRIVATE_REGISTRY: "false"
           PUBLISH_IMAGES: "false"
           BUILD_FSM_CLI: "false"
+          GODEBUG: "netdns=go+1"
         run: |
           touch .env
           make k3d-up
