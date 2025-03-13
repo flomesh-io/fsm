@@ -53,128 +53,152 @@ func (c *ConfigGenerator) resolveFilterConfig(ns string, ref *gwv1.LocalObjectRe
 
 	switch ref.Kind {
 	case constants.CircuitBreakerKind:
+		k := "circuitBreak"
+
 		obj := &extv1alpha1.CircuitBreaker{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
 			log.Error().Msgf("Failed to resolve CircuitBreaker: %s", err)
-			return map[string]interface{}{}
+			return emptyConfig(k)
 		}
 
 		c2 := fgwv2.CircuitBreakerSpec{}
 		if err := gwutils.DeepCopy(&c2, &obj.Spec); err != nil {
 			log.Error().Msgf("Failed to copy CircuitBreaker: %s", err)
-			return map[string]interface{}{}
+			return emptyConfig(k)
 		}
 
-		return toMap("circuitBreak", &c2)
+		return toMap(k, &c2)
 	case constants.FaultInjectionKind:
+		k := "faultInjection"
+
 		obj := &extv1alpha1.FaultInjection{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
 			log.Error().Msgf("Failed to resolve FaultInjection: %s", err)
-			return map[string]interface{}{}
+			return emptyConfig(k)
 		}
 
 		f2 := fgwv2.FaultInjectionSpec{}
 		if err := gwutils.DeepCopy(&f2, &obj.Spec); err != nil {
 			log.Error().Msgf("Failed to copy FaultInjection: %s", err)
-			return map[string]interface{}{}
+			return emptyConfig(k)
 		}
 
-		return toMap("faultInjection", &f2)
+		return toMap(k, &f2)
 	case constants.RateLimitKind:
+		k := "rateLimit"
+
 		obj := &extv1alpha1.RateLimit{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
 			log.Error().Msgf("Failed to resolve RateLimit: %s", err)
-			return map[string]interface{}{}
+			return emptyConfig(k)
 		}
 
 		r2 := fgwv2.RateLimitSpec{}
 		if err := gwutils.DeepCopy(&r2, &obj.Spec); err != nil {
 			log.Error().Msgf("Failed to copy RateLimit: %s", err)
-			return map[string]interface{}{}
+			return emptyConfig(k)
 		}
 
-		return toMap("rateLimit", &r2)
+		return toMap(k, &r2)
 	case constants.GatewayHTTPLogKind:
+		k := "httpLog"
+
 		obj := &extv1alpha1.HTTPLog{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
 			log.Error().Msgf("Failed to resolve HTTPLog: %s", err)
-			return map[string]interface{}{}
+			return emptyConfig(k)
 		}
 
 		l2 := fgwv2.HTTPLogSpec{}
 		if err := gwutils.DeepCopy(&l2, &obj.Spec); err != nil {
 			log.Error().Msgf("Failed to copy HTTPLog: %s", err)
-			return map[string]interface{}{}
+			return emptyConfig(k)
 		}
 
-		return toMap("httpLog", &l2)
+		return toMap(k, &l2)
 	case constants.GatewayMetricsKind:
+		k := "metrics"
+
 		obj := &extv1alpha1.Metrics{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
 			log.Error().Msgf("Failed to resolve Metrics: %s", err)
-			return map[string]interface{}{}
+			return emptyConfig(k)
 		}
 
 		m2 := fgwv2.MetricsSpec{}
 		if err := gwutils.DeepCopy(&m2, &obj.Spec); err != nil {
 			log.Error().Msgf("Failed to copy Metrics: %s", err)
-			return map[string]interface{}{}
+			return emptyConfig(k)
 		}
 
-		return toMap("metrics", &m2)
+		return toMap(k, &m2)
 	case constants.GatewayZipkinKind:
+		k := "zipkin"
+
 		obj := &extv1alpha1.Zipkin{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
 			log.Error().Msgf("Failed to resolve Zipkin: %s", err)
-			return map[string]interface{}{}
+			return emptyConfig(k)
 		}
 
-		return toMap("zipkin", &obj.Spec)
+		return toMap(k, &obj.Spec)
 	case constants.GatewayProxyTagKind:
+		k := "proxyTag"
+
 		obj := &extv1alpha1.ProxyTag{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
 			log.Error().Msgf("Failed to resolve ProxyTag: %s", err)
-			return map[string]interface{}{}
+			return emptyConfig(k)
 		}
 
-		return toMap("proxyTag", &obj.Spec)
+		return toMap(k, &obj.Spec)
 	case constants.GatewayIPRestrictionKind:
+		k := "ipRestriction"
+
 		obj := &extv1alpha1.IPRestriction{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
 			log.Error().Msgf("Failed to resolve IPRestriction: %s", err)
-			return map[string]interface{}{}
+			return emptyConfig(k)
 		}
 
-		return toMap("ipRestriction", &obj.Spec)
+		return toMap(k, &obj.Spec)
 	case constants.GatewayExternalRateLimitKind:
+		k := "externalRateLimit"
+
 		obj := &extv1alpha1.ExternalRateLimit{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
 			log.Error().Msgf("Failed to resolve ExternalRateLimit: %s", err)
-			return map[string]interface{}{}
+			return emptyConfig(k)
 		}
 
-		return toMap("externalRateLimit", &obj.Spec)
+		return toMap(k, &obj.Spec)
 	case constants.GatewayRequestTerminationKind:
+		k := "requestTermination"
+
 		obj := &extv1alpha1.RequestTermination{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
 			log.Error().Msgf("Failed to resolve RequestTermination: %s", err)
-			return map[string]interface{}{}
+			return emptyConfig(k)
 		}
 
-		return toMap("requestTermination", &obj.Spec)
+		return toMap(k, &obj.Spec)
 	case constants.GatewayConcurrencyLimitKind:
+		k := "concurrencyLimit"
+
 		obj := &extv1alpha1.ConcurrencyLimit{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
 			log.Error().Msgf("Failed to resolve ConcurrencyLimit: %s", err)
-			return map[string]interface{}{}
+			return emptyConfig(k)
 		}
 
-		return toMap("concurrencyLimit", &obj.Spec)
+		return toMap(k, &obj.Spec)
 	case constants.GatewayDNSModifierKind:
+		k := "dnsModifier"
+
 		obj := &extv1alpha1.DNSModifier{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
 			log.Error().Msgf("Failed to resolve DNSModifier: %s", err)
-			return map[string]interface{}{}
+			return emptyConfig(k)
 		}
 
 		result := struct {
@@ -190,7 +214,7 @@ func (c *ConfigGenerator) resolveFilterConfig(ns string, ref *gwv1.LocalObjectRe
 			result.BlacklistDomains = append(result.BlacklistDomains, zone.BlacklistDomains...)
 		}
 
-		return toMap("dnsModifier", &result)
+		return toMap(k, &result)
 	case constants.GatewayAPIExtensionFilterConfigKind:
 		obj := &extv1alpha1.FilterConfig{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
@@ -227,21 +251,27 @@ func toMap(key string, spec interface{}) map[string]interface{} {
 	bytes, err := yaml.Marshal(spec)
 	if err != nil {
 		log.Error().Msgf("Failed to marshal spec: %v", err)
-		return map[string]interface{}{}
+		return emptyConfig(key)
 	}
 
 	vals := map[string]interface{}{}
 	err = yaml.Unmarshal(bytes, &vals)
 	if err != nil {
 		log.Error().Msgf("Failed to read values: %v", err)
-		return map[string]interface{}{}
+		return emptyConfig(key)
 	}
 
 	if len(vals) == 0 {
-		return map[string]interface{}{}
+		return emptyConfig(key)
 	}
 
 	return map[string]interface{}{
 		key: vals,
+	}
+}
+
+func emptyConfig(key string) map[string]interface{} {
+	return map[string]interface{}{
+		key: map[string]interface{}{},
 	}
 }
