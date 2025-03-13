@@ -96,3 +96,15 @@ type Limiter struct {
 	Limit uint32 `json:"limit"`
 	Burst uint32 `json:"burst"`
 }
+
+type MetadataStrategy struct {
+	// +kubebuilder:default=false
+	// +optional
+	Enable bool `json:"enable,omitempty"`
+
+	// +optional
+	LabelConversions map[string]string `json:"labelConversions,omitempty"`
+
+	// +optional
+	AnnotationConversions map[string]string `json:"annotationConversions,omitempty"`
+}

@@ -58,6 +58,10 @@ type ConnectController interface {
 	GetFixedHTTPServicePort() *uint32
 	GetFixedGRPCServicePort() *uint32
 
+	EnableMetadataStrategy() bool
+	GetMetadataToLabelConversions() map[string]string
+	GetMetadataToAnnotationConversions() map[string]string
+
 	GetC2KWithGateway() bool
 	GetC2KMultiGateways() bool
 

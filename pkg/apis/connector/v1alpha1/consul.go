@@ -108,6 +108,9 @@ type ConsulSyncToK8SSpec struct {
 	// +kubebuilder:default=true
 	// +optional
 	GenerateInternalServiceHealthCheck bool `json:"generateInternalServiceHealthCheck,omitempty"`
+
+	// +optional
+	MetadataStrategy *MetadataStrategy `json:"tagStrategy,omitempty"`
 }
 
 // ConsulSyncFromK8SSpec is the type used to represent the sync from K8S to Consul specification.

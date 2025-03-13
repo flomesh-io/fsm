@@ -370,6 +370,20 @@ spec:
                     type: string
                   suffixTag:
                     type: string
+                  tagStrategy:
+                    properties:
+                      annotationConversions:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      enable:
+                        default: false
+                        type: boolean
+                      labelConversions:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
                   withGateway:
                     default:
                       enable: false
