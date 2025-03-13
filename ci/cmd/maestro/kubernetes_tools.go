@@ -190,12 +190,14 @@ func SearchLogsForSuccess(kubeClient kubernetes.Interface, namespace string, pod
 
 					if strings.Contains(line, successToken) {
 						log.Info().Msgf("[%s] Found %s", containerName, successToken)
+						log.Debug().Msgf("[%s] Line: %s", containerName, line)
 						result <- TestsPassed
 						return
 					}
 
 					if strings.Contains(line, failureToken) {
 						log.Info().Msgf("[%s] Found %s", containerName, failureToken)
+						log.Debug().Msgf("[%s] Line: %s", containerName, line)
 						result <- TestsFailed
 						return
 					}
@@ -248,14 +250,6 @@ func WaitForPodToBeReady(kubeClient kubernetes.Interface, totalWait time.Duratio
 			log.Error().Err(err).Msgf("Error getting pod %s/%s", namespace, podName)
 			os.Exit(1)
 		}
-
-		fmt.Println("=================================>>>")
-		fmt.Printf("Pod phase: %#v\n", pod.Status.Phase)
-		fmt.Printf("Pod conditions: %#v\n", pod.Status.Conditions)
-		fmt.Printf("Pod status message: %#v\n", pod.Status.Message)
-		fmt.Printf("Pod status reason: %#v\n", pod.Status.Reason)
-		fmt.Printf("Pod container status: %#v\n", pod.Status.ContainerStatuses)
-		fmt.Println("<<<=================================")
 
 		for _, condition := range pod.Status.Conditions {
 			if condition.Type != corev1.PodReady {
