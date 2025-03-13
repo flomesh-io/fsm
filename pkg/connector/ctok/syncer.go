@@ -198,7 +198,6 @@ func (s *CtoKSyncer) Upsert(key string, raw interface{}) error {
 	// separately for a quick lookup.
 	if s.hasOwnership(service) {
 		s.controller.GetC2KContext().SyncedKubeServiceCache[connector.KubeSvcName(service.Name)] = service
-		s.controller.GetC2KContext().SyncedKubeServiceHash[connector.KubeSvcName(service.Name)] = s.serviceHash(service)
 		s.trigger() // Always trigger sync
 	}
 
@@ -408,7 +407,8 @@ func (s *CtoKSyncer) crudList() (createSvcs []*syncCreate, deleteSvcs []connecto
 				}
 				s.fillService(svcMeta, &updateSvc, false)
 				preHv := s.controller.GetC2KContext().SyncedKubeServiceHash[k8sSvcName]
-				if preHv == s.serviceHash(&updateSvc) {
+				curHv := s.serviceHash(&updateSvc)
+				if preHv == curHv {
 					log.Trace().Msgf("service already registered in K8S, not registering, name:%s", k8sSvcName)
 					continue
 				}
@@ -434,12 +434,6 @@ func (s *CtoKSyncer) crudList() (createSvcs []*syncCreate, deleteSvcs []connecto
 				createSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
 			}
 			endpoints := s.fillService(svcMeta, createSvc, fillEndpoints)
-			preHv := s.controller.GetC2KContext().SyncedKubeServiceHash[k8sSvcName]
-			if preHv == s.serviceHash(createSvc) {
-				log.Debug().Msgf("service already registered in K8S, not registering, name:%s", k8sSvcName)
-				continue
-			}
-
 			syncCreate := &syncCreate{
 				service:   createSvc,
 				endpoints: endpoints,
