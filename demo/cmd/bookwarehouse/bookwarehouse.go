@@ -85,6 +85,7 @@ func restockBooks(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msgf("Restocking bookstore with %d new books; Total so far: %d", numberOfBooks, totalBooks)
 	if totalBooks >= 3 {
 		fmt.Println(common.Success)
+		log.Info().Msgf(common.Success)
 	}
 }
 
@@ -94,7 +95,7 @@ func initDb() {
 		db, err = database.GetMySQLConnection()
 
 		if err != nil {
-			log.Info().Msg("Booksdemo database is not ready. Wait for 10s ...")
+			log.Error().Msgf("Booksdemo database is not ready: %v. Wait for 10s ...", err)
 			time.Sleep(10 * time.Second)
 		} else {
 			break

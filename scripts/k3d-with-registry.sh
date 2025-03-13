@@ -12,7 +12,9 @@ K3D_GATEWAY_API_ENABLE="${K3D_GATEWAY_API_ENABLE:-false}"
 K3D_FLB_ENABLE="${K3D_FLB_ENABLE:-false}"
 K3D_SERVICELB_ENABLE="${K3D_SERVICELB_ENABLE:-false}"
 K3D_IMAGE="${K3D_IMAGE:-rancher/k3s:v1.25.16-k3s4}"
-CI_INTEGRATION_TEST="${CI_INTEGRATION_TEST:-false}"
+CREATE_LOCAL_REGISTRY="${CREATE_LOCAL_REGISTRY:-true}"
+NUMBER_OF_K3D_SERVERS="${NUMBER_OF_K3D_SERVERS:-1}"
+NUMBER_OF_K3D_AGENTS="${NUMBER_OF_K3D_AGENTS:-0}"
 
 # shellcheck disable=SC2086
 jq_cluster_exists=".[] | select(.name == \"${K3D_CLUSTER_NAME}\")"
@@ -22,38 +24,43 @@ if [ "${num_of_cluster_exists}" = "1" ] ; then
   exit 0
 fi
 
-k3d_network='fsm'
+#k3d_network='fsm'
 k3d_prefix='k3d'
 reg_name='registry.localhost'
 final_reg_name="${k3d_prefix}-${reg_name}"
 reg_port='5000'
 
-# create registry container unless it already num_of_exists
-jq_reg_exists=".[] | select(.name == \"${final_reg_name}\")"
-jq_reg_running=".[] | select(.name == \"${final_reg_name}\" and .State.Running == true)"
-num_of_exists=$(k3d registry list -o json | jq "${jq_reg_exists}" | jq -s 'length')
-if [ "${num_of_exists}" = '0' ]; then
-  # no k3d managed registry found, kill any running registry container and create a new one
-  #shellcheck disable=SC2046
-  container_id=$(docker ps --format json | jq -r 'select(.Image == "registry:2" and .State == "running") | .ID')
-  if [ "${container_id}" != "" ]; then
-    docker kill "${container_id}"
-  fi
-  k3d registry create "${reg_name}" --port "127.0.0.1:${reg_port}"
-else
-  num_of_running=$(k3d registry list -o json | jq "${jq_reg_running}" | jq -s 'length')
-  if [ "${num_of_running}" = '0' ]; then
+if [ "${CREATE_LOCAL_REGISTRY}" = "true" ]; then
+  # create registry container unless it already num_of_exists
+  jq_reg_exists=".[] | select(.name == \"${final_reg_name}\")"
+  jq_reg_running=".[] | select(.name == \"${final_reg_name}\" and .State.Running == true)"
+  num_of_exists=$(k3d registry list -o json | jq "${jq_reg_exists}" | jq -s 'length')
+  if [ "${num_of_exists}" = '0' ]; then
     # no k3d managed registry found, kill any running registry container and create a new one
-    k3d registry delete --all
     #shellcheck disable=SC2046
     container_id=$(docker ps --format json | jq -r 'select(.Image == "registry:2" and .State == "running") | .ID')
     if [ "${container_id}" != "" ]; then
       docker kill "${container_id}"
     fi
     k3d registry create "${reg_name}" --port "127.0.0.1:${reg_port}"
+  else
+    num_of_running=$(k3d registry list -o json | jq "${jq_reg_running}" | jq -s 'length')
+    if [ "${num_of_running}" = '0' ]; then
+      # no k3d managed registry found, kill any running registry container and create a new one
+      k3d registry delete --all
+      #shellcheck disable=SC2046
+      container_id=$(docker ps --format json | jq -r 'select(.Image == "registry:2" and .State == "running") | .ID')
+      if [ "${container_id}" != "" ]; then
+        docker kill "${container_id}"
+      fi
+      k3d registry create "${reg_name}" --port "127.0.0.1:${reg_port}"
+    fi
   fi
 fi
 
+reg_config=""
+
+if [ "${CREATE_LOCAL_REGISTRY}" = "true" ]; then
 reg_config="
 registries:
   use:
@@ -64,26 +71,6 @@ registries:
         endpoint:
           - http://${final_reg_name}:${reg_port}
 "
-
-if [ "${CI_INTEGRATION_TEST}" = "true" ]; then
-reg_config="
-registries:
-  config: |
-    mirrors:
-      ghcr.io:
-      docker.io:
-    configs:
-      ghcr.io:
-        auth:
-          username: ${GITHUB_REPO_OWNER}
-          password: ${GITHUB_TOKEN}
-      docker.io:
-        tls:
-          insecure_skip_verify: true
-        auth:
-          username: ${DOCKER_USER}
-          password: ${DOCKER_PASS}
-"
 fi
 
 # create cluster
@@ -92,10 +79,9 @@ apiVersion: k3d.io/v1alpha5
 kind: Simple
 metadata:
   name: ${K3D_CLUSTER_NAME}
-servers: 1
-agents: 0
+servers: ${NUMBER_OF_K3D_SERVERS}
+agents: ${NUMBER_OF_K3D_AGENTS}
 image: ${K3D_IMAGE}
-network: ${k3d_network}
 ${reg_config}
 ports:
   - port: 80:80

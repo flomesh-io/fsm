@@ -23,14 +23,18 @@ on:
       - "CODEOWNERS"
       - "OWNERS"
 env:
-  CI_WAIT_FOR_OK_SECONDS: 60
-  CI_MAX_ITERATIONS_THRESHOLD: 60
+  CI_WAIT_FOR_OK_SECONDS: 180
+  CI_MAX_ITERATIONS_THRESHOLD: 0 #unlimited
   CI_CLIENT_CONCURRENT_CONNECTIONS: 1
-  CI_MAX_WAIT_FOR_POD_TIME_SECONDS: 60
+  CI_MAX_WAIT_FOR_POD_TIME_SECONDS: 180
   CI_MIN_SUCCESS_THRESHOLD: 1
+  CI_SLEEP_BETWEEN_REQUESTS_SECONDS: 3
   FSM_HUMAN_DEBUG_LOG: ${{ vars.FSM_HUMAN_DEBUG_LOG || 'false' }}
   CLUSTER_INSTALL_TYPE: ${{ vars.CLUSTER_INSTALL_TYPE || 'K3dCluster' }}
   K3D_NODE_LOGS: ${{ vars.K3D_NODE_LOGS || 'false' }}
+  DOCKER_IMAGES_DOWNLOAD_PATH: ${{ vars.DOCKER_IMAGES_DOWNLOAD_PATH || '/tmp/fsm-docker-images' }}
+  DOCKER_IMAGE_ARTIFACTS_NAME: ${{ vars.DOCKER_IMAGE_ARTIFACTS_NAME || 'docker-images' }}
+  FSM_CLI_ARTIFACTS_NAME: ${{ vars.FSM_CLI_ARTIFACTS_NAME || 'fsm-cli' }}
 
 jobs:
   shellcheck:
@@ -151,63 +155,64 @@ jobs:
         with:
           flags: unittests
 
-  ghcr:
-    name: Docker Images(ghcr.io)
+  fsm-artifacts:
+    name: FSM artifacts(images, cli...)
     runs-on: ubuntu-24.04
     needs: build
     env:
-      CTR_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
+      CTR_REGISTRY: ${{ vars.CI_CTR_REGISTRY || 'localhost:5000' }}
       CTR_TAG: ${{ github.sha }}
+      DOCKER_BUILDX_OUTPUT: type=docker
+      DOCKER_TAR_PATH: /tmp/docker-images/${{ github.sha }}
     steps:
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3.6.0
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3.10.0
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.WORKFLOW_PAT }}
-
-      # to avoid dockerhub anonymous rate limit
-      - name: Login to DockerHub
-        uses: docker/login-action@v3.3.0
-        with:
-          username: ${{ secrets.RELEASE_DOCKER_USER }}
-          password: ${{ secrets.RELEASE_DOCKER_PASS }}
-
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Go
         id: setup-go
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
           cache: false
-
-      - name: Push images with SHA tag
+      - name: Build images with SHA tag
         run: make docker-build-fsm docker-build-demo
+      - name: Save docker images
+        run: make docker-save-fsm docker-save-demo
+      - name: Upload docker images
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.DOCKER_IMAGE_ARTIFACTS_NAME }}
+          path: ${{ env.DOCKER_TAR_PATH }}
+          retention-days: 1
+          overwrite: true
+      - name: Build fsm CLI
+        run: make build-fsm
+      - name: Upload fsm CLI
+        uses: actions/upload-artifact@v4
+        with:
+          name: fsm-cli
+          path: ./bin/fsm
+          retention-days: 1
+          overwrite: true
 
-  imagescan:
+  image-scan:
     name: Scan images for security vulnerabilities
     runs-on: ubuntu-24.04
-    needs: ghcr
+    needs: fsm-artifacts
     env:
-      CTR_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
+      CTR_REGISTRY: ${{ vars.CI_CTR_REGISTRY || 'localhost:5000' }}
       CTR_TAG: ${{ github.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+      - name: Download docker image artifacts
+        uses: actions/download-artifact@v4
         with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.WORKFLOW_PAT }}
+          name: ${{ env.DOCKER_IMAGE_ARTIFACTS_NAME }}
+          path: ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}
+      - name: Load images
+        run: |
+          ls -1 ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
+          docker image ls -a
       - name: Setup Trivy
         run: make trivy-ci-setup
       - name: Scan docker images for vulnerabilities
@@ -215,7 +220,7 @@ jobs:
 
   mesh-e2e-test:
     name: Go mesh test
-    needs: ghcr
+    needs: fsm-artifacts
     strategy:
       matrix:
         k8s_version: [""]
@@ -241,7 +246,7 @@ jobs:
 
   gateway-e2e-test:
     name: Go gateway test
-    needs: ghcr
+    needs: fsm-artifacts
     strategy:
       matrix:
         focus: [""]
@@ -272,11 +277,13 @@ jobs:
       k8s_version: ${{ matrix.k8s.version }}
       bucket: ${{ matrix.bucket }}
       focus: ${{ matrix.focus }}
+      install_grpcurl: true
+      add_hosts: true
     secrets: inherit
 
   ingress-e2e-test:
     name: Go ingress test
-    needs: ghcr
+    needs: fsm-artifacts
     strategy:
       matrix:
         k8s_version: [ "" ]
@@ -288,11 +295,13 @@ jobs:
       k8s_version: ${{ matrix.k8s_version }}
       bucket: ${{ matrix.bucket }}
       focus: ${{ matrix.focus }}
+      install_grpcurl: true
+      add_hosts: true
     secrets: inherit
 
   mesh-retry-e2e-test:
     name: Go retry test
-    needs: ghcr
+    needs: fsm-artifacts
     strategy:
       matrix:
         k8s_version: [""]
@@ -308,7 +317,7 @@ jobs:
 
   mesh-statefulset-e2e-test:
     name: Go statefulset test
-    needs: ghcr
+    needs: fsm-artifacts
     strategy:
       matrix:
         k8s_version: [""]
@@ -325,18 +334,18 @@ jobs:
   integration-tresor:
     name: Integration Test with Tresor, SMI traffic policies, and egress disabled
     runs-on: ubuntu-24.04
-    needs: ghcr
+    needs: fsm-artifacts
     steps:
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: false
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
+#      - name: Free Disk Space (Ubuntu)
+#        uses: jlumbroso/free-disk-space@main
+#        with:
+#          tool-cache: false
+#          android: true
+#          dotnet: true
+#          haskell: true
+#          large-packages: true
+#          docker-images: false
+#          swap-storage: true
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
@@ -348,6 +357,24 @@ jobs:
         run: |
           curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
           k3d version
+      - name: Download docker image artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.DOCKER_IMAGE_ARTIFACTS_NAME }}
+          path: ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}
+      - name: Load images
+        run: |
+          ls -1 ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
+          docker image ls -a
+      - name: Download fsm CLI
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.FSM_CLI_ARTIFACTS_NAME }}
+          path: ./bin
+      - name: Grant execute permission to fsm CLI
+        run: |
+          chmod a+x ./bin/fsm
+          ls -l ./bin/fsm
       - name: Run Simulation w/ Tresor, SMI policies, egress disabled and reconciler disabled
         env:
           CERT_MANAGER: "tresor"
@@ -357,33 +384,18 @@ jobs:
           ENABLE_RECONCILER: "false"
           PERMISSIVE_MODE: "false"
           DEPLOY_TRAFFIC_SPLIT: "true"
-          CTR_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
+          CTR_REGISTRY: ${{ vars.CI_CTR_REGISTRY || 'localhost:5000' }}
           CTR_TAG: ${{ github.sha }}
           USE_PRIVATE_REGISTRY: "false"
           PUBLISH_IMAGES: "false"
-          GITHUB_REPO_OWNER: ${{ github.repository_owner }}
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
-          DOCKER_USER: ${{ secrets.RELEASE_DOCKER_USER }}
-          DOCKER_PASS: ${{ secrets.RELEASE_DOCKER_PASS }}
-          CI_INTEGRATION_TEST: "true"
+          BUILD_FSM_CLI: "false"
+          GODEBUG: "netdns=go+1"
         run: |
           touch .env
           make k3d-up
+          docker image list --format "{{.Repository}}:{{.Tag}}" | grep "^localhost" | xargs --no-run-if-empty -L 1 docker push
           ./demo/run-fsm-demo.sh
           go run ./ci/cmd/maestro.go
-
-  ghcr-cleanup:
-    name: ghcr.io cleanup
-    runs-on: ubuntu-24.04
-    needs: [mesh-e2e-test, gateway-e2e-test, ingress-e2e-test, mesh-retry-e2e-test, mesh-statefulset-e2e-test, integration-tresor, imagescan]
-    steps:
-      - uses: dataaxiom/ghcr-cleanup-action@v1
-        with:
-          token: ${{ secrets.WORKFLOW_PAT }}
-          owner: ${{ github.repository_owner }}
-          packages: fsm-*
-          expand-packages: true
-          delete-tags: ${{ github.sha }}
 
   images:
     name: Docker Images

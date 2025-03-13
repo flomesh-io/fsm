@@ -132,6 +132,7 @@ func maxWaitForPod() time.Duration {
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Could not convert environment variable %s='%s' to int", maestro.WaitForPodTimeSecondsEnvVar, maxPodWaitString)
 	}
+	log.Debug().Msgf("maxWaitForPod: %d second(s)", maxWaitInt)
 	return time.Duration(maxWaitInt) * time.Second
 }
 
@@ -140,6 +141,7 @@ func maxWaitForOK() time.Duration {
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Could not convert environment variable %s='%s' to int", maestro.WaitForOKSecondsEnvVar, maxOKWaitString)
 	}
+	log.Debug().Msgf("maxWaitForOK: %d second(s)", maxWaitInt)
 	return time.Duration(maxWaitInt) * time.Second
 }
 

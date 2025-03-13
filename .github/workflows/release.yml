@@ -49,7 +49,7 @@ jobs:
     with:
       id: ${{ matrix.id }}
       version: ${{ needs.version.outputs.version }}
-      image: ${{ secrets.RELEASE_REGISTRY }}/fsm-${{ matrix.id }}
+      image: fsm-${{ matrix.id }}
       dockerfile: ./dockerfiles/Dockerfile.fsm-${{ matrix.id }}
       package_helm_charts: true
     secrets: inherit
@@ -64,7 +64,7 @@ jobs:
     with:
       id: ${{ matrix.id }}
       version: ${{ needs.version.outputs.version }}
-      image: ${{ secrets.RELEASE_REGISTRY }}/fsm-demo-${{ matrix.id }}
+      image: fsm-demo-${{ matrix.id }}
       dockerfile: ./dockerfiles/Dockerfile.demo
     secrets: inherit
 

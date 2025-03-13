@@ -45,6 +45,7 @@ TIMEOUT="${TIMEOUT:-90s}"
 USE_PRIVATE_REGISTRY="${USE_PRIVATE_REGISTRY:-false}"
 PUBLISH_IMAGES="${PUBLISH_IMAGES:-true}"
 LOCAL_PROXY_MODE=${LOCAL_PROXY_MODE:-Localhost}
+BUILD_FSM_CLI="${BUILD_FSM_CLI:-true}"
 
 # For any additional installation arguments. Used heavily in CI.
 optionalInstallArgs=$*
@@ -58,7 +59,9 @@ exit_error() {
 # Check if Docker daemon is running
 docker info > /dev/null || { echo "Docker daemon is not running"; exit 1; }
 
+if [ "$BUILD_FSM_CLI" = true ]; then
 make build-fsm
+fi
 
 # cleanup stale resources from previous runs
 ./demo/clean-kubernetes.sh

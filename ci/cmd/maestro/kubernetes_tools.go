@@ -189,13 +189,13 @@ func SearchLogsForSuccess(kubeClient kubernetes.Interface, namespace string, pod
 				default:
 
 					if strings.Contains(line, successToken) {
-						log.Info().Msgf("[%s] Found %s", containerName, successToken)
+						log.Info().Msgf("[%s]-[%s] Found %s", podName, containerName, successToken)
 						result <- TestsPassed
 						return
 					}
 
 					if strings.Contains(line, failureToken) {
-						log.Info().Msgf("[%s] Found %s", containerName, failureToken)
+						log.Info().Msgf("[%s]-[%s] Found %s", podName, containerName, failureToken)
 						result <- TestsFailed
 						return
 					}
