@@ -17,6 +17,9 @@ func (c *client) BroadcastListener(stopCh <-chan struct{}) {
 	slidingTimer := time.NewTimer(c.GetSyncPeriod())
 	defer slidingTimer.Stop()
 
+	statusTimer := time.NewTimer(c.GetSyncPeriod())
+	defer statusTimer.Stop()
+
 	reconfirm := true
 
 	for {
@@ -29,8 +32,6 @@ func (c *client) BroadcastListener(stopCh <-chan struct{}) {
 			// Avoid data omission
 			reconfirm = true
 		case <-slidingTimer.C:
-			c.updateConnectorMetrics()
-
 			newJob := func() *connectControllerJob {
 				return &connectControllerJob{
 					done:              make(chan struct{}),
@@ -43,6 +44,9 @@ func (c *client) BroadcastListener(stopCh <-chan struct{}) {
 				reconfirm = false
 				slidingTimer.Reset(c.GetSyncPeriod())
 			}
+		case <-statusTimer.C:
+			c.updateConnectorStatus()
+			statusTimer.Reset(c.GetSyncPeriod())
 		}
 	}
 }

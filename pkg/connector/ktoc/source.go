@@ -352,7 +352,7 @@ func (t *KtoCSource) generateRegistrations(key string) {
 
 	baseService := connector.AgentService{
 		MicroService: connector.MicroService{
-			NamespacedService: connector.NamespacedService{
+			NamespacedService: ctv1.NamespacedService{
 				Service: t.addPrefixAndK8SNamespace(svc.Name, svc.Namespace),
 			},
 		},

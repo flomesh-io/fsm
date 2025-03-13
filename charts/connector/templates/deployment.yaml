@@ -57,6 +57,7 @@ spec:
             "-sdr-provider={{.Values.fsm.cloudConnector.connectorProvider}}",
             "-sdr-connector-namespace={{.Values.fsm.cloudConnector.connectorNamespace}}",
             "-sdr-connector-name={{.Values.fsm.cloudConnector.connectorName}}",
+            "-sdr-connector-uid={{.Values.fsm.cloudConnector.connectorUID}}",
           ]
           resources:
             limits:

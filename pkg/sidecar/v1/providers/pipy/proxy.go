@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -80,9 +80,9 @@ type ProxyMetadata struct {
 	SidecarNodeID   string
 	WorkloadKind    string
 	WorkloadName    string
-	ReadinessProbes []*v1.Probe
-	LivenessProbes  []*v1.Probe
-	StartupProbes   []*v1.Probe
+	ReadinessProbes []*corev1.Probe
+	LivenessProbes  []*corev1.Probe
+	StartupProbes   []*corev1.Probe
 }
 
 // HasMetadata answers the question - has the Pod metadata been recorded for the given Sidecar proxy

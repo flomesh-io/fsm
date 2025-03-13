@@ -51,13 +51,15 @@ type ConnectController interface {
 	GetC2KExcludeIPRanges() []*cidr.CIDR
 	GetK2CFilterIPRanges() []*cidr.CIDR
 	GetK2CExcludeIPRanges() []*cidr.CIDR
-	GetPrefix() string
 	GetPrefixTag() string
 	GetSuffixTag() string
 	GetPrefixMetadata() string
 	GetSuffixMetadata() string
 
-	GetFixedHTTPServicePort() *uint32
+	GetC2KFixedHTTPServicePort() *uint32
+
+	EnableC2KConversions() bool
+	GetC2KServiceConversions() map[string]ctv1.ServiceConversion
 
 	GetC2KWithGateway() bool
 	GetC2KMultiGateways() bool

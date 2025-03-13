@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
@@ -53,7 +53,7 @@ func (w *watcher) refresh(clientSet kubernetes.Interface, fsmNamespace string) {
 		}
 		w.restartCnt = w.restartCnt + int(c.RestartCount)
 	}
-	if w.containerCnt == w.readyContainerCnt || v1.PodSucceeded == phase {
+	if w.containerCnt == w.readyContainerCnt || corev1.PodSucceeded == phase {
 		w.ready = true
 		w.spinner.Stop()
 	} else {

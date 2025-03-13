@@ -78,7 +78,6 @@ func (s *Server) Start(_ uint32, _ *certificate.Certificate) error {
 		return success, err
 	})
 	if err != nil {
-		log.Error().Err(err)
 		return err
 	}
 
@@ -110,9 +109,7 @@ func (s *Server) Start(_ uint32, _ *certificate.Certificate) error {
 		return nil
 	}
 
-	err = s.repoClient.Restore()
-	if err != nil {
-		log.Error().Err(err)
+	if err = s.repoClient.Restore(); err != nil {
 		return err
 	}
 

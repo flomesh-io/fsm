@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
@@ -52,7 +52,7 @@ func TestReleaseCertificateHandler(t *testing.T) {
 				m.GetKubeEventPubSub().Pub(events.PubSubMessage{
 					Kind:   announcements.PodDeleted,
 					NewObj: nil,
-					OldObj: &v1.Pod{
+					OldObj: &corev1.Pod{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
 								constants.SidecarUniqueIDLabelName: proxyUUID,
@@ -71,7 +71,7 @@ func TestReleaseCertificateHandler(t *testing.T) {
 				m.GetKubeEventPubSub().Pub(events.PubSubMessage{
 					Kind:   announcements.PodDeleted,
 					NewObj: nil,
-					OldObj: &v1.Pod{
+					OldObj: &corev1.Pod{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
 								constants.SidecarUniqueIDLabelName: uuid.New().String(),
@@ -90,7 +90,7 @@ func TestReleaseCertificateHandler(t *testing.T) {
 				m.GetKubeEventPubSub().Pub(events.PubSubMessage{
 					Kind:   announcements.PodAdded,
 					NewObj: nil,
-					OldObj: &v1.Pod{
+					OldObj: &corev1.Pod{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
 								constants.SidecarUniqueIDLabelName: proxyUUID,

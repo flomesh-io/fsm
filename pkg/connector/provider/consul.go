@@ -66,7 +66,7 @@ func (dc *ConsulDiscoveryClient) IsInternalServices() bool {
 	return dc.connectController.AsInternalServices()
 }
 
-func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) ([]connector.NamespacedService, error) {
+func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) ([]ctv1.NamespacedService, error) {
 	opts := q.ToConsul()
 	filters := []string{fmt.Sprintf("Service.Meta.%s != `%s`",
 		connector.ClusterSetKey,
@@ -87,7 +87,7 @@ func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) ([]c
 	}
 	q.WaitIndex = meta.LastIndex
 
-	var catalogServices []connector.NamespacedService
+	var catalogServices []ctv1.NamespacedService
 	if len(servicesMap) > 0 {
 		for svc := range servicesMap {
 			if strings.EqualFold(svc, consulServiceName) {
@@ -97,9 +97,9 @@ func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) ([]c
 				log.Info().Msgf("invalid format, ignore service: %s, errors:%s", svc, strings.Join(errMsgs, "; "))
 				continue
 			}
-			catalogServices = append(catalogServices, connector.NamespacedService{Service: svc})
+			catalogServices = append(catalogServices, ctv1.NamespacedService{Service: svc})
 			if dc.IsInternalServices() && dc.connectController.GetConsulGenerateInternalServiceHealthCheck() {
-				catalogServices = append(catalogServices, connector.NamespacedService{Service: fmt.Sprintf("%s%s", svc, healthCheckServiceSuffix)})
+				catalogServices = append(catalogServices, ctv1.NamespacedService{Service: fmt.Sprintf("%s%s", svc, healthCheckServiceSuffix)})
 			}
 		}
 	}
@@ -202,8 +202,8 @@ func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.Q
 	return agentServices, nil
 }
 
-func (dc *ConsulDiscoveryClient) RegisteredServices(q *connector.QueryOptions) ([]connector.NamespacedService, error) {
-	var registeredServices []connector.NamespacedService
+func (dc *ConsulDiscoveryClient) RegisteredServices(q *connector.QueryOptions) ([]ctv1.NamespacedService, error) {
+	var registeredServices []ctv1.NamespacedService
 	var opts = q.ToConsul()
 	opts.Filter = fmt.Sprintf("ServiceMeta.%s == `%s`",
 		connector.ConnectUIDKey,
@@ -216,7 +216,7 @@ func (dc *ConsulDiscoveryClient) RegisteredServices(q *connector.QueryOptions) (
 				if strings.EqualFold(svc, consulServiceName) {
 					continue
 				}
-				registeredServices = append(registeredServices, connector.NamespacedService{Service: svc})
+				registeredServices = append(registeredServices, ctv1.NamespacedService{Service: svc})
 			}
 		}
 	}

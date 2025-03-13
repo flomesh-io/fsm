@@ -32,7 +32,7 @@ type NacosConnector struct {
 
 	// Status is the status of the Nacos Connector configuration.
 	// +optional
-	Status NacosStatus `json:"status,omitempty"`
+	Status ConnectorStatus `json:"status,omitempty"`
 }
 
 func (c *NacosConnector) GetProvider() DiscoveryServiceProvider {
@@ -101,6 +101,9 @@ type NacosSyncToK8SSpec struct {
 	// +kubebuilder:default={enable: false, multiGateways: true}
 	// +optional
 	WithGateway C2KGateway `json:"withGateway,omitempty"`
+
+	// +optional
+	ConversionStrategy *ConversionStrategy `json:"conversionStrategy,omitempty"`
 }
 
 // NacosSyncFromK8SSpec is the type used to represent the sync from K8S to Nacos specification.
@@ -245,21 +248,6 @@ type NacosAuthSpec struct {
 	// +kubebuilder:default=public
 	// +optional
 	NamespaceId string `json:"namespaceId,omitempty"`
-}
-
-// NacosStatus is the type used to represent the status of a Nacos Connector resource.
-type NacosStatus struct {
-	// CurrentStatus defines the current status of a Nacos Connector resource.
-	// +optional
-	CurrentStatus string `json:"currentStatus,omitempty"`
-
-	// Reason defines the reason for the current status of a Nacos Connector resource.
-	// +optional
-	Reason string `json:"reason,omitempty"`
-
-	ToK8SServiceCnt int `json:"toK8SServiceCnt"`
-
-	FromK8SServiceCnt int `json:"fromK8SServiceCnt"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

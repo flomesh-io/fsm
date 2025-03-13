@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	access "github.com/servicemeshinterface/smi-sdk-go/pkg/apis/access/v1alpha3"
 	tassert "github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	testclient "k8s.io/client-go/kubernetes/fake"
 
@@ -179,7 +179,7 @@ func TestListAllowedUpstreamEndpointsForService(t *testing.T) {
 				mockServiceProvider.EXPECT().GetServicesForServiceIdentity(sa).Return(services).AnyTimes()
 			}
 
-			var pods []*v1.Pod
+			var pods []*corev1.Pod
 			for serviceIdentity, services := range tc.outboundServices {
 				// TODO(draychev): use ServiceIdentity in the rest of the tests [https://github.com/flomesh-io/fsm/issues/2218]
 				sa := serviceIdentity.ToK8sServiceAccount()
@@ -190,9 +190,9 @@ func TestListAllowedUpstreamEndpointsForService(t *testing.T) {
 					}
 					pod := tests.NewPodFixture(tests.Namespace, svc.Name, sa.Name, podlabels)
 					podEndpoints := tc.outboundServiceEndpoints[svc]
-					var podIps []v1.PodIP
+					var podIps []corev1.PodIP
 					for _, ep := range podEndpoints {
-						podIps = append(podIps, v1.PodIP{IP: ep.IP.String()})
+						podIps = append(podIps, corev1.PodIP{IP: ep.IP.String()})
 					}
 					pod.Status.PodIPs = podIps
 					pod.Spec.ServiceAccountName = sa.Name
