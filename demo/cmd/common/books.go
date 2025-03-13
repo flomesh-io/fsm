@@ -211,7 +211,7 @@ func GetBooks(participantName string, meshExpectedResponseCode int, booksCount *
 					// Sending this string to STDOUT will inform the CI Maestro that this is a succeeded;
 					// Maestro will stop tailing logs.
 					fmt.Println(Success)
-					log.Info().Msg(Success)
+					log.Info().Msgf("%s - Iteration: %d", Success, iteration)
 				}
 			}
 
