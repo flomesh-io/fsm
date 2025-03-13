@@ -79,7 +79,7 @@ jobs:
           path: ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}
       - name: Load images
         run: |
-          ls -1 ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}/*.tar | grep -v "^fsm-demo-" | xargs --no-run-if-empty -L 1 docker load -i
+          ls -1 ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}/*.tar | grep -v "fsm-demo-" | xargs --no-run-if-empty -L 1 docker load -i
           docker image ls -a
       - name: Download fsm CLI
         uses: actions/download-artifact@v4
