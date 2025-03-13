@@ -47,6 +47,7 @@ fsm:
     connectorProvider: ""
     connectorNamespace: ""
     connectorName: ""
+    connectorUID: ""
     # -- Sidecar injector's replica count (ignored when autoscale.enable is true)
     replicaCount: 1
     # -- Sidecar injector's container resource parameters

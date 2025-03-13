@@ -313,6 +313,7 @@
                     "connectorProvider",
                     "connectorNamespace",
                     "connectorName",
+                    "connectorUID",
                     "replicaCount",
                     "resource"
                   ],
@@ -346,6 +347,12 @@
                       "type": "string",
                       "title": "Connector Name",
                       "description": "Connector Name"
+                    },
+                    "connectorUID": {
+                      "$id": "#/properties/fsm/properties/cloudConnector/properties/connectorUID",
+                      "type": "string",
+                      "title": "Connector UID",
+                      "description": "Connector UID"
                     },
                     "replicaCount": {
                       "$id": "#/properties/fsm/properties/cloudConnector/properties/replicaCount",

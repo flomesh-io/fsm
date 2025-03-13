@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	"github.com/flomesh-io/fsm/pkg/certificate"
@@ -109,7 +109,7 @@ func isCNforProxy(proxy *pipy.Proxy, cn certificate.CommonName) bool {
 
 // recordPodMetadata records pod metadata and verifies the certificate issued for this pod
 // is for the same service account as seen on the pod's service account
-func (s *Server) recordPodMetadata(p *pipy.Proxy, pod *v1.Pod) error {
+func (s *Server) recordPodMetadata(p *pipy.Proxy, pod *corev1.Pod) error {
 	var err error
 	if p.Metadata == nil {
 		if pod == nil {

@@ -408,7 +408,7 @@ func getEgressClusterDestinationSpec(meshCatalog catalog.MeshCataloger, egressPo
 						destinationSpec.SourceCert.PrivateKey = string(tlsKey)
 					}
 				} else {
-					log.Error().Err(err)
+					log.Error().Err(err).Msg(err.Error())
 				}
 			}
 		}
@@ -932,7 +932,7 @@ func generatePipyEgressTrafficBalancePolicy(meshCatalog catalog.MeshCataloger, p
 						clusterConfigs.SourceCert.PrivateKey = string(tlsKey)
 					}
 				} else {
-					log.Error().Err(err)
+					log.Error().Err(err).Msg(err.Error())
 				}
 			}
 		}

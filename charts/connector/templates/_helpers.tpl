@@ -44,5 +44,5 @@ securityContext:
 
 {{/* fsm connector's name */}}
 {{- define "fsmConnector.name" -}}
-{{- printf "fsm-connector-%s-%s" .Values.fsm.cloudConnector.connectorProvider .Values.fsm.cloudConnector.connectorName -}}
+{{- printf "fsc-%s-%s-%s" .Values.fsm.cloudConnector.connectorProvider .Values.fsm.cloudConnector.connectorNamespace .Values.fsm.cloudConnector.connectorName -}}
 {{- end -}}

@@ -130,7 +130,7 @@ rules:
     verbs: ["list", "get", "watch", "update"]
   - apiGroups: ["connector.flomesh.io"]
     resources: ["consulconnectors/status", "eurekaconnectors/status", "nacosconnectors/status", "zookeeperconnectors/status", "machineconnectors/status", "gatewayconnectors/status"]
-    verbs: ["update"]
+    verbs: ["get", "patch", "update"]
 
   # FSM's custom xnetwork API
   - apiGroups: ["xnetwork.flomesh.io"]

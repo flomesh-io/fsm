@@ -74,6 +74,7 @@ type Config struct {
 	SdrProvider           string
 	SdrConnectorNamespace string
 	SdrConnectorName      string
+	SdrConnectorUID       string
 	LeaderElection        bool
 }
 
@@ -92,6 +93,7 @@ func init() {
 	flags.StringVar(&Cfg.SdrProvider, "sdr-provider", "", "service discovery and registration (consul, eureka, nacos, machine, gateway)")
 	flags.StringVar(&Cfg.SdrConnectorNamespace, "sdr-connector-namespace", "", "connector namespace")
 	flags.StringVar(&Cfg.SdrConnectorName, "sdr-connector-name", "", "connector name")
+	flags.StringVar(&Cfg.SdrConnectorUID, "sdr-connector-uid", "", "connector uid")
 	flags.BoolVar(&Cfg.LeaderElection, "leader-election", true, "leader election mode")
 }
 
@@ -124,6 +126,10 @@ func ValidateCLIParams() error {
 
 	if len(Cfg.SdrConnectorName) == 0 {
 		return fmt.Errorf("please specify the connector name using -sdr-connector-name")
+	}
+
+	if len(Cfg.SdrConnectorUID) == 0 {
+		return fmt.Errorf("please specify the connector uid using -sdr-connector-uid")
 	}
 
 	return nil

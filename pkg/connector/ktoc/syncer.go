@@ -7,6 +7,7 @@ import (
 
 	mapset "github.com/deckarep/golang-set"
 
+	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
@@ -141,7 +142,7 @@ func (s *KtoCSyncer) watchReapableServices(ctx context.Context) {
 	// This prevents a lot of churn in services causing high CPU usage.
 	minWait := s.controller.GetSyncPeriod()
 	minWaitCh := time.After(minWait)
-	var services []connector.NamespacedService
+	var services []ctv1.NamespacedService
 	var err error
 	for {
 		// Wait our minimum time before continuing or retrying
@@ -254,7 +255,7 @@ func (s *KtoCSyncer) watchService(ctx context.Context, name, namespace string) {
 			deregistration := &connector.CatalogDeregistration{
 				Node:      instance.Node,
 				ServiceID: instance.ServiceID,
-				NamespacedService: connector.NamespacedService{
+				NamespacedService: ctv1.NamespacedService{
 					Service: instance.ServiceName,
 				},
 				ServiceRef: instance.ServiceRef,
@@ -299,7 +300,7 @@ func (s *KtoCSyncer) scheduleReapServiceLocked(name, namespace string) error {
 		deregistration := &connector.CatalogDeregistration{
 			Node:      instance.Node,
 			ServiceID: instance.ServiceID,
-			NamespacedService: connector.NamespacedService{
+			NamespacedService: ctv1.NamespacedService{
 				Service: instance.ServiceName,
 			},
 			ServiceRef: instance.ServiceRef,

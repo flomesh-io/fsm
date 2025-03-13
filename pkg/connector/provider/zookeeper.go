@@ -182,12 +182,12 @@ func (dc *ZookeeperDiscoveryClient) CatalogInstances(service string, _ *connecto
 	return agentServices, nil
 }
 
-func (dc *ZookeeperDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]connector.NamespacedService, error) {
+func (dc *ZookeeperDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]ctv1.NamespacedService, error) {
 	serviceList, err := dc.selectServices()
 	if err != nil {
 		return nil, err
 	}
-	var catalogServices []connector.NamespacedService
+	var catalogServices []ctv1.NamespacedService
 	if len(serviceList) > 0 {
 		for _, svc := range serviceList {
 			instances, _ := dc.selectInstances(svc)
@@ -255,7 +255,7 @@ func (dc *ZookeeperDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]
 						continue
 					}
 				}
-				catalogServices = append(catalogServices, connector.NamespacedService{Service: svc})
+				catalogServices = append(catalogServices, ctv1.NamespacedService{Service: svc})
 				break
 			}
 		}
@@ -286,12 +286,12 @@ func (dc *ZookeeperDiscoveryClient) RegisteredInstances(service string, _ *conne
 	return catalogServices, nil
 }
 
-func (dc *ZookeeperDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]connector.NamespacedService, error) {
+func (dc *ZookeeperDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]ctv1.NamespacedService, error) {
 	serviceList, err := dc.selectServices()
 	if err != nil {
 		return nil, err
 	}
-	var registeredServices []connector.NamespacedService
+	var registeredServices []ctv1.NamespacedService
 	if len(serviceList) > 0 {
 		for _, svc := range serviceList {
 			svc := strings.ToLower(svc)
@@ -307,7 +307,7 @@ func (dc *ZookeeperDiscoveryClient) RegisteredServices(*connector.QueryOptions) 
 				instance := instance
 				if connectUID, connectUIDExist := instance.GetMetadata(connector.ConnectUIDKey); connectUIDExist {
 					if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
-						registeredServices = append(registeredServices, connector.NamespacedService{Service: svc})
+						registeredServices = append(registeredServices, ctv1.NamespacedService{Service: svc})
 						break
 					}
 				}

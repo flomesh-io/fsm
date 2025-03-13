@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
 	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
@@ -72,7 +72,7 @@ func (k *KubeProxyServiceMapper) ListProxyServices(p *pipy.Proxy) ([]service.Mes
 	return meshServices, nil
 }
 
-func kubernetesServicesToMeshServices(kubeController k8s.Controller, kubernetesServices []v1.Service, subdomainFilter string) (meshServices []service.MeshService) {
+func kubernetesServicesToMeshServices(kubeController k8s.Controller, kubernetesServices []corev1.Service, subdomainFilter string) (meshServices []service.MeshService) {
 	for _, svc := range kubernetesServices {
 		svc := svc
 		for _, meshSvc := range k8s.ServiceToMeshServices(kubeController, &svc) {
@@ -92,11 +92,11 @@ func listServiceNames(meshServices []service.MeshService) (serviceNames []string
 }
 
 // listServicesForPod lists Kubernetes services whose selectors match pod labels
-func listServicesForPod(pod *v1.Pod, kubeController k8s.Controller) []service.MeshService {
-	var serviceList []v1.Service
+func listServicesForPod(pod *corev1.Pod, kubeController k8s.Controller) []service.MeshService {
+	var serviceList []corev1.Service
 	svcList := kubeController.ListServices(true, true)
 
-	var attachedFromServiceList []*v1.Service
+	var attachedFromServiceList []*corev1.Service
 	attachedToServices := make(map[string]string)
 
 	for _, svc := range svcList {
@@ -163,7 +163,7 @@ func listServicesForPod(pod *v1.Pod, kubeController k8s.Controller) []service.Me
 
 // listServicesForVm lists Kubernetes services whose selectors match vm labels
 func listServicesForVm(vm *machinev1alpha1.VirtualMachine, kubeController k8s.Controller) []service.MeshService {
-	var serviceList []v1.Service
+	var serviceList []corev1.Service
 	svcList := kubeController.ListServices(true, true)
 
 	for _, svc := range svcList {

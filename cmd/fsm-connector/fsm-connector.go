@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -126,12 +127,12 @@ func main() {
 	if cli.Cfg.LeaderElection {
 		lock := &resourcelock.LeaseLock{
 			LeaseMeta: metav1.ObjectMeta{
-				Name:      cli.Cfg.SdrConnectorName,
-				Namespace: connectorPod.Namespace,
+				Name:      fmt.Sprintf("%s-%s-%s", cli.Cfg.SdrProvider, cli.Cfg.SdrConnectorNamespace, cli.Cfg.SdrConnectorName),
+				Namespace: cli.Cfg.FsmNamespace,
 			},
 			Client: kubeClient.CoordinationV1(),
 			LockConfig: resourcelock.ResourceLockConfig{
-				Identity: connectorPod.Name,
+				Identity: string(connectorPod.UID),
 			},
 		}
 

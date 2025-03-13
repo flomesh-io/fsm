@@ -34,11 +34,13 @@ func (c *client) syncCtoK() {
 	syncer.SetMicroAggregator(source)
 	syncer.Ready()
 
-	go source.Run(ctx)
+	svcCacheController := &connector.CacheController{Resource: syncer}
+	go svcCacheController.Run(ctx.Done())
 
-	// Build the controller and start it
-	ctl := &connector.CacheController{Resource: syncer}
-	go ctl.Run(ctx.Done())
+	eptCacheController := &connector.CacheController{Resource: syncer.EndpointsSource()}
+	go eptCacheController.Run(ctx.Done())
+
+	go source.Run(ctx)
 }
 
 func (c *client) syncKtoC() {

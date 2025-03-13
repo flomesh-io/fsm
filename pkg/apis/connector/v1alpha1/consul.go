@@ -32,7 +32,7 @@ type ConsulConnector struct {
 
 	// Status is the status of the Consul Connector configuration.
 	// +optional
-	Status ConsulStatus `json:"status,omitempty"`
+	Status ConnectorStatus `json:"status,omitempty"`
 }
 
 func (c *ConsulConnector) GetProvider() DiscoveryServiceProvider {
@@ -104,6 +104,9 @@ type ConsulSyncToK8SSpec struct {
 	// +kubebuilder:default=false
 	// +optional
 	GenerateInternalServiceHealthCheck bool `json:"generateInternalServiceHealthCheck,omitempty"`
+
+	// +optional
+	ConversionStrategy *ConversionStrategy `json:"conversionStrategy,omitempty"`
 }
 
 // ConsulSyncFromK8SSpec is the type used to represent the sync from K8S to Consul specification.
@@ -254,21 +257,6 @@ type ConsulAuthSpec struct {
 	// +kubebuilder:default=""
 	// +optional
 	Password string `json:"password,omitempty"`
-}
-
-// ConsulStatus is the type used to represent the status of a Consul Connector resource.
-type ConsulStatus struct {
-	// CurrentStatus defines the current status of a Consul Connector resource.
-	// +optional
-	CurrentStatus string `json:"currentStatus,omitempty"`
-
-	// Reason defines the reason for the current status of a Consul Connector resource.
-	// +optional
-	Reason string `json:"reason,omitempty"`
-
-	ToK8SServiceCnt int `json:"toK8SServiceCnt"`
-
-	FromK8SServiceCnt int `json:"fromK8SServiceCnt"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

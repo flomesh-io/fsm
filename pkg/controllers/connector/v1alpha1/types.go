@@ -108,6 +108,7 @@ func (r *connectorReconciler) resolveValues(object metav1.Object, mc configurato
 		fmt.Sprintf("fsm.cloudConnector.connectorProvider=%s", connector.GetProvider()),
 		fmt.Sprintf("fsm.cloudConnector.connectorNamespace=%s", connector.GetNamespace()),
 		fmt.Sprintf("fsm.cloudConnector.connectorName=%s", connector.GetName()),
+		fmt.Sprintf("fsm.cloudConnector.connectorUID=%s", connector.GetUID()),
 
 		fmt.Sprintf("fsm.cloudConnector.replicaCount=%d", replicas(connector, 1)),
 		fmt.Sprintf("fsm.cloudConnector.resource.requests.cpu='%s'", requestsCpu(connector, resource.MustParse("0.5")).String()),

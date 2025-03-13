@@ -308,7 +308,8 @@
                             "image",
                             "resource",
                             "flush",
-                            "nodePaths"
+                            "nodePaths",
+                            "cnis"
                           ],
                           "additionalProperties": false,
                           "properties": {
@@ -433,163 +434,6 @@
                                           "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/magic/properties/ipv6",
                                           "type": "string",
                                           "title": "The ipv6 schema"
-                                        }
-                                      },
-                                      "additionalProperties": false
-                                    },
-                                    "cnis": {
-                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis",
-                                      "type": "object",
-                                      "title": "cnis schema",
-                                      "description": "cnis",
-                                      "required": [
-                                        "flannel",
-                                        "calicoVxlan"
-                                      ],
-                                      "properties": {
-                                        "flannel": {
-                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/flannel",
-                                          "type": "object",
-                                          "title": "flannel cni schema",
-                                          "required": [
-                                            "enable",
-                                            "bridge4",
-                                            "bridge6"
-                                          ],
-                                          "properties":{
-                                            "enable": {
-                                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/flannel/properties/enable",
-                                              "type": "boolean",
-                                              "title": "The enable schema"
-                                            },
-                                            "bridge4": {
-                                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/flannel/properties/bridge4",
-                                              "type": "object",
-                                              "title": "IPv4 bridge schema",
-                                              "required": [
-                                                "enable",
-                                                "name"
-                                              ],
-                                              "properties":{
-                                                "enable": {
-                                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/flannel/properties/bridge4/properties/enable",
-                                                  "type": "boolean",
-                                                  "title": "The enable schema"
-                                                },
-                                                "name": {
-                                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/flannel/properties/bridge4/properties/name",
-                                                  "type": "string",
-                                                  "title": "bridge name schema"
-                                                },
-                                                "mac": {
-                                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/flannel/properties/bridge4/properties/mac",
-                                                  "type": "string",
-                                                  "title": "bridge mac schema"
-                                                }
-                                              },
-                                              "additionalProperties": false
-                                            },
-                                            "bridge6": {
-                                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/flannel/properties/bridge6",
-                                              "type": "object",
-                                              "title": "IPv6 bridge schema",
-                                              "required": [
-                                                "enable",
-                                                "name"
-                                              ],
-                                              "properties":{
-                                                "enable": {
-                                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/flannel/properties/bridge6/properties/enable",
-                                                  "type": "boolean",
-                                                  "title": "The enable schema"
-                                                },
-                                                "name": {
-                                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/flannel/properties/bridge6/properties/name",
-                                                  "type": "string",
-                                                  "title": "bridge name schema"
-                                                },
-                                                "mac": {
-                                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/flannel/properties/bridge6/properties/mac",
-                                                  "type": "string",
-                                                  "title": "bridge mac schema"
-                                                }
-                                              },
-                                              "additionalProperties": false
-                                            }
-                                          },
-                                          "additionalProperties": false
-                                        },
-                                        "calicoVxlan": {
-                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/calicoVxlan",
-                                          "type": "object",
-                                          "title": "calico cross subnet cni schema",
-                                          "required": [
-                                            "enable",
-                                            "bridge4",
-                                            "bridge6"
-                                          ],
-                                          "properties":{
-                                            "enable": {
-                                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/calicoVxlan/properties/enable",
-                                              "type": "boolean",
-                                              "title": "The enable schema"
-                                            },
-                                            "bridge4": {
-                                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/calicoVxlan/properties/bridge4",
-                                              "type": "object",
-                                              "title": "IPv4 bridge schema",
-                                              "required": [
-                                                "enable",
-                                                "name"
-                                              ],
-                                              "properties":{
-                                                "enable": {
-                                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/calicoVxlan/properties/bridge4/properties/enable",
-                                                  "type": "boolean",
-                                                  "title": "The enable schema"
-                                                },
-                                                "name": {
-                                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/calicoVxlan/properties/bridge4/properties/name",
-                                                  "type": "string",
-                                                  "title": "bridge name schema"
-                                                },
-                                                "mac": {
-                                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/calicoVxlan/properties/bridge4/properties/mac",
-                                                  "type": "string",
-                                                  "title": "bridge mac schema"
-                                                }
-                                              },
-                                              "additionalProperties": false
-                                            },
-                                            "bridge6": {
-                                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/calicoVxlan/properties/bridge6",
-                                              "type": "object",
-                                              "title": "IPv6 bridge schema",
-                                              "required": [
-                                                "enable",
-                                                "name"
-                                              ],
-                                              "properties":{
-                                                "enable": {
-                                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/calicoVxlan/properties/bridge6/properties/enable",
-                                                  "type": "boolean",
-                                                  "title": "The enable schema"
-                                                },
-                                                "name": {
-                                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/calicoVxlan/properties/bridge6/properties/name",
-                                                  "type": "string",
-                                                  "title": "bridge name schema"
-                                                },
-                                                "mac": {
-                                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb/properties/cnis/properties/calicoVxlan/properties/bridge6/properties/mac",
-                                                  "type": "string",
-                                                  "title": "bridge mac schema"
-                                                }
-                                              },
-                                              "additionalProperties": false
-                                            }
-                                          },
-                                          "additionalProperties": false
                                         }
                                       },
                                       "additionalProperties": false
@@ -813,6 +657,163 @@
                                       "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k3s/properties/sysRun",
                                       "type": "string",
                                       "title": "The sys run schema"
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "cnis": {
+                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis",
+                              "type": "object",
+                              "title": "cnis schema",
+                              "description": "cnis",
+                              "required": [
+                                "flannel",
+                                "calicoVxlan"
+                              ],
+                              "properties": {
+                                "flannel": {
+                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/flannel",
+                                  "type": "object",
+                                  "title": "flannel cni schema",
+                                  "required": [
+                                    "enable",
+                                    "bridge4",
+                                    "bridge6"
+                                  ],
+                                  "properties":{
+                                    "enable": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/flannel/properties/enable",
+                                      "type": "boolean",
+                                      "title": "The enable schema"
+                                    },
+                                    "bridge4": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/flannel/properties/bridge4",
+                                      "type": "object",
+                                      "title": "IPv4 bridge schema",
+                                      "required": [
+                                        "enable",
+                                        "name"
+                                      ],
+                                      "properties":{
+                                        "enable": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/flannel/properties/bridge4/properties/enable",
+                                          "type": "boolean",
+                                          "title": "The enable schema"
+                                        },
+                                        "name": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/flannel/properties/bridge4/properties/name",
+                                          "type": "string",
+                                          "title": "bridge name schema"
+                                        },
+                                        "mac": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/flannel/properties/bridge4/properties/mac",
+                                          "type": "string",
+                                          "title": "bridge mac schema"
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    },
+                                    "bridge6": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/flannel/properties/bridge6",
+                                      "type": "object",
+                                      "title": "IPv6 bridge schema",
+                                      "required": [
+                                        "enable",
+                                        "name"
+                                      ],
+                                      "properties":{
+                                        "enable": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/flannel/properties/bridge6/properties/enable",
+                                          "type": "boolean",
+                                          "title": "The enable schema"
+                                        },
+                                        "name": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/flannel/properties/bridge6/properties/name",
+                                          "type": "string",
+                                          "title": "bridge name schema"
+                                        },
+                                        "mac": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/flannel/properties/bridge6/properties/mac",
+                                          "type": "string",
+                                          "title": "bridge mac schema"
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                },
+                                "calicoVxlan": {
+                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/calicoVxlan",
+                                  "type": "object",
+                                  "title": "calico cross subnet cni schema",
+                                  "required": [
+                                    "enable",
+                                    "bridge4",
+                                    "bridge6"
+                                  ],
+                                  "properties":{
+                                    "enable": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/calicoVxlan/properties/enable",
+                                      "type": "boolean",
+                                      "title": "The enable schema"
+                                    },
+                                    "bridge4": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/calicoVxlan/properties/bridge4",
+                                      "type": "object",
+                                      "title": "IPv4 bridge schema",
+                                      "required": [
+                                        "enable",
+                                        "name"
+                                      ],
+                                      "properties":{
+                                        "enable": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/calicoVxlan/properties/bridge4/properties/enable",
+                                          "type": "boolean",
+                                          "title": "The enable schema"
+                                        },
+                                        "name": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/calicoVxlan/properties/bridge4/properties/name",
+                                          "type": "string",
+                                          "title": "bridge name schema"
+                                        },
+                                        "mac": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/calicoVxlan/properties/bridge4/properties/mac",
+                                          "type": "string",
+                                          "title": "bridge mac schema"
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    },
+                                    "bridge6": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/calicoVxlan/properties/bridge6",
+                                      "type": "object",
+                                      "title": "IPv6 bridge schema",
+                                      "required": [
+                                        "enable",
+                                        "name"
+                                      ],
+                                      "properties":{
+                                        "enable": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/calicoVxlan/properties/bridge6/properties/enable",
+                                          "type": "boolean",
+                                          "title": "The enable schema"
+                                        },
+                                        "name": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/calicoVxlan/properties/bridge6/properties/name",
+                                          "type": "string",
+                                          "title": "bridge name schema"
+                                        },
+                                        "mac": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/cnis/properties/calicoVxlan/properties/bridge6/properties/mac",
+                                          "type": "string",
+                                          "title": "bridge mac schema"
+                                        }
+                                      },
+                                      "additionalProperties": false
                                     }
                                   },
                                   "additionalProperties": false

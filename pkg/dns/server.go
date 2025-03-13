@@ -80,13 +80,13 @@ func (s *Server) stop() {
 	if s.udpServer != nil {
 		err := s.udpServer.Shutdown()
 		if err != nil {
-			log.Error().Err(err)
+			log.Error().Err(err).Msg(err.Error())
 		}
 	}
 	if s.tcpServer != nil {
 		err := s.tcpServer.Shutdown()
 		if err != nil {
-			log.Error().Err(err)
+			log.Error().Err(err).Msg(err.Error())
 		}
 	}
 }

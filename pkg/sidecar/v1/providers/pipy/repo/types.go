@@ -5,8 +5,8 @@ import (
 	"time"
 
 	mapset "github.com/deckarep/golang-set"
-	v1 "k8s.io/api/core/v1"
-	runtime "k8s.io/apimachinery/pkg/runtime"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/catalog"
@@ -245,9 +245,9 @@ type MeshConfigSpec struct {
 	Traffic         TrafficSpec
 	FeatureFlags    FeatureFlags
 	Probes          struct {
-		ReadinessProbes []v1.Probe `json:"ReadinessProbes,omitempty"`
-		LivenessProbes  []v1.Probe `json:"LivenessProbes,omitempty"`
-		StartupProbes   []v1.Probe `json:"StartupProbes,omitempty"`
+		ReadinessProbes []corev1.Probe `json:"ReadinessProbes,omitempty"`
+		LivenessProbes  []corev1.Probe `json:"LivenessProbes,omitempty"`
+		StartupProbes   []corev1.Probe `json:"StartupProbes,omitempty"`
 	}
 	ClusterSet    map[string]string `json:"ClusterSet,omitempty"`
 	Observability ObservabilitySpec `json:"Observability,omitempty"`
