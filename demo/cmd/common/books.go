@@ -211,6 +211,7 @@ func GetBooks(participantName string, meshExpectedResponseCode int, booksCount *
 					// Sending this string to STDOUT will inform the CI Maestro that this is a succeeded;
 					// Maestro will stop tailing logs.
 					fmt.Println(Success)
+					log.Info().Msg(Success)
 				}
 			}
 
@@ -228,6 +229,8 @@ func GetBooks(participantName string, meshExpectedResponseCode int, booksCount *
 			// We are over budget!
 			fmt.Printf("Threshold of %d iterations exceeded\n\n", maxIterations)
 			fmt.Print(Failure)
+			log.Error().Msgf("Threshold of %d iterations exceeded", maxIterations)
+			log.Error().Msg(Failure)
 		}
 
 		fillerTime := sleepDurationBetweenRequests - time.Since(startTime)
