@@ -26,7 +26,7 @@ on:
       free_disk_space:
         required: false
         type: boolean
-        default: false
+        default: ${{ vars.FREE_DISK_SPACE || false }}
 
 env:
   FSM_HUMAN_DEBUG_LOG: ${{ vars.FSM_HUMAN_DEBUG_LOG || 'false' }}
@@ -45,7 +45,7 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
-        if: inputs.free_disk_space == true && startsWith(matrix.os, 'ubuntu')
+        if: inputs.free_disk_space == true && startsWith(inputs.os, 'ubuntu')
         with:
           tool-cache: false
           android: true
