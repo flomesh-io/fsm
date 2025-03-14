@@ -338,7 +338,7 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
-        if: vars.FREE_DISK_SPACE
+        if: vars.FREE_DISK_SPACE == 'true'
         with:
           tool-cache: false
           android: true

@@ -26,7 +26,7 @@ on:
       free_disk_space:
         required: false
         type: boolean
-        default: ${{ vars.FREE_DISK_SPACE }}
+        default: ${{ vars.FREE_DISK_SPACE == 'true' }}
 
 env:
   FSM_HUMAN_DEBUG_LOG: ${{ vars.FSM_HUMAN_DEBUG_LOG || 'false' }}
