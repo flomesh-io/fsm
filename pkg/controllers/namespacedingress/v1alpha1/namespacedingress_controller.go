@@ -243,7 +243,7 @@ func (r *reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&nsigv1alpha1.NamespacedIngress{}).
 		WithDefaulter(r.webhook).
 		WithValidator(r.webhook).
-		RecoverPanic().
+		RecoverPanic(true).
 		Complete(); err != nil {
 		return err
 	}

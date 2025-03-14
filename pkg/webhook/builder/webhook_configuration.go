@@ -3,6 +3,7 @@ package builder
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -251,4 +252,15 @@ func pluralName(gvk schema.GroupVersionKind) string {
 	namer := namerv2.NewAllLowercasePluralNamer(make(map[string]string))
 	t := &types.Type{Name: types.Name{Name: gvk.Kind}}
 	return namer.Name(t)
+}
+
+const webhookPathStringValidation = `^((/[a-zA-Z0-9-_]+)+|/)$`
+
+var validWebhookPathRegex = regexp.MustCompile(webhookPathStringValidation)
+
+func generateCustomPath(customPath string) (string, error) {
+	if !validWebhookPathRegex.MatchString(customPath) {
+		return "", errors.New("customPath \"" + customPath + "\" does not match this regex: " + webhookPathStringValidation)
+	}
+	return customPath, nil
 }

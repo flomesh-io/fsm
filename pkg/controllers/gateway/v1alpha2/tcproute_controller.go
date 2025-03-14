@@ -124,7 +124,7 @@ func (r *tcpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&gwv1alpha2.TCPRoute{}).
 		WithDefaulter(r.webhook).
 		WithValidator(r.webhook).
-		RecoverPanic().
+		RecoverPanic(true).
 		Complete(); err != nil {
 		return err
 	}

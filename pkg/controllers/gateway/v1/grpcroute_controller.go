@@ -130,7 +130,7 @@ func (r *grpcRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&gwv1.GRPCRoute{}).
 		WithDefaulter(r.webhook).
 		WithValidator(r.webhook).
-		RecoverPanic().
+		RecoverPanic(true).
 		Complete(); err != nil {
 		return err
 	}

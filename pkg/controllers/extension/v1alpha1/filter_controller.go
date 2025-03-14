@@ -73,7 +73,7 @@ func (r *filterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&extv1alpha1.Filter{}).
 		WithDefaulter(r.webhook).
 		WithValidator(r.webhook).
-		RecoverPanic().
+		RecoverPanic(true).
 		Complete(); err != nil {
 		return err
 	}

@@ -88,7 +88,7 @@ func (r *healthCheckPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&gwpav1alpha2.HealthCheckPolicy{}).
 		WithDefaulter(r.webhook).
 		WithValidator(r.webhook).
-		RecoverPanic().
+		RecoverPanic(true).
 		Complete(); err != nil {
 		return err
 	}
