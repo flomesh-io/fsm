@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // DNSModifierLister helps list DNSModifiers.
@@ -27,7 +27,7 @@ import (
 type DNSModifierLister interface {
 	// List lists all DNSModifiers in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.DNSModifier, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.DNSModifier, err error)
 	// DNSModifiers returns an object that can list and get DNSModifiers.
 	DNSModifiers(namespace string) DNSModifierNamespaceLister
 	DNSModifierListerExpansion
@@ -35,17 +35,17 @@ type DNSModifierLister interface {
 
 // dNSModifierLister implements the DNSModifierLister interface.
 type dNSModifierLister struct {
-	listers.ResourceIndexer[*v1alpha1.DNSModifier]
+	listers.ResourceIndexer[*extensionv1alpha1.DNSModifier]
 }
 
 // NewDNSModifierLister returns a new DNSModifierLister.
 func NewDNSModifierLister(indexer cache.Indexer) DNSModifierLister {
-	return &dNSModifierLister{listers.New[*v1alpha1.DNSModifier](indexer, v1alpha1.Resource("dnsmodifier"))}
+	return &dNSModifierLister{listers.New[*extensionv1alpha1.DNSModifier](indexer, extensionv1alpha1.Resource("dnsmodifier"))}
 }
 
 // DNSModifiers returns an object that can list and get DNSModifiers.
 func (s *dNSModifierLister) DNSModifiers(namespace string) DNSModifierNamespaceLister {
-	return dNSModifierNamespaceLister{listers.NewNamespaced[*v1alpha1.DNSModifier](s.ResourceIndexer, namespace)}
+	return dNSModifierNamespaceLister{listers.NewNamespaced[*extensionv1alpha1.DNSModifier](s.ResourceIndexer, namespace)}
 }
 
 // DNSModifierNamespaceLister helps list and get DNSModifiers.
@@ -53,15 +53,15 @@ func (s *dNSModifierLister) DNSModifiers(namespace string) DNSModifierNamespaceL
 type DNSModifierNamespaceLister interface {
 	// List lists all DNSModifiers in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.DNSModifier, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.DNSModifier, err error)
 	// Get retrieves the DNSModifier from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.DNSModifier, error)
+	Get(name string) (*extensionv1alpha1.DNSModifier, error)
 	DNSModifierNamespaceListerExpansion
 }
 
 // dNSModifierNamespaceLister implements the DNSModifierNamespaceLister
 // interface.
 type dNSModifierNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.DNSModifier]
+	listers.ResourceIndexer[*extensionv1alpha1.DNSModifier]
 }

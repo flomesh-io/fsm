@@ -16,129 +16,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/typed/extension/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeDNSModifiers implements DNSModifierInterface
-type FakeDNSModifiers struct {
+// fakeDNSModifiers implements DNSModifierInterface
+type fakeDNSModifiers struct {
+	*gentype.FakeClientWithList[*v1alpha1.DNSModifier, *v1alpha1.DNSModifierList]
 	Fake *FakeExtensionV1alpha1
-	ns   string
 }
 
-var dnsmodifiersResource = v1alpha1.SchemeGroupVersion.WithResource("dnsmodifiers")
-
-var dnsmodifiersKind = v1alpha1.SchemeGroupVersion.WithKind("DNSModifier")
-
-// Get takes name of the dNSModifier, and returns the corresponding dNSModifier object, and an error if there is any.
-func (c *FakeDNSModifiers) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.DNSModifier, err error) {
-	emptyResult := &v1alpha1.DNSModifier{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(dnsmodifiersResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakeDNSModifiers(fake *FakeExtensionV1alpha1, namespace string) extensionv1alpha1.DNSModifierInterface {
+	return &fakeDNSModifiers{
+		gentype.NewFakeClientWithList[*v1alpha1.DNSModifier, *v1alpha1.DNSModifierList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("dnsmodifiers"),
+			v1alpha1.SchemeGroupVersion.WithKind("DNSModifier"),
+			func() *v1alpha1.DNSModifier { return &v1alpha1.DNSModifier{} },
+			func() *v1alpha1.DNSModifierList { return &v1alpha1.DNSModifierList{} },
+			func(dst, src *v1alpha1.DNSModifierList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.DNSModifierList) []*v1alpha1.DNSModifier {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.DNSModifierList, items []*v1alpha1.DNSModifier) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.DNSModifier), err
-}
-
-// List takes label and field selectors, and returns the list of DNSModifiers that match those selectors.
-func (c *FakeDNSModifiers) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.DNSModifierList, err error) {
-	emptyResult := &v1alpha1.DNSModifierList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(dnsmodifiersResource, dnsmodifiersKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.DNSModifierList{ListMeta: obj.(*v1alpha1.DNSModifierList).ListMeta}
-	for _, item := range obj.(*v1alpha1.DNSModifierList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested dNSModifiers.
-func (c *FakeDNSModifiers) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(dnsmodifiersResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a dNSModifier and creates it.  Returns the server's representation of the dNSModifier, and an error, if there is any.
-func (c *FakeDNSModifiers) Create(ctx context.Context, dNSModifier *v1alpha1.DNSModifier, opts v1.CreateOptions) (result *v1alpha1.DNSModifier, err error) {
-	emptyResult := &v1alpha1.DNSModifier{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(dnsmodifiersResource, c.ns, dNSModifier, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.DNSModifier), err
-}
-
-// Update takes the representation of a dNSModifier and updates it. Returns the server's representation of the dNSModifier, and an error, if there is any.
-func (c *FakeDNSModifiers) Update(ctx context.Context, dNSModifier *v1alpha1.DNSModifier, opts v1.UpdateOptions) (result *v1alpha1.DNSModifier, err error) {
-	emptyResult := &v1alpha1.DNSModifier{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(dnsmodifiersResource, c.ns, dNSModifier, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.DNSModifier), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeDNSModifiers) UpdateStatus(ctx context.Context, dNSModifier *v1alpha1.DNSModifier, opts v1.UpdateOptions) (result *v1alpha1.DNSModifier, err error) {
-	emptyResult := &v1alpha1.DNSModifier{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceActionWithOptions(dnsmodifiersResource, "status", c.ns, dNSModifier, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.DNSModifier), err
-}
-
-// Delete takes name of the dNSModifier and deletes it. Returns an error if one occurs.
-func (c *FakeDNSModifiers) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(dnsmodifiersResource, c.ns, name, opts), &v1alpha1.DNSModifier{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeDNSModifiers) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(dnsmodifiersResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.DNSModifierList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched dNSModifier.
-func (c *FakeDNSModifiers) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.DNSModifier, err error) {
-	emptyResult := &v1alpha1.DNSModifier{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(dnsmodifiersResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.DNSModifier), err
 }

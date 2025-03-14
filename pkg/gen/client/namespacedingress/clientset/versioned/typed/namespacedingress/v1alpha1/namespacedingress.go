@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
+	namespacedingressv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,38 @@ type NamespacedIngressesGetter interface {
 
 // NamespacedIngressInterface has methods to work with NamespacedIngress resources.
 type NamespacedIngressInterface interface {
-	Create(ctx context.Context, namespacedIngress *v1alpha1.NamespacedIngress, opts v1.CreateOptions) (*v1alpha1.NamespacedIngress, error)
-	Update(ctx context.Context, namespacedIngress *v1alpha1.NamespacedIngress, opts v1.UpdateOptions) (*v1alpha1.NamespacedIngress, error)
+	Create(ctx context.Context, namespacedIngress *namespacedingressv1alpha1.NamespacedIngress, opts v1.CreateOptions) (*namespacedingressv1alpha1.NamespacedIngress, error)
+	Update(ctx context.Context, namespacedIngress *namespacedingressv1alpha1.NamespacedIngress, opts v1.UpdateOptions) (*namespacedingressv1alpha1.NamespacedIngress, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, namespacedIngress *v1alpha1.NamespacedIngress, opts v1.UpdateOptions) (*v1alpha1.NamespacedIngress, error)
+	UpdateStatus(ctx context.Context, namespacedIngress *namespacedingressv1alpha1.NamespacedIngress, opts v1.UpdateOptions) (*namespacedingressv1alpha1.NamespacedIngress, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.NamespacedIngress, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.NamespacedIngressList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*namespacedingressv1alpha1.NamespacedIngress, error)
+	List(ctx context.Context, opts v1.ListOptions) (*namespacedingressv1alpha1.NamespacedIngressList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.NamespacedIngress, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *namespacedingressv1alpha1.NamespacedIngress, err error)
 	NamespacedIngressExpansion
 }
 
 // namespacedIngresses implements NamespacedIngressInterface
 type namespacedIngresses struct {
-	*gentype.ClientWithList[*v1alpha1.NamespacedIngress, *v1alpha1.NamespacedIngressList]
+	*gentype.ClientWithList[*namespacedingressv1alpha1.NamespacedIngress, *namespacedingressv1alpha1.NamespacedIngressList]
 }
 
 // newNamespacedIngresses returns a NamespacedIngresses
 func newNamespacedIngresses(c *NetworkingV1alpha1Client, namespace string) *namespacedIngresses {
 	return &namespacedIngresses{
-		gentype.NewClientWithList[*v1alpha1.NamespacedIngress, *v1alpha1.NamespacedIngressList](
+		gentype.NewClientWithList[*namespacedingressv1alpha1.NamespacedIngress, *namespacedingressv1alpha1.NamespacedIngressList](
 			"namespacedingresses",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.NamespacedIngress { return &v1alpha1.NamespacedIngress{} },
-			func() *v1alpha1.NamespacedIngressList { return &v1alpha1.NamespacedIngressList{} }),
+			func() *namespacedingressv1alpha1.NamespacedIngress {
+				return &namespacedingressv1alpha1.NamespacedIngress{}
+			},
+			func() *namespacedingressv1alpha1.NamespacedIngressList {
+				return &namespacedingressv1alpha1.NamespacedIngressList{}
+			},
+		),
 	}
 }

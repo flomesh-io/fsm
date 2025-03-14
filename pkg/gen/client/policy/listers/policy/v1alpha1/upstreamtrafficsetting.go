@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // UpstreamTrafficSettingLister helps list UpstreamTrafficSettings.
@@ -27,7 +27,7 @@ import (
 type UpstreamTrafficSettingLister interface {
 	// List lists all UpstreamTrafficSettings in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.UpstreamTrafficSetting, err error)
+	List(selector labels.Selector) (ret []*policyv1alpha1.UpstreamTrafficSetting, err error)
 	// UpstreamTrafficSettings returns an object that can list and get UpstreamTrafficSettings.
 	UpstreamTrafficSettings(namespace string) UpstreamTrafficSettingNamespaceLister
 	UpstreamTrafficSettingListerExpansion
@@ -35,17 +35,17 @@ type UpstreamTrafficSettingLister interface {
 
 // upstreamTrafficSettingLister implements the UpstreamTrafficSettingLister interface.
 type upstreamTrafficSettingLister struct {
-	listers.ResourceIndexer[*v1alpha1.UpstreamTrafficSetting]
+	listers.ResourceIndexer[*policyv1alpha1.UpstreamTrafficSetting]
 }
 
 // NewUpstreamTrafficSettingLister returns a new UpstreamTrafficSettingLister.
 func NewUpstreamTrafficSettingLister(indexer cache.Indexer) UpstreamTrafficSettingLister {
-	return &upstreamTrafficSettingLister{listers.New[*v1alpha1.UpstreamTrafficSetting](indexer, v1alpha1.Resource("upstreamtrafficsetting"))}
+	return &upstreamTrafficSettingLister{listers.New[*policyv1alpha1.UpstreamTrafficSetting](indexer, policyv1alpha1.Resource("upstreamtrafficsetting"))}
 }
 
 // UpstreamTrafficSettings returns an object that can list and get UpstreamTrafficSettings.
 func (s *upstreamTrafficSettingLister) UpstreamTrafficSettings(namespace string) UpstreamTrafficSettingNamespaceLister {
-	return upstreamTrafficSettingNamespaceLister{listers.NewNamespaced[*v1alpha1.UpstreamTrafficSetting](s.ResourceIndexer, namespace)}
+	return upstreamTrafficSettingNamespaceLister{listers.NewNamespaced[*policyv1alpha1.UpstreamTrafficSetting](s.ResourceIndexer, namespace)}
 }
 
 // UpstreamTrafficSettingNamespaceLister helps list and get UpstreamTrafficSettings.
@@ -53,15 +53,15 @@ func (s *upstreamTrafficSettingLister) UpstreamTrafficSettings(namespace string)
 type UpstreamTrafficSettingNamespaceLister interface {
 	// List lists all UpstreamTrafficSettings in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.UpstreamTrafficSetting, err error)
+	List(selector labels.Selector) (ret []*policyv1alpha1.UpstreamTrafficSetting, err error)
 	// Get retrieves the UpstreamTrafficSetting from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.UpstreamTrafficSetting, error)
+	Get(name string) (*policyv1alpha1.UpstreamTrafficSetting, error)
 	UpstreamTrafficSettingNamespaceListerExpansion
 }
 
 // upstreamTrafficSettingNamespaceLister implements the UpstreamTrafficSettingNamespaceLister
 // interface.
 type upstreamTrafficSettingNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.UpstreamTrafficSetting]
+	listers.ResourceIndexer[*policyv1alpha1.UpstreamTrafficSetting]
 }

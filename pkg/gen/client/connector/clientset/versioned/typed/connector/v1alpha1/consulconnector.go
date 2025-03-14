@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type ConsulConnectorsGetter interface {
 
 // ConsulConnectorInterface has methods to work with ConsulConnector resources.
 type ConsulConnectorInterface interface {
-	Create(ctx context.Context, consulConnector *v1alpha1.ConsulConnector, opts v1.CreateOptions) (*v1alpha1.ConsulConnector, error)
-	Update(ctx context.Context, consulConnector *v1alpha1.ConsulConnector, opts v1.UpdateOptions) (*v1alpha1.ConsulConnector, error)
+	Create(ctx context.Context, consulConnector *connectorv1alpha1.ConsulConnector, opts v1.CreateOptions) (*connectorv1alpha1.ConsulConnector, error)
+	Update(ctx context.Context, consulConnector *connectorv1alpha1.ConsulConnector, opts v1.UpdateOptions) (*connectorv1alpha1.ConsulConnector, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, consulConnector *v1alpha1.ConsulConnector, opts v1.UpdateOptions) (*v1alpha1.ConsulConnector, error)
+	UpdateStatus(ctx context.Context, consulConnector *connectorv1alpha1.ConsulConnector, opts v1.UpdateOptions) (*connectorv1alpha1.ConsulConnector, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.ConsulConnector, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.ConsulConnectorList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*connectorv1alpha1.ConsulConnector, error)
+	List(ctx context.Context, opts v1.ListOptions) (*connectorv1alpha1.ConsulConnectorList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ConsulConnector, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *connectorv1alpha1.ConsulConnector, err error)
 	ConsulConnectorExpansion
 }
 
 // consulConnectors implements ConsulConnectorInterface
 type consulConnectors struct {
-	*gentype.ClientWithList[*v1alpha1.ConsulConnector, *v1alpha1.ConsulConnectorList]
+	*gentype.ClientWithList[*connectorv1alpha1.ConsulConnector, *connectorv1alpha1.ConsulConnectorList]
 }
 
 // newConsulConnectors returns a ConsulConnectors
 func newConsulConnectors(c *ConnectorV1alpha1Client, namespace string) *consulConnectors {
 	return &consulConnectors{
-		gentype.NewClientWithList[*v1alpha1.ConsulConnector, *v1alpha1.ConsulConnectorList](
+		gentype.NewClientWithList[*connectorv1alpha1.ConsulConnector, *connectorv1alpha1.ConsulConnectorList](
 			"consulconnectors",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.ConsulConnector { return &v1alpha1.ConsulConnector{} },
-			func() *v1alpha1.ConsulConnectorList { return &v1alpha1.ConsulConnectorList{} }),
+			func() *connectorv1alpha1.ConsulConnector { return &connectorv1alpha1.ConsulConnector{} },
+			func() *connectorv1alpha1.ConsulConnectorList { return &connectorv1alpha1.ConsulConnectorList{} },
+		),
 	}
 }

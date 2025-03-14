@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // NacosConnectorLister helps list NacosConnectors.
@@ -27,7 +27,7 @@ import (
 type NacosConnectorLister interface {
 	// List lists all NacosConnectors in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.NacosConnector, err error)
+	List(selector labels.Selector) (ret []*connectorv1alpha1.NacosConnector, err error)
 	// NacosConnectors returns an object that can list and get NacosConnectors.
 	NacosConnectors(namespace string) NacosConnectorNamespaceLister
 	NacosConnectorListerExpansion
@@ -35,17 +35,17 @@ type NacosConnectorLister interface {
 
 // nacosConnectorLister implements the NacosConnectorLister interface.
 type nacosConnectorLister struct {
-	listers.ResourceIndexer[*v1alpha1.NacosConnector]
+	listers.ResourceIndexer[*connectorv1alpha1.NacosConnector]
 }
 
 // NewNacosConnectorLister returns a new NacosConnectorLister.
 func NewNacosConnectorLister(indexer cache.Indexer) NacosConnectorLister {
-	return &nacosConnectorLister{listers.New[*v1alpha1.NacosConnector](indexer, v1alpha1.Resource("nacosconnector"))}
+	return &nacosConnectorLister{listers.New[*connectorv1alpha1.NacosConnector](indexer, connectorv1alpha1.Resource("nacosconnector"))}
 }
 
 // NacosConnectors returns an object that can list and get NacosConnectors.
 func (s *nacosConnectorLister) NacosConnectors(namespace string) NacosConnectorNamespaceLister {
-	return nacosConnectorNamespaceLister{listers.NewNamespaced[*v1alpha1.NacosConnector](s.ResourceIndexer, namespace)}
+	return nacosConnectorNamespaceLister{listers.NewNamespaced[*connectorv1alpha1.NacosConnector](s.ResourceIndexer, namespace)}
 }
 
 // NacosConnectorNamespaceLister helps list and get NacosConnectors.
@@ -53,15 +53,15 @@ func (s *nacosConnectorLister) NacosConnectors(namespace string) NacosConnectorN
 type NacosConnectorNamespaceLister interface {
 	// List lists all NacosConnectors in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.NacosConnector, err error)
+	List(selector labels.Selector) (ret []*connectorv1alpha1.NacosConnector, err error)
 	// Get retrieves the NacosConnector from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.NacosConnector, error)
+	Get(name string) (*connectorv1alpha1.NacosConnector, error)
 	NacosConnectorNamespaceListerExpansion
 }
 
 // nacosConnectorNamespaceLister implements the NacosConnectorNamespaceLister
 // interface.
 type nacosConnectorNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.NacosConnector]
+	listers.ResourceIndexer[*connectorv1alpha1.NacosConnector]
 }

@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	pluginv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // PluginConfigLister helps list PluginConfigs.
@@ -27,7 +27,7 @@ import (
 type PluginConfigLister interface {
 	// List lists all PluginConfigs in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.PluginConfig, err error)
+	List(selector labels.Selector) (ret []*pluginv1alpha1.PluginConfig, err error)
 	// PluginConfigs returns an object that can list and get PluginConfigs.
 	PluginConfigs(namespace string) PluginConfigNamespaceLister
 	PluginConfigListerExpansion
@@ -35,17 +35,17 @@ type PluginConfigLister interface {
 
 // pluginConfigLister implements the PluginConfigLister interface.
 type pluginConfigLister struct {
-	listers.ResourceIndexer[*v1alpha1.PluginConfig]
+	listers.ResourceIndexer[*pluginv1alpha1.PluginConfig]
 }
 
 // NewPluginConfigLister returns a new PluginConfigLister.
 func NewPluginConfigLister(indexer cache.Indexer) PluginConfigLister {
-	return &pluginConfigLister{listers.New[*v1alpha1.PluginConfig](indexer, v1alpha1.Resource("pluginconfig"))}
+	return &pluginConfigLister{listers.New[*pluginv1alpha1.PluginConfig](indexer, pluginv1alpha1.Resource("pluginconfig"))}
 }
 
 // PluginConfigs returns an object that can list and get PluginConfigs.
 func (s *pluginConfigLister) PluginConfigs(namespace string) PluginConfigNamespaceLister {
-	return pluginConfigNamespaceLister{listers.NewNamespaced[*v1alpha1.PluginConfig](s.ResourceIndexer, namespace)}
+	return pluginConfigNamespaceLister{listers.NewNamespaced[*pluginv1alpha1.PluginConfig](s.ResourceIndexer, namespace)}
 }
 
 // PluginConfigNamespaceLister helps list and get PluginConfigs.
@@ -53,15 +53,15 @@ func (s *pluginConfigLister) PluginConfigs(namespace string) PluginConfigNamespa
 type PluginConfigNamespaceLister interface {
 	// List lists all PluginConfigs in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.PluginConfig, err error)
+	List(selector labels.Selector) (ret []*pluginv1alpha1.PluginConfig, err error)
 	// Get retrieves the PluginConfig from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.PluginConfig, error)
+	Get(name string) (*pluginv1alpha1.PluginConfig, error)
 	PluginConfigNamespaceListerExpansion
 }
 
 // pluginConfigNamespaceLister implements the PluginConfigNamespaceLister
 // interface.
 type pluginConfigNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.PluginConfig]
+	listers.ResourceIndexer[*pluginv1alpha1.PluginConfig]
 }

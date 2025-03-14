@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	pluginv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // PluginLister helps list Plugins.
@@ -27,19 +27,19 @@ import (
 type PluginLister interface {
 	// List lists all Plugins in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.Plugin, err error)
+	List(selector labels.Selector) (ret []*pluginv1alpha1.Plugin, err error)
 	// Get retrieves the Plugin from the index for a given name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.Plugin, error)
+	Get(name string) (*pluginv1alpha1.Plugin, error)
 	PluginListerExpansion
 }
 
 // pluginLister implements the PluginLister interface.
 type pluginLister struct {
-	listers.ResourceIndexer[*v1alpha1.Plugin]
+	listers.ResourceIndexer[*pluginv1alpha1.Plugin]
 }
 
 // NewPluginLister returns a new PluginLister.
 func NewPluginLister(indexer cache.Indexer) PluginLister {
-	return &pluginLister{listers.New[*v1alpha1.Plugin](indexer, v1alpha1.Resource("plugin"))}
+	return &pluginLister{listers.New[*pluginv1alpha1.Plugin](indexer, pluginv1alpha1.Resource("plugin"))}
 }

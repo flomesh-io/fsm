@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	pluginv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // PluginChainLister helps list PluginChains.
@@ -27,7 +27,7 @@ import (
 type PluginChainLister interface {
 	// List lists all PluginChains in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.PluginChain, err error)
+	List(selector labels.Selector) (ret []*pluginv1alpha1.PluginChain, err error)
 	// PluginChains returns an object that can list and get PluginChains.
 	PluginChains(namespace string) PluginChainNamespaceLister
 	PluginChainListerExpansion
@@ -35,17 +35,17 @@ type PluginChainLister interface {
 
 // pluginChainLister implements the PluginChainLister interface.
 type pluginChainLister struct {
-	listers.ResourceIndexer[*v1alpha1.PluginChain]
+	listers.ResourceIndexer[*pluginv1alpha1.PluginChain]
 }
 
 // NewPluginChainLister returns a new PluginChainLister.
 func NewPluginChainLister(indexer cache.Indexer) PluginChainLister {
-	return &pluginChainLister{listers.New[*v1alpha1.PluginChain](indexer, v1alpha1.Resource("pluginchain"))}
+	return &pluginChainLister{listers.New[*pluginv1alpha1.PluginChain](indexer, pluginv1alpha1.Resource("pluginchain"))}
 }
 
 // PluginChains returns an object that can list and get PluginChains.
 func (s *pluginChainLister) PluginChains(namespace string) PluginChainNamespaceLister {
-	return pluginChainNamespaceLister{listers.NewNamespaced[*v1alpha1.PluginChain](s.ResourceIndexer, namespace)}
+	return pluginChainNamespaceLister{listers.NewNamespaced[*pluginv1alpha1.PluginChain](s.ResourceIndexer, namespace)}
 }
 
 // PluginChainNamespaceLister helps list and get PluginChains.
@@ -53,15 +53,15 @@ func (s *pluginChainLister) PluginChains(namespace string) PluginChainNamespaceL
 type PluginChainNamespaceLister interface {
 	// List lists all PluginChains in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.PluginChain, err error)
+	List(selector labels.Selector) (ret []*pluginv1alpha1.PluginChain, err error)
 	// Get retrieves the PluginChain from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.PluginChain, error)
+	Get(name string) (*pluginv1alpha1.PluginChain, error)
 	PluginChainNamespaceListerExpansion
 }
 
 // pluginChainNamespaceLister implements the PluginChainNamespaceLister
 // interface.
 type pluginChainNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.PluginChain]
+	listers.ResourceIndexer[*pluginv1alpha1.PluginChain]
 }

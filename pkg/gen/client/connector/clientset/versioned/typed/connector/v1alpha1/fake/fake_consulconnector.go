@@ -16,129 +16,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned/typed/connector/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeConsulConnectors implements ConsulConnectorInterface
-type FakeConsulConnectors struct {
+// fakeConsulConnectors implements ConsulConnectorInterface
+type fakeConsulConnectors struct {
+	*gentype.FakeClientWithList[*v1alpha1.ConsulConnector, *v1alpha1.ConsulConnectorList]
 	Fake *FakeConnectorV1alpha1
-	ns   string
 }
 
-var consulconnectorsResource = v1alpha1.SchemeGroupVersion.WithResource("consulconnectors")
-
-var consulconnectorsKind = v1alpha1.SchemeGroupVersion.WithKind("ConsulConnector")
-
-// Get takes name of the consulConnector, and returns the corresponding consulConnector object, and an error if there is any.
-func (c *FakeConsulConnectors) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.ConsulConnector, err error) {
-	emptyResult := &v1alpha1.ConsulConnector{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(consulconnectorsResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakeConsulConnectors(fake *FakeConnectorV1alpha1, namespace string) connectorv1alpha1.ConsulConnectorInterface {
+	return &fakeConsulConnectors{
+		gentype.NewFakeClientWithList[*v1alpha1.ConsulConnector, *v1alpha1.ConsulConnectorList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("consulconnectors"),
+			v1alpha1.SchemeGroupVersion.WithKind("ConsulConnector"),
+			func() *v1alpha1.ConsulConnector { return &v1alpha1.ConsulConnector{} },
+			func() *v1alpha1.ConsulConnectorList { return &v1alpha1.ConsulConnectorList{} },
+			func(dst, src *v1alpha1.ConsulConnectorList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.ConsulConnectorList) []*v1alpha1.ConsulConnector {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.ConsulConnectorList, items []*v1alpha1.ConsulConnector) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.ConsulConnector), err
-}
-
-// List takes label and field selectors, and returns the list of ConsulConnectors that match those selectors.
-func (c *FakeConsulConnectors) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.ConsulConnectorList, err error) {
-	emptyResult := &v1alpha1.ConsulConnectorList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(consulconnectorsResource, consulconnectorsKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.ConsulConnectorList{ListMeta: obj.(*v1alpha1.ConsulConnectorList).ListMeta}
-	for _, item := range obj.(*v1alpha1.ConsulConnectorList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested consulConnectors.
-func (c *FakeConsulConnectors) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(consulconnectorsResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a consulConnector and creates it.  Returns the server's representation of the consulConnector, and an error, if there is any.
-func (c *FakeConsulConnectors) Create(ctx context.Context, consulConnector *v1alpha1.ConsulConnector, opts v1.CreateOptions) (result *v1alpha1.ConsulConnector, err error) {
-	emptyResult := &v1alpha1.ConsulConnector{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(consulconnectorsResource, c.ns, consulConnector, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.ConsulConnector), err
-}
-
-// Update takes the representation of a consulConnector and updates it. Returns the server's representation of the consulConnector, and an error, if there is any.
-func (c *FakeConsulConnectors) Update(ctx context.Context, consulConnector *v1alpha1.ConsulConnector, opts v1.UpdateOptions) (result *v1alpha1.ConsulConnector, err error) {
-	emptyResult := &v1alpha1.ConsulConnector{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(consulconnectorsResource, c.ns, consulConnector, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.ConsulConnector), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeConsulConnectors) UpdateStatus(ctx context.Context, consulConnector *v1alpha1.ConsulConnector, opts v1.UpdateOptions) (result *v1alpha1.ConsulConnector, err error) {
-	emptyResult := &v1alpha1.ConsulConnector{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceActionWithOptions(consulconnectorsResource, "status", c.ns, consulConnector, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.ConsulConnector), err
-}
-
-// Delete takes name of the consulConnector and deletes it. Returns an error if one occurs.
-func (c *FakeConsulConnectors) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(consulconnectorsResource, c.ns, name, opts), &v1alpha1.ConsulConnector{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeConsulConnectors) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(consulconnectorsResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.ConsulConnectorList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched consulConnector.
-func (c *FakeConsulConnectors) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ConsulConnector, err error) {
-	emptyResult := &v1alpha1.ConsulConnector{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(consulconnectorsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.ConsulConnector), err
 }

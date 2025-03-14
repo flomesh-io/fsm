@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	apispolicyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/policy/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/listers/policy/v1alpha1"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/listers/policy/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // EgressGateways.
 type EgressGatewayInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.EgressGatewayLister
+	Lister() policyv1alpha1.EgressGatewayLister
 }
 
 type egressGatewayInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredEgressGatewayInformer(client versioned.Interface, namespace stri
 				return client.PolicyV1alpha1().EgressGateways(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&policyv1alpha1.EgressGateway{},
+		&apispolicyv1alpha1.EgressGateway{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *egressGatewayInformer) defaultInformer(client versioned.Interface, resy
 }
 
 func (f *egressGatewayInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&policyv1alpha1.EgressGateway{}, f.defaultInformer)
+	return f.factory.InformerFor(&apispolicyv1alpha1.EgressGateway{}, f.defaultInformer)
 }
 
-func (f *egressGatewayInformer) Lister() v1alpha1.EgressGatewayLister {
-	return v1alpha1.NewEgressGatewayLister(f.Informer().GetIndexer())
+func (f *egressGatewayInformer) Lister() policyv1alpha1.EgressGatewayLister {
+	return policyv1alpha1.NewEgressGatewayLister(f.Informer().GetIndexer())
 }

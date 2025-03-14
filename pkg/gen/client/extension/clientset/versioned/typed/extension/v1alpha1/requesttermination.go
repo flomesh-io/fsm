@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type RequestTerminationsGetter interface {
 
 // RequestTerminationInterface has methods to work with RequestTermination resources.
 type RequestTerminationInterface interface {
-	Create(ctx context.Context, requestTermination *v1alpha1.RequestTermination, opts v1.CreateOptions) (*v1alpha1.RequestTermination, error)
-	Update(ctx context.Context, requestTermination *v1alpha1.RequestTermination, opts v1.UpdateOptions) (*v1alpha1.RequestTermination, error)
+	Create(ctx context.Context, requestTermination *extensionv1alpha1.RequestTermination, opts v1.CreateOptions) (*extensionv1alpha1.RequestTermination, error)
+	Update(ctx context.Context, requestTermination *extensionv1alpha1.RequestTermination, opts v1.UpdateOptions) (*extensionv1alpha1.RequestTermination, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, requestTermination *v1alpha1.RequestTermination, opts v1.UpdateOptions) (*v1alpha1.RequestTermination, error)
+	UpdateStatus(ctx context.Context, requestTermination *extensionv1alpha1.RequestTermination, opts v1.UpdateOptions) (*extensionv1alpha1.RequestTermination, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.RequestTermination, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.RequestTerminationList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*extensionv1alpha1.RequestTermination, error)
+	List(ctx context.Context, opts v1.ListOptions) (*extensionv1alpha1.RequestTerminationList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.RequestTermination, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *extensionv1alpha1.RequestTermination, err error)
 	RequestTerminationExpansion
 }
 
 // requestTerminations implements RequestTerminationInterface
 type requestTerminations struct {
-	*gentype.ClientWithList[*v1alpha1.RequestTermination, *v1alpha1.RequestTerminationList]
+	*gentype.ClientWithList[*extensionv1alpha1.RequestTermination, *extensionv1alpha1.RequestTerminationList]
 }
 
 // newRequestTerminations returns a RequestTerminations
 func newRequestTerminations(c *ExtensionV1alpha1Client, namespace string) *requestTerminations {
 	return &requestTerminations{
-		gentype.NewClientWithList[*v1alpha1.RequestTermination, *v1alpha1.RequestTerminationList](
+		gentype.NewClientWithList[*extensionv1alpha1.RequestTermination, *extensionv1alpha1.RequestTerminationList](
 			"requestterminations",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.RequestTermination { return &v1alpha1.RequestTermination{} },
-			func() *v1alpha1.RequestTerminationList { return &v1alpha1.RequestTerminationList{} }),
+			func() *extensionv1alpha1.RequestTermination { return &extensionv1alpha1.RequestTermination{} },
+			func() *extensionv1alpha1.RequestTerminationList { return &extensionv1alpha1.RequestTerminationList{} },
+		),
 	}
 }

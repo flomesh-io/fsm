@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // IPRestrictionLister helps list IPRestrictions.
@@ -27,7 +27,7 @@ import (
 type IPRestrictionLister interface {
 	// List lists all IPRestrictions in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.IPRestriction, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.IPRestriction, err error)
 	// IPRestrictions returns an object that can list and get IPRestrictions.
 	IPRestrictions(namespace string) IPRestrictionNamespaceLister
 	IPRestrictionListerExpansion
@@ -35,17 +35,17 @@ type IPRestrictionLister interface {
 
 // iPRestrictionLister implements the IPRestrictionLister interface.
 type iPRestrictionLister struct {
-	listers.ResourceIndexer[*v1alpha1.IPRestriction]
+	listers.ResourceIndexer[*extensionv1alpha1.IPRestriction]
 }
 
 // NewIPRestrictionLister returns a new IPRestrictionLister.
 func NewIPRestrictionLister(indexer cache.Indexer) IPRestrictionLister {
-	return &iPRestrictionLister{listers.New[*v1alpha1.IPRestriction](indexer, v1alpha1.Resource("iprestriction"))}
+	return &iPRestrictionLister{listers.New[*extensionv1alpha1.IPRestriction](indexer, extensionv1alpha1.Resource("iprestriction"))}
 }
 
 // IPRestrictions returns an object that can list and get IPRestrictions.
 func (s *iPRestrictionLister) IPRestrictions(namespace string) IPRestrictionNamespaceLister {
-	return iPRestrictionNamespaceLister{listers.NewNamespaced[*v1alpha1.IPRestriction](s.ResourceIndexer, namespace)}
+	return iPRestrictionNamespaceLister{listers.NewNamespaced[*extensionv1alpha1.IPRestriction](s.ResourceIndexer, namespace)}
 }
 
 // IPRestrictionNamespaceLister helps list and get IPRestrictions.
@@ -53,15 +53,15 @@ func (s *iPRestrictionLister) IPRestrictions(namespace string) IPRestrictionName
 type IPRestrictionNamespaceLister interface {
 	// List lists all IPRestrictions in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.IPRestriction, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.IPRestriction, err error)
 	// Get retrieves the IPRestriction from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.IPRestriction, error)
+	Get(name string) (*extensionv1alpha1.IPRestriction, error)
 	IPRestrictionNamespaceListerExpansion
 }
 
 // iPRestrictionNamespaceLister implements the IPRestrictionNamespaceLister
 // interface.
 type iPRestrictionNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.IPRestriction]
+	listers.ResourceIndexer[*extensionv1alpha1.IPRestriction]
 }

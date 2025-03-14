@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // TrafficWarmupLister helps list TrafficWarmups.
@@ -27,7 +27,7 @@ import (
 type TrafficWarmupLister interface {
 	// List lists all TrafficWarmups in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.TrafficWarmup, err error)
+	List(selector labels.Selector) (ret []*policyv1alpha1.TrafficWarmup, err error)
 	// TrafficWarmups returns an object that can list and get TrafficWarmups.
 	TrafficWarmups(namespace string) TrafficWarmupNamespaceLister
 	TrafficWarmupListerExpansion
@@ -35,17 +35,17 @@ type TrafficWarmupLister interface {
 
 // trafficWarmupLister implements the TrafficWarmupLister interface.
 type trafficWarmupLister struct {
-	listers.ResourceIndexer[*v1alpha1.TrafficWarmup]
+	listers.ResourceIndexer[*policyv1alpha1.TrafficWarmup]
 }
 
 // NewTrafficWarmupLister returns a new TrafficWarmupLister.
 func NewTrafficWarmupLister(indexer cache.Indexer) TrafficWarmupLister {
-	return &trafficWarmupLister{listers.New[*v1alpha1.TrafficWarmup](indexer, v1alpha1.Resource("trafficwarmup"))}
+	return &trafficWarmupLister{listers.New[*policyv1alpha1.TrafficWarmup](indexer, policyv1alpha1.Resource("trafficwarmup"))}
 }
 
 // TrafficWarmups returns an object that can list and get TrafficWarmups.
 func (s *trafficWarmupLister) TrafficWarmups(namespace string) TrafficWarmupNamespaceLister {
-	return trafficWarmupNamespaceLister{listers.NewNamespaced[*v1alpha1.TrafficWarmup](s.ResourceIndexer, namespace)}
+	return trafficWarmupNamespaceLister{listers.NewNamespaced[*policyv1alpha1.TrafficWarmup](s.ResourceIndexer, namespace)}
 }
 
 // TrafficWarmupNamespaceLister helps list and get TrafficWarmups.
@@ -53,15 +53,15 @@ func (s *trafficWarmupLister) TrafficWarmups(namespace string) TrafficWarmupName
 type TrafficWarmupNamespaceLister interface {
 	// List lists all TrafficWarmups in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.TrafficWarmup, err error)
+	List(selector labels.Selector) (ret []*policyv1alpha1.TrafficWarmup, err error)
 	// Get retrieves the TrafficWarmup from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.TrafficWarmup, error)
+	Get(name string) (*policyv1alpha1.TrafficWarmup, error)
 	TrafficWarmupNamespaceListerExpansion
 }
 
 // trafficWarmupNamespaceLister implements the TrafficWarmupNamespaceLister
 // interface.
 type trafficWarmupNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.TrafficWarmup]
+	listers.ResourceIndexer[*policyv1alpha1.TrafficWarmup]
 }

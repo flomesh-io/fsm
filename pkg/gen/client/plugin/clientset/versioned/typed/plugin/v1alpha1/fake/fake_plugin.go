@@ -16,120 +16,32 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	pluginv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/plugin/clientset/versioned/typed/plugin/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakePlugins implements PluginInterface
-type FakePlugins struct {
+// fakePlugins implements PluginInterface
+type fakePlugins struct {
+	*gentype.FakeClientWithList[*v1alpha1.Plugin, *v1alpha1.PluginList]
 	Fake *FakePluginV1alpha1
 }
 
-var pluginsResource = v1alpha1.SchemeGroupVersion.WithResource("plugins")
-
-var pluginsKind = v1alpha1.SchemeGroupVersion.WithKind("Plugin")
-
-// Get takes name of the plugin, and returns the corresponding plugin object, and an error if there is any.
-func (c *FakePlugins) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Plugin, err error) {
-	emptyResult := &v1alpha1.Plugin{}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootGetActionWithOptions(pluginsResource, name, options), emptyResult)
-	if obj == nil {
-		return emptyResult, err
+func newFakePlugins(fake *FakePluginV1alpha1) pluginv1alpha1.PluginInterface {
+	return &fakePlugins{
+		gentype.NewFakeClientWithList[*v1alpha1.Plugin, *v1alpha1.PluginList](
+			fake.Fake,
+			"",
+			v1alpha1.SchemeGroupVersion.WithResource("plugins"),
+			v1alpha1.SchemeGroupVersion.WithKind("Plugin"),
+			func() *v1alpha1.Plugin { return &v1alpha1.Plugin{} },
+			func() *v1alpha1.PluginList { return &v1alpha1.PluginList{} },
+			func(dst, src *v1alpha1.PluginList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.PluginList) []*v1alpha1.Plugin { return gentype.ToPointerSlice(list.Items) },
+			func(list *v1alpha1.PluginList, items []*v1alpha1.Plugin) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.Plugin), err
-}
-
-// List takes label and field selectors, and returns the list of Plugins that match those selectors.
-func (c *FakePlugins) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.PluginList, err error) {
-	emptyResult := &v1alpha1.PluginList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootListActionWithOptions(pluginsResource, pluginsKind, opts), emptyResult)
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.PluginList{ListMeta: obj.(*v1alpha1.PluginList).ListMeta}
-	for _, item := range obj.(*v1alpha1.PluginList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested plugins.
-func (c *FakePlugins) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewRootWatchActionWithOptions(pluginsResource, opts))
-}
-
-// Create takes the representation of a plugin and creates it.  Returns the server's representation of the plugin, and an error, if there is any.
-func (c *FakePlugins) Create(ctx context.Context, plugin *v1alpha1.Plugin, opts v1.CreateOptions) (result *v1alpha1.Plugin, err error) {
-	emptyResult := &v1alpha1.Plugin{}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootCreateActionWithOptions(pluginsResource, plugin, opts), emptyResult)
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.Plugin), err
-}
-
-// Update takes the representation of a plugin and updates it. Returns the server's representation of the plugin, and an error, if there is any.
-func (c *FakePlugins) Update(ctx context.Context, plugin *v1alpha1.Plugin, opts v1.UpdateOptions) (result *v1alpha1.Plugin, err error) {
-	emptyResult := &v1alpha1.Plugin{}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateActionWithOptions(pluginsResource, plugin, opts), emptyResult)
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.Plugin), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakePlugins) UpdateStatus(ctx context.Context, plugin *v1alpha1.Plugin, opts v1.UpdateOptions) (result *v1alpha1.Plugin, err error) {
-	emptyResult := &v1alpha1.Plugin{}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateSubresourceActionWithOptions(pluginsResource, "status", plugin, opts), emptyResult)
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.Plugin), err
-}
-
-// Delete takes name of the plugin and deletes it. Returns an error if one occurs.
-func (c *FakePlugins) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteActionWithOptions(pluginsResource, name, opts), &v1alpha1.Plugin{})
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakePlugins) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionActionWithOptions(pluginsResource, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.PluginList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched plugin.
-func (c *FakePlugins) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Plugin, err error) {
-	emptyResult := &v1alpha1.Plugin{}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceActionWithOptions(pluginsResource, name, pt, data, opts, subresources...), emptyResult)
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.Plugin), err
 }

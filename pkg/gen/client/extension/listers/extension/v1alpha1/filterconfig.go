@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // FilterConfigLister helps list FilterConfigs.
@@ -27,7 +27,7 @@ import (
 type FilterConfigLister interface {
 	// List lists all FilterConfigs in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.FilterConfig, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.FilterConfig, err error)
 	// FilterConfigs returns an object that can list and get FilterConfigs.
 	FilterConfigs(namespace string) FilterConfigNamespaceLister
 	FilterConfigListerExpansion
@@ -35,17 +35,17 @@ type FilterConfigLister interface {
 
 // filterConfigLister implements the FilterConfigLister interface.
 type filterConfigLister struct {
-	listers.ResourceIndexer[*v1alpha1.FilterConfig]
+	listers.ResourceIndexer[*extensionv1alpha1.FilterConfig]
 }
 
 // NewFilterConfigLister returns a new FilterConfigLister.
 func NewFilterConfigLister(indexer cache.Indexer) FilterConfigLister {
-	return &filterConfigLister{listers.New[*v1alpha1.FilterConfig](indexer, v1alpha1.Resource("filterconfig"))}
+	return &filterConfigLister{listers.New[*extensionv1alpha1.FilterConfig](indexer, extensionv1alpha1.Resource("filterconfig"))}
 }
 
 // FilterConfigs returns an object that can list and get FilterConfigs.
 func (s *filterConfigLister) FilterConfigs(namespace string) FilterConfigNamespaceLister {
-	return filterConfigNamespaceLister{listers.NewNamespaced[*v1alpha1.FilterConfig](s.ResourceIndexer, namespace)}
+	return filterConfigNamespaceLister{listers.NewNamespaced[*extensionv1alpha1.FilterConfig](s.ResourceIndexer, namespace)}
 }
 
 // FilterConfigNamespaceLister helps list and get FilterConfigs.
@@ -53,15 +53,15 @@ func (s *filterConfigLister) FilterConfigs(namespace string) FilterConfigNamespa
 type FilterConfigNamespaceLister interface {
 	// List lists all FilterConfigs in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.FilterConfig, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.FilterConfig, err error)
 	// Get retrieves the FilterConfig from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.FilterConfig, error)
+	Get(name string) (*extensionv1alpha1.FilterConfig, error)
 	FilterConfigNamespaceListerExpansion
 }
 
 // filterConfigNamespaceLister implements the FilterConfigNamespaceLister
 // interface.
 type filterConfigNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.FilterConfig]
+	listers.ResourceIndexer[*extensionv1alpha1.FilterConfig]
 }

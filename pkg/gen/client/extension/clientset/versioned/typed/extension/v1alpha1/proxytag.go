@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type ProxyTagsGetter interface {
 
 // ProxyTagInterface has methods to work with ProxyTag resources.
 type ProxyTagInterface interface {
-	Create(ctx context.Context, proxyTag *v1alpha1.ProxyTag, opts v1.CreateOptions) (*v1alpha1.ProxyTag, error)
-	Update(ctx context.Context, proxyTag *v1alpha1.ProxyTag, opts v1.UpdateOptions) (*v1alpha1.ProxyTag, error)
+	Create(ctx context.Context, proxyTag *extensionv1alpha1.ProxyTag, opts v1.CreateOptions) (*extensionv1alpha1.ProxyTag, error)
+	Update(ctx context.Context, proxyTag *extensionv1alpha1.ProxyTag, opts v1.UpdateOptions) (*extensionv1alpha1.ProxyTag, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, proxyTag *v1alpha1.ProxyTag, opts v1.UpdateOptions) (*v1alpha1.ProxyTag, error)
+	UpdateStatus(ctx context.Context, proxyTag *extensionv1alpha1.ProxyTag, opts v1.UpdateOptions) (*extensionv1alpha1.ProxyTag, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.ProxyTag, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.ProxyTagList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*extensionv1alpha1.ProxyTag, error)
+	List(ctx context.Context, opts v1.ListOptions) (*extensionv1alpha1.ProxyTagList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ProxyTag, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *extensionv1alpha1.ProxyTag, err error)
 	ProxyTagExpansion
 }
 
 // proxyTags implements ProxyTagInterface
 type proxyTags struct {
-	*gentype.ClientWithList[*v1alpha1.ProxyTag, *v1alpha1.ProxyTagList]
+	*gentype.ClientWithList[*extensionv1alpha1.ProxyTag, *extensionv1alpha1.ProxyTagList]
 }
 
 // newProxyTags returns a ProxyTags
 func newProxyTags(c *ExtensionV1alpha1Client, namespace string) *proxyTags {
 	return &proxyTags{
-		gentype.NewClientWithList[*v1alpha1.ProxyTag, *v1alpha1.ProxyTagList](
+		gentype.NewClientWithList[*extensionv1alpha1.ProxyTag, *extensionv1alpha1.ProxyTagList](
 			"proxytags",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.ProxyTag { return &v1alpha1.ProxyTag{} },
-			func() *v1alpha1.ProxyTagList { return &v1alpha1.ProxyTagList{} }),
+			func() *extensionv1alpha1.ProxyTag { return &extensionv1alpha1.ProxyTag{} },
+			func() *extensionv1alpha1.ProxyTagList { return &extensionv1alpha1.ProxyTagList{} },
+		),
 	}
 }

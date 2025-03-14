@@ -16,116 +16,30 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned/typed/policy/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeRetries implements RetryInterface
-type FakeRetries struct {
+// fakeRetries implements RetryInterface
+type fakeRetries struct {
+	*gentype.FakeClientWithList[*v1alpha1.Retry, *v1alpha1.RetryList]
 	Fake *FakePolicyV1alpha1
-	ns   string
 }
 
-var retriesResource = v1alpha1.SchemeGroupVersion.WithResource("retries")
-
-var retriesKind = v1alpha1.SchemeGroupVersion.WithKind("Retry")
-
-// Get takes name of the retry, and returns the corresponding retry object, and an error if there is any.
-func (c *FakeRetries) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Retry, err error) {
-	emptyResult := &v1alpha1.Retry{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(retriesResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakeRetries(fake *FakePolicyV1alpha1, namespace string) policyv1alpha1.RetryInterface {
+	return &fakeRetries{
+		gentype.NewFakeClientWithList[*v1alpha1.Retry, *v1alpha1.RetryList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("retries"),
+			v1alpha1.SchemeGroupVersion.WithKind("Retry"),
+			func() *v1alpha1.Retry { return &v1alpha1.Retry{} },
+			func() *v1alpha1.RetryList { return &v1alpha1.RetryList{} },
+			func(dst, src *v1alpha1.RetryList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.RetryList) []*v1alpha1.Retry { return gentype.ToPointerSlice(list.Items) },
+			func(list *v1alpha1.RetryList, items []*v1alpha1.Retry) { list.Items = gentype.FromPointerSlice(items) },
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.Retry), err
-}
-
-// List takes label and field selectors, and returns the list of Retries that match those selectors.
-func (c *FakeRetries) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.RetryList, err error) {
-	emptyResult := &v1alpha1.RetryList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(retriesResource, retriesKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.RetryList{ListMeta: obj.(*v1alpha1.RetryList).ListMeta}
-	for _, item := range obj.(*v1alpha1.RetryList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested retries.
-func (c *FakeRetries) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(retriesResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a retry and creates it.  Returns the server's representation of the retry, and an error, if there is any.
-func (c *FakeRetries) Create(ctx context.Context, retry *v1alpha1.Retry, opts v1.CreateOptions) (result *v1alpha1.Retry, err error) {
-	emptyResult := &v1alpha1.Retry{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(retriesResource, c.ns, retry, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.Retry), err
-}
-
-// Update takes the representation of a retry and updates it. Returns the server's representation of the retry, and an error, if there is any.
-func (c *FakeRetries) Update(ctx context.Context, retry *v1alpha1.Retry, opts v1.UpdateOptions) (result *v1alpha1.Retry, err error) {
-	emptyResult := &v1alpha1.Retry{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(retriesResource, c.ns, retry, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.Retry), err
-}
-
-// Delete takes name of the retry and deletes it. Returns an error if one occurs.
-func (c *FakeRetries) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(retriesResource, c.ns, name, opts), &v1alpha1.Retry{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeRetries) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(retriesResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.RetryList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched retry.
-func (c *FakeRetries) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Retry, err error) {
-	emptyResult := &v1alpha1.Retry{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(retriesResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.Retry), err
 }

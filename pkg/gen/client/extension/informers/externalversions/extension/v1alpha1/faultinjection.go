@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	apisextensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/extension/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // FaultInjections.
 type FaultInjectionInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.FaultInjectionLister
+	Lister() extensionv1alpha1.FaultInjectionLister
 }
 
 type faultInjectionInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredFaultInjectionInformer(client versioned.Interface, namespace str
 				return client.ExtensionV1alpha1().FaultInjections(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&extensionv1alpha1.FaultInjection{},
+		&apisextensionv1alpha1.FaultInjection{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *faultInjectionInformer) defaultInformer(client versioned.Interface, res
 }
 
 func (f *faultInjectionInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&extensionv1alpha1.FaultInjection{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisextensionv1alpha1.FaultInjection{}, f.defaultInformer)
 }
 
-func (f *faultInjectionInformer) Lister() v1alpha1.FaultInjectionLister {
-	return v1alpha1.NewFaultInjectionLister(f.Informer().GetIndexer())
+func (f *faultInjectionInformer) Lister() extensionv1alpha1.FaultInjectionLister {
+	return extensionv1alpha1.NewFaultInjectionLister(f.Informer().GetIndexer())
 }

@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/traffic/v1alpha1"
+	trafficv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/traffic/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/traffic/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type TrafficSplitsGetter interface {
 
 // TrafficSplitInterface has methods to work with TrafficSplit resources.
 type TrafficSplitInterface interface {
-	Create(ctx context.Context, trafficSplit *v1alpha1.TrafficSplit, opts v1.CreateOptions) (*v1alpha1.TrafficSplit, error)
-	Update(ctx context.Context, trafficSplit *v1alpha1.TrafficSplit, opts v1.UpdateOptions) (*v1alpha1.TrafficSplit, error)
+	Create(ctx context.Context, trafficSplit *trafficv1alpha1.TrafficSplit, opts v1.CreateOptions) (*trafficv1alpha1.TrafficSplit, error)
+	Update(ctx context.Context, trafficSplit *trafficv1alpha1.TrafficSplit, opts v1.UpdateOptions) (*trafficv1alpha1.TrafficSplit, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, trafficSplit *v1alpha1.TrafficSplit, opts v1.UpdateOptions) (*v1alpha1.TrafficSplit, error)
+	UpdateStatus(ctx context.Context, trafficSplit *trafficv1alpha1.TrafficSplit, opts v1.UpdateOptions) (*trafficv1alpha1.TrafficSplit, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.TrafficSplit, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.TrafficSplitList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*trafficv1alpha1.TrafficSplit, error)
+	List(ctx context.Context, opts v1.ListOptions) (*trafficv1alpha1.TrafficSplitList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.TrafficSplit, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *trafficv1alpha1.TrafficSplit, err error)
 	TrafficSplitExpansion
 }
 
 // trafficSplits implements TrafficSplitInterface
 type trafficSplits struct {
-	*gentype.ClientWithList[*v1alpha1.TrafficSplit, *v1alpha1.TrafficSplitList]
+	*gentype.ClientWithList[*trafficv1alpha1.TrafficSplit, *trafficv1alpha1.TrafficSplitList]
 }
 
 // newTrafficSplits returns a TrafficSplits
 func newTrafficSplits(c *TrafficV1alpha1Client, namespace string) *trafficSplits {
 	return &trafficSplits{
-		gentype.NewClientWithList[*v1alpha1.TrafficSplit, *v1alpha1.TrafficSplitList](
+		gentype.NewClientWithList[*trafficv1alpha1.TrafficSplit, *trafficv1alpha1.TrafficSplitList](
 			"trafficsplits",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.TrafficSplit { return &v1alpha1.TrafficSplit{} },
-			func() *v1alpha1.TrafficSplitList { return &v1alpha1.TrafficSplitList{} }),
+			func() *trafficv1alpha1.TrafficSplit { return &trafficv1alpha1.TrafficSplit{} },
+			func() *trafficv1alpha1.TrafficSplitList { return &trafficv1alpha1.TrafficSplitList{} },
+		),
 	}
 }

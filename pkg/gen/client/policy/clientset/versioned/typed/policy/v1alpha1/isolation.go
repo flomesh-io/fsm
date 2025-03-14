@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type IsolationsGetter interface {
 
 // IsolationInterface has methods to work with Isolation resources.
 type IsolationInterface interface {
-	Create(ctx context.Context, isolation *v1alpha1.Isolation, opts v1.CreateOptions) (*v1alpha1.Isolation, error)
-	Update(ctx context.Context, isolation *v1alpha1.Isolation, opts v1.UpdateOptions) (*v1alpha1.Isolation, error)
+	Create(ctx context.Context, isolation *policyv1alpha1.Isolation, opts v1.CreateOptions) (*policyv1alpha1.Isolation, error)
+	Update(ctx context.Context, isolation *policyv1alpha1.Isolation, opts v1.UpdateOptions) (*policyv1alpha1.Isolation, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, isolation *v1alpha1.Isolation, opts v1.UpdateOptions) (*v1alpha1.Isolation, error)
+	UpdateStatus(ctx context.Context, isolation *policyv1alpha1.Isolation, opts v1.UpdateOptions) (*policyv1alpha1.Isolation, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.Isolation, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.IsolationList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*policyv1alpha1.Isolation, error)
+	List(ctx context.Context, opts v1.ListOptions) (*policyv1alpha1.IsolationList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Isolation, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *policyv1alpha1.Isolation, err error)
 	IsolationExpansion
 }
 
 // isolations implements IsolationInterface
 type isolations struct {
-	*gentype.ClientWithList[*v1alpha1.Isolation, *v1alpha1.IsolationList]
+	*gentype.ClientWithList[*policyv1alpha1.Isolation, *policyv1alpha1.IsolationList]
 }
 
 // newIsolations returns a Isolations
 func newIsolations(c *PolicyV1alpha1Client, namespace string) *isolations {
 	return &isolations{
-		gentype.NewClientWithList[*v1alpha1.Isolation, *v1alpha1.IsolationList](
+		gentype.NewClientWithList[*policyv1alpha1.Isolation, *policyv1alpha1.IsolationList](
 			"isolations",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.Isolation { return &v1alpha1.Isolation{} },
-			func() *v1alpha1.IsolationList { return &v1alpha1.IsolationList{} }),
+			func() *policyv1alpha1.Isolation { return &policyv1alpha1.Isolation{} },
+			func() *policyv1alpha1.IsolationList { return &policyv1alpha1.IsolationList{} },
+		),
 	}
 }

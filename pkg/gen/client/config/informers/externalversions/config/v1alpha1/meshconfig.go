@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	configv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha1"
+	apisconfigv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/config/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/config/listers/config/v1alpha1"
+	configv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/config/listers/config/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // MeshConfigs.
 type MeshConfigInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.MeshConfigLister
+	Lister() configv1alpha1.MeshConfigLister
 }
 
 type meshConfigInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredMeshConfigInformer(client versioned.Interface, namespace string,
 				return client.ConfigV1alpha1().MeshConfigs(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&configv1alpha1.MeshConfig{},
+		&apisconfigv1alpha1.MeshConfig{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *meshConfigInformer) defaultInformer(client versioned.Interface, resyncP
 }
 
 func (f *meshConfigInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&configv1alpha1.MeshConfig{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisconfigv1alpha1.MeshConfig{}, f.defaultInformer)
 }
 
-func (f *meshConfigInformer) Lister() v1alpha1.MeshConfigLister {
-	return v1alpha1.NewMeshConfigLister(f.Informer().GetIndexer())
+func (f *meshConfigInformer) Lister() configv1alpha1.MeshConfigLister {
+	return configv1alpha1.NewMeshConfigLister(f.Informer().GetIndexer())
 }

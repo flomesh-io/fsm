@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,31 +34,32 @@ type EgressesGetter interface {
 
 // EgressInterface has methods to work with Egress resources.
 type EgressInterface interface {
-	Create(ctx context.Context, egress *v1alpha1.Egress, opts v1.CreateOptions) (*v1alpha1.Egress, error)
-	Update(ctx context.Context, egress *v1alpha1.Egress, opts v1.UpdateOptions) (*v1alpha1.Egress, error)
+	Create(ctx context.Context, egress *policyv1alpha1.Egress, opts v1.CreateOptions) (*policyv1alpha1.Egress, error)
+	Update(ctx context.Context, egress *policyv1alpha1.Egress, opts v1.UpdateOptions) (*policyv1alpha1.Egress, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.Egress, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.EgressList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*policyv1alpha1.Egress, error)
+	List(ctx context.Context, opts v1.ListOptions) (*policyv1alpha1.EgressList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Egress, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *policyv1alpha1.Egress, err error)
 	EgressExpansion
 }
 
 // egresses implements EgressInterface
 type egresses struct {
-	*gentype.ClientWithList[*v1alpha1.Egress, *v1alpha1.EgressList]
+	*gentype.ClientWithList[*policyv1alpha1.Egress, *policyv1alpha1.EgressList]
 }
 
 // newEgresses returns a Egresses
 func newEgresses(c *PolicyV1alpha1Client, namespace string) *egresses {
 	return &egresses{
-		gentype.NewClientWithList[*v1alpha1.Egress, *v1alpha1.EgressList](
+		gentype.NewClientWithList[*policyv1alpha1.Egress, *policyv1alpha1.EgressList](
 			"egresses",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.Egress { return &v1alpha1.Egress{} },
-			func() *v1alpha1.EgressList { return &v1alpha1.EgressList{} }),
+			func() *policyv1alpha1.Egress { return &policyv1alpha1.Egress{} },
+			func() *policyv1alpha1.EgressList { return &policyv1alpha1.EgressList{} },
+		),
 	}
 }

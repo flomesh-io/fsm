@@ -26,11 +26,11 @@ type FakeTrafficV1alpha1 struct {
 }
 
 func (c *FakeTrafficV1alpha1) HTTPTrafficRules(namespace string) v1alpha1.HTTPTrafficRuleInterface {
-	return &FakeHTTPTrafficRules{c, namespace}
+	return newFakeHTTPTrafficRules(c, namespace)
 }
 
 func (c *FakeTrafficV1alpha1) TrafficSplits(namespace string) v1alpha1.TrafficSplitInterface {
-	return &FakeTrafficSplits{c, namespace}
+	return newFakeTrafficSplits(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	trafficv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/traffic/v1alpha1"
+	apistrafficv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/traffic/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/traffic/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/traffic/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/traffic/listers/traffic/v1alpha1"
+	trafficv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/traffic/listers/traffic/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // TrafficSplits.
 type TrafficSplitInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.TrafficSplitLister
+	Lister() trafficv1alpha1.TrafficSplitLister
 }
 
 type trafficSplitInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredTrafficSplitInformer(client versioned.Interface, namespace strin
 				return client.TrafficV1alpha1().TrafficSplits(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&trafficv1alpha1.TrafficSplit{},
+		&apistrafficv1alpha1.TrafficSplit{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *trafficSplitInformer) defaultInformer(client versioned.Interface, resyn
 }
 
 func (f *trafficSplitInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&trafficv1alpha1.TrafficSplit{}, f.defaultInformer)
+	return f.factory.InformerFor(&apistrafficv1alpha1.TrafficSplit{}, f.defaultInformer)
 }
 
-func (f *trafficSplitInformer) Lister() v1alpha1.TrafficSplitLister {
-	return v1alpha1.NewTrafficSplitLister(f.Informer().GetIndexer())
+func (f *trafficSplitInformer) Lister() trafficv1alpha1.TrafficSplitLister {
+	return trafficv1alpha1.NewTrafficSplitLister(f.Informer().GetIndexer())
 }

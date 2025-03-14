@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type DNSModifiersGetter interface {
 
 // DNSModifierInterface has methods to work with DNSModifier resources.
 type DNSModifierInterface interface {
-	Create(ctx context.Context, dNSModifier *v1alpha1.DNSModifier, opts v1.CreateOptions) (*v1alpha1.DNSModifier, error)
-	Update(ctx context.Context, dNSModifier *v1alpha1.DNSModifier, opts v1.UpdateOptions) (*v1alpha1.DNSModifier, error)
+	Create(ctx context.Context, dNSModifier *extensionv1alpha1.DNSModifier, opts v1.CreateOptions) (*extensionv1alpha1.DNSModifier, error)
+	Update(ctx context.Context, dNSModifier *extensionv1alpha1.DNSModifier, opts v1.UpdateOptions) (*extensionv1alpha1.DNSModifier, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, dNSModifier *v1alpha1.DNSModifier, opts v1.UpdateOptions) (*v1alpha1.DNSModifier, error)
+	UpdateStatus(ctx context.Context, dNSModifier *extensionv1alpha1.DNSModifier, opts v1.UpdateOptions) (*extensionv1alpha1.DNSModifier, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.DNSModifier, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.DNSModifierList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*extensionv1alpha1.DNSModifier, error)
+	List(ctx context.Context, opts v1.ListOptions) (*extensionv1alpha1.DNSModifierList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.DNSModifier, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *extensionv1alpha1.DNSModifier, err error)
 	DNSModifierExpansion
 }
 
 // dNSModifiers implements DNSModifierInterface
 type dNSModifiers struct {
-	*gentype.ClientWithList[*v1alpha1.DNSModifier, *v1alpha1.DNSModifierList]
+	*gentype.ClientWithList[*extensionv1alpha1.DNSModifier, *extensionv1alpha1.DNSModifierList]
 }
 
 // newDNSModifiers returns a DNSModifiers
 func newDNSModifiers(c *ExtensionV1alpha1Client, namespace string) *dNSModifiers {
 	return &dNSModifiers{
-		gentype.NewClientWithList[*v1alpha1.DNSModifier, *v1alpha1.DNSModifierList](
+		gentype.NewClientWithList[*extensionv1alpha1.DNSModifier, *extensionv1alpha1.DNSModifierList](
 			"dnsmodifiers",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.DNSModifier { return &v1alpha1.DNSModifier{} },
-			func() *v1alpha1.DNSModifierList { return &v1alpha1.DNSModifierList{} }),
+			func() *extensionv1alpha1.DNSModifier { return &extensionv1alpha1.DNSModifier{} },
+			func() *extensionv1alpha1.DNSModifierList { return &extensionv1alpha1.DNSModifierList{} },
+		),
 	}
 }

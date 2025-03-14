@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // ProxyTagLister helps list ProxyTags.
@@ -27,7 +27,7 @@ import (
 type ProxyTagLister interface {
 	// List lists all ProxyTags in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ProxyTag, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.ProxyTag, err error)
 	// ProxyTags returns an object that can list and get ProxyTags.
 	ProxyTags(namespace string) ProxyTagNamespaceLister
 	ProxyTagListerExpansion
@@ -35,17 +35,17 @@ type ProxyTagLister interface {
 
 // proxyTagLister implements the ProxyTagLister interface.
 type proxyTagLister struct {
-	listers.ResourceIndexer[*v1alpha1.ProxyTag]
+	listers.ResourceIndexer[*extensionv1alpha1.ProxyTag]
 }
 
 // NewProxyTagLister returns a new ProxyTagLister.
 func NewProxyTagLister(indexer cache.Indexer) ProxyTagLister {
-	return &proxyTagLister{listers.New[*v1alpha1.ProxyTag](indexer, v1alpha1.Resource("proxytag"))}
+	return &proxyTagLister{listers.New[*extensionv1alpha1.ProxyTag](indexer, extensionv1alpha1.Resource("proxytag"))}
 }
 
 // ProxyTags returns an object that can list and get ProxyTags.
 func (s *proxyTagLister) ProxyTags(namespace string) ProxyTagNamespaceLister {
-	return proxyTagNamespaceLister{listers.NewNamespaced[*v1alpha1.ProxyTag](s.ResourceIndexer, namespace)}
+	return proxyTagNamespaceLister{listers.NewNamespaced[*extensionv1alpha1.ProxyTag](s.ResourceIndexer, namespace)}
 }
 
 // ProxyTagNamespaceLister helps list and get ProxyTags.
@@ -53,15 +53,15 @@ func (s *proxyTagLister) ProxyTags(namespace string) ProxyTagNamespaceLister {
 type ProxyTagNamespaceLister interface {
 	// List lists all ProxyTags in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ProxyTag, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.ProxyTag, err error)
 	// Get retrieves the ProxyTag from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.ProxyTag, error)
+	Get(name string) (*extensionv1alpha1.ProxyTag, error)
 	ProxyTagNamespaceListerExpansion
 }
 
 // proxyTagNamespaceLister implements the ProxyTagNamespaceLister
 // interface.
 type proxyTagNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.ProxyTag]
+	listers.ResourceIndexer[*extensionv1alpha1.ProxyTag]
 }

@@ -16,129 +16,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/typed/extension/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeRequestTerminations implements RequestTerminationInterface
-type FakeRequestTerminations struct {
+// fakeRequestTerminations implements RequestTerminationInterface
+type fakeRequestTerminations struct {
+	*gentype.FakeClientWithList[*v1alpha1.RequestTermination, *v1alpha1.RequestTerminationList]
 	Fake *FakeExtensionV1alpha1
-	ns   string
 }
 
-var requestterminationsResource = v1alpha1.SchemeGroupVersion.WithResource("requestterminations")
-
-var requestterminationsKind = v1alpha1.SchemeGroupVersion.WithKind("RequestTermination")
-
-// Get takes name of the requestTermination, and returns the corresponding requestTermination object, and an error if there is any.
-func (c *FakeRequestTerminations) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.RequestTermination, err error) {
-	emptyResult := &v1alpha1.RequestTermination{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(requestterminationsResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakeRequestTerminations(fake *FakeExtensionV1alpha1, namespace string) extensionv1alpha1.RequestTerminationInterface {
+	return &fakeRequestTerminations{
+		gentype.NewFakeClientWithList[*v1alpha1.RequestTermination, *v1alpha1.RequestTerminationList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("requestterminations"),
+			v1alpha1.SchemeGroupVersion.WithKind("RequestTermination"),
+			func() *v1alpha1.RequestTermination { return &v1alpha1.RequestTermination{} },
+			func() *v1alpha1.RequestTerminationList { return &v1alpha1.RequestTerminationList{} },
+			func(dst, src *v1alpha1.RequestTerminationList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.RequestTerminationList) []*v1alpha1.RequestTermination {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.RequestTerminationList, items []*v1alpha1.RequestTermination) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.RequestTermination), err
-}
-
-// List takes label and field selectors, and returns the list of RequestTerminations that match those selectors.
-func (c *FakeRequestTerminations) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.RequestTerminationList, err error) {
-	emptyResult := &v1alpha1.RequestTerminationList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(requestterminationsResource, requestterminationsKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.RequestTerminationList{ListMeta: obj.(*v1alpha1.RequestTerminationList).ListMeta}
-	for _, item := range obj.(*v1alpha1.RequestTerminationList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested requestTerminations.
-func (c *FakeRequestTerminations) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(requestterminationsResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a requestTermination and creates it.  Returns the server's representation of the requestTermination, and an error, if there is any.
-func (c *FakeRequestTerminations) Create(ctx context.Context, requestTermination *v1alpha1.RequestTermination, opts v1.CreateOptions) (result *v1alpha1.RequestTermination, err error) {
-	emptyResult := &v1alpha1.RequestTermination{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(requestterminationsResource, c.ns, requestTermination, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.RequestTermination), err
-}
-
-// Update takes the representation of a requestTermination and updates it. Returns the server's representation of the requestTermination, and an error, if there is any.
-func (c *FakeRequestTerminations) Update(ctx context.Context, requestTermination *v1alpha1.RequestTermination, opts v1.UpdateOptions) (result *v1alpha1.RequestTermination, err error) {
-	emptyResult := &v1alpha1.RequestTermination{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(requestterminationsResource, c.ns, requestTermination, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.RequestTermination), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeRequestTerminations) UpdateStatus(ctx context.Context, requestTermination *v1alpha1.RequestTermination, opts v1.UpdateOptions) (result *v1alpha1.RequestTermination, err error) {
-	emptyResult := &v1alpha1.RequestTermination{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceActionWithOptions(requestterminationsResource, "status", c.ns, requestTermination, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.RequestTermination), err
-}
-
-// Delete takes name of the requestTermination and deletes it. Returns an error if one occurs.
-func (c *FakeRequestTerminations) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(requestterminationsResource, c.ns, name, opts), &v1alpha1.RequestTermination{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeRequestTerminations) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(requestterminationsResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.RequestTerminationList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched requestTermination.
-func (c *FakeRequestTerminations) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.RequestTermination, err error) {
-	emptyResult := &v1alpha1.RequestTermination{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(requestterminationsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.RequestTermination), err
 }

@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha2
 
 import (
-	"context"
+	context "context"
 
-	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+	policyattachmentv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,36 @@ type BackendLBPoliciesGetter interface {
 
 // BackendLBPolicyInterface has methods to work with BackendLBPolicy resources.
 type BackendLBPolicyInterface interface {
-	Create(ctx context.Context, backendLBPolicy *v1alpha2.BackendLBPolicy, opts v1.CreateOptions) (*v1alpha2.BackendLBPolicy, error)
-	Update(ctx context.Context, backendLBPolicy *v1alpha2.BackendLBPolicy, opts v1.UpdateOptions) (*v1alpha2.BackendLBPolicy, error)
+	Create(ctx context.Context, backendLBPolicy *policyattachmentv1alpha2.BackendLBPolicy, opts v1.CreateOptions) (*policyattachmentv1alpha2.BackendLBPolicy, error)
+	Update(ctx context.Context, backendLBPolicy *policyattachmentv1alpha2.BackendLBPolicy, opts v1.UpdateOptions) (*policyattachmentv1alpha2.BackendLBPolicy, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, backendLBPolicy *v1alpha2.BackendLBPolicy, opts v1.UpdateOptions) (*v1alpha2.BackendLBPolicy, error)
+	UpdateStatus(ctx context.Context, backendLBPolicy *policyattachmentv1alpha2.BackendLBPolicy, opts v1.UpdateOptions) (*policyattachmentv1alpha2.BackendLBPolicy, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha2.BackendLBPolicy, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha2.BackendLBPolicyList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*policyattachmentv1alpha2.BackendLBPolicy, error)
+	List(ctx context.Context, opts v1.ListOptions) (*policyattachmentv1alpha2.BackendLBPolicyList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha2.BackendLBPolicy, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *policyattachmentv1alpha2.BackendLBPolicy, err error)
 	BackendLBPolicyExpansion
 }
 
 // backendLBPolicies implements BackendLBPolicyInterface
 type backendLBPolicies struct {
-	*gentype.ClientWithList[*v1alpha2.BackendLBPolicy, *v1alpha2.BackendLBPolicyList]
+	*gentype.ClientWithList[*policyattachmentv1alpha2.BackendLBPolicy, *policyattachmentv1alpha2.BackendLBPolicyList]
 }
 
 // newBackendLBPolicies returns a BackendLBPolicies
 func newBackendLBPolicies(c *GatewayV1alpha2Client, namespace string) *backendLBPolicies {
 	return &backendLBPolicies{
-		gentype.NewClientWithList[*v1alpha2.BackendLBPolicy, *v1alpha2.BackendLBPolicyList](
+		gentype.NewClientWithList[*policyattachmentv1alpha2.BackendLBPolicy, *policyattachmentv1alpha2.BackendLBPolicyList](
 			"backendlbpolicies",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha2.BackendLBPolicy { return &v1alpha2.BackendLBPolicy{} },
-			func() *v1alpha2.BackendLBPolicyList { return &v1alpha2.BackendLBPolicyList{} }),
+			func() *policyattachmentv1alpha2.BackendLBPolicy { return &policyattachmentv1alpha2.BackendLBPolicy{} },
+			func() *policyattachmentv1alpha2.BackendLBPolicyList {
+				return &policyattachmentv1alpha2.BackendLBPolicyList{}
+			},
+		),
 	}
 }

@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // AccessCertLister helps list AccessCerts.
@@ -27,7 +27,7 @@ import (
 type AccessCertLister interface {
 	// List lists all AccessCerts in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.AccessCert, err error)
+	List(selector labels.Selector) (ret []*policyv1alpha1.AccessCert, err error)
 	// AccessCerts returns an object that can list and get AccessCerts.
 	AccessCerts(namespace string) AccessCertNamespaceLister
 	AccessCertListerExpansion
@@ -35,17 +35,17 @@ type AccessCertLister interface {
 
 // accessCertLister implements the AccessCertLister interface.
 type accessCertLister struct {
-	listers.ResourceIndexer[*v1alpha1.AccessCert]
+	listers.ResourceIndexer[*policyv1alpha1.AccessCert]
 }
 
 // NewAccessCertLister returns a new AccessCertLister.
 func NewAccessCertLister(indexer cache.Indexer) AccessCertLister {
-	return &accessCertLister{listers.New[*v1alpha1.AccessCert](indexer, v1alpha1.Resource("accesscert"))}
+	return &accessCertLister{listers.New[*policyv1alpha1.AccessCert](indexer, policyv1alpha1.Resource("accesscert"))}
 }
 
 // AccessCerts returns an object that can list and get AccessCerts.
 func (s *accessCertLister) AccessCerts(namespace string) AccessCertNamespaceLister {
-	return accessCertNamespaceLister{listers.NewNamespaced[*v1alpha1.AccessCert](s.ResourceIndexer, namespace)}
+	return accessCertNamespaceLister{listers.NewNamespaced[*policyv1alpha1.AccessCert](s.ResourceIndexer, namespace)}
 }
 
 // AccessCertNamespaceLister helps list and get AccessCerts.
@@ -53,15 +53,15 @@ func (s *accessCertLister) AccessCerts(namespace string) AccessCertNamespaceList
 type AccessCertNamespaceLister interface {
 	// List lists all AccessCerts in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.AccessCert, err error)
+	List(selector labels.Selector) (ret []*policyv1alpha1.AccessCert, err error)
 	// Get retrieves the AccessCert from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.AccessCert, error)
+	Get(name string) (*policyv1alpha1.AccessCert, error)
 	AccessCertNamespaceListerExpansion
 }
 
 // accessCertNamespaceLister implements the AccessCertNamespaceLister
 // interface.
 type accessCertNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.AccessCert]
+	listers.ResourceIndexer[*policyv1alpha1.AccessCert]
 }

@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	apisextensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/extension/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // FilterConfigs.
 type FilterConfigInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.FilterConfigLister
+	Lister() extensionv1alpha1.FilterConfigLister
 }
 
 type filterConfigInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredFilterConfigInformer(client versioned.Interface, namespace strin
 				return client.ExtensionV1alpha1().FilterConfigs(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&extensionv1alpha1.FilterConfig{},
+		&apisextensionv1alpha1.FilterConfig{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *filterConfigInformer) defaultInformer(client versioned.Interface, resyn
 }
 
 func (f *filterConfigInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&extensionv1alpha1.FilterConfig{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisextensionv1alpha1.FilterConfig{}, f.defaultInformer)
 }
 
-func (f *filterConfigInformer) Lister() v1alpha1.FilterConfigLister {
-	return v1alpha1.NewFilterConfigLister(f.Informer().GetIndexer())
+func (f *filterConfigInformer) Lister() extensionv1alpha1.FilterConfigLister {
+	return extensionv1alpha1.NewFilterConfigLister(f.Informer().GetIndexer())
 }

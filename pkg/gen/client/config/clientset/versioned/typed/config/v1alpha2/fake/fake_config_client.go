@@ -26,11 +26,11 @@ type FakeConfigV1alpha2 struct {
 }
 
 func (c *FakeConfigV1alpha2) MeshConfigs(namespace string) v1alpha2.MeshConfigInterface {
-	return &FakeMeshConfigs{c, namespace}
+	return newFakeMeshConfigs(c, namespace)
 }
 
 func (c *FakeConfigV1alpha2) MeshRootCertificates(namespace string) v1alpha2.MeshRootCertificateInterface {
-	return &FakeMeshRootCertificates{c, namespace}
+	return newFakeMeshRootCertificates(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

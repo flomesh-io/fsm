@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type ServiceImportsGetter interface {
 
 // ServiceImportInterface has methods to work with ServiceImport resources.
 type ServiceImportInterface interface {
-	Create(ctx context.Context, serviceImport *v1alpha1.ServiceImport, opts v1.CreateOptions) (*v1alpha1.ServiceImport, error)
-	Update(ctx context.Context, serviceImport *v1alpha1.ServiceImport, opts v1.UpdateOptions) (*v1alpha1.ServiceImport, error)
+	Create(ctx context.Context, serviceImport *multiclusterv1alpha1.ServiceImport, opts v1.CreateOptions) (*multiclusterv1alpha1.ServiceImport, error)
+	Update(ctx context.Context, serviceImport *multiclusterv1alpha1.ServiceImport, opts v1.UpdateOptions) (*multiclusterv1alpha1.ServiceImport, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, serviceImport *v1alpha1.ServiceImport, opts v1.UpdateOptions) (*v1alpha1.ServiceImport, error)
+	UpdateStatus(ctx context.Context, serviceImport *multiclusterv1alpha1.ServiceImport, opts v1.UpdateOptions) (*multiclusterv1alpha1.ServiceImport, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.ServiceImport, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.ServiceImportList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*multiclusterv1alpha1.ServiceImport, error)
+	List(ctx context.Context, opts v1.ListOptions) (*multiclusterv1alpha1.ServiceImportList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ServiceImport, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *multiclusterv1alpha1.ServiceImport, err error)
 	ServiceImportExpansion
 }
 
 // serviceImports implements ServiceImportInterface
 type serviceImports struct {
-	*gentype.ClientWithList[*v1alpha1.ServiceImport, *v1alpha1.ServiceImportList]
+	*gentype.ClientWithList[*multiclusterv1alpha1.ServiceImport, *multiclusterv1alpha1.ServiceImportList]
 }
 
 // newServiceImports returns a ServiceImports
 func newServiceImports(c *MulticlusterV1alpha1Client, namespace string) *serviceImports {
 	return &serviceImports{
-		gentype.NewClientWithList[*v1alpha1.ServiceImport, *v1alpha1.ServiceImportList](
+		gentype.NewClientWithList[*multiclusterv1alpha1.ServiceImport, *multiclusterv1alpha1.ServiceImportList](
 			"serviceimports",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.ServiceImport { return &v1alpha1.ServiceImport{} },
-			func() *v1alpha1.ServiceImportList { return &v1alpha1.ServiceImportList{} }),
+			func() *multiclusterv1alpha1.ServiceImport { return &multiclusterv1alpha1.ServiceImport{} },
+			func() *multiclusterv1alpha1.ServiceImportList { return &multiclusterv1alpha1.ServiceImportList{} },
+		),
 	}
 }

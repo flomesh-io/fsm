@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha2
 
 import (
-	"context"
+	context "context"
 
-	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+	policyattachmentv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,38 @@ type HealthCheckPoliciesGetter interface {
 
 // HealthCheckPolicyInterface has methods to work with HealthCheckPolicy resources.
 type HealthCheckPolicyInterface interface {
-	Create(ctx context.Context, healthCheckPolicy *v1alpha2.HealthCheckPolicy, opts v1.CreateOptions) (*v1alpha2.HealthCheckPolicy, error)
-	Update(ctx context.Context, healthCheckPolicy *v1alpha2.HealthCheckPolicy, opts v1.UpdateOptions) (*v1alpha2.HealthCheckPolicy, error)
+	Create(ctx context.Context, healthCheckPolicy *policyattachmentv1alpha2.HealthCheckPolicy, opts v1.CreateOptions) (*policyattachmentv1alpha2.HealthCheckPolicy, error)
+	Update(ctx context.Context, healthCheckPolicy *policyattachmentv1alpha2.HealthCheckPolicy, opts v1.UpdateOptions) (*policyattachmentv1alpha2.HealthCheckPolicy, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, healthCheckPolicy *v1alpha2.HealthCheckPolicy, opts v1.UpdateOptions) (*v1alpha2.HealthCheckPolicy, error)
+	UpdateStatus(ctx context.Context, healthCheckPolicy *policyattachmentv1alpha2.HealthCheckPolicy, opts v1.UpdateOptions) (*policyattachmentv1alpha2.HealthCheckPolicy, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha2.HealthCheckPolicy, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha2.HealthCheckPolicyList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*policyattachmentv1alpha2.HealthCheckPolicy, error)
+	List(ctx context.Context, opts v1.ListOptions) (*policyattachmentv1alpha2.HealthCheckPolicyList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha2.HealthCheckPolicy, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *policyattachmentv1alpha2.HealthCheckPolicy, err error)
 	HealthCheckPolicyExpansion
 }
 
 // healthCheckPolicies implements HealthCheckPolicyInterface
 type healthCheckPolicies struct {
-	*gentype.ClientWithList[*v1alpha2.HealthCheckPolicy, *v1alpha2.HealthCheckPolicyList]
+	*gentype.ClientWithList[*policyattachmentv1alpha2.HealthCheckPolicy, *policyattachmentv1alpha2.HealthCheckPolicyList]
 }
 
 // newHealthCheckPolicies returns a HealthCheckPolicies
 func newHealthCheckPolicies(c *GatewayV1alpha2Client, namespace string) *healthCheckPolicies {
 	return &healthCheckPolicies{
-		gentype.NewClientWithList[*v1alpha2.HealthCheckPolicy, *v1alpha2.HealthCheckPolicyList](
+		gentype.NewClientWithList[*policyattachmentv1alpha2.HealthCheckPolicy, *policyattachmentv1alpha2.HealthCheckPolicyList](
 			"healthcheckpolicies",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha2.HealthCheckPolicy { return &v1alpha2.HealthCheckPolicy{} },
-			func() *v1alpha2.HealthCheckPolicyList { return &v1alpha2.HealthCheckPolicyList{} }),
+			func() *policyattachmentv1alpha2.HealthCheckPolicy {
+				return &policyattachmentv1alpha2.HealthCheckPolicy{}
+			},
+			func() *policyattachmentv1alpha2.HealthCheckPolicyList {
+				return &policyattachmentv1alpha2.HealthCheckPolicyList{}
+			},
+		),
 	}
 }

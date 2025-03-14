@@ -26,15 +26,15 @@ type FakePluginV1alpha1 struct {
 }
 
 func (c *FakePluginV1alpha1) Plugins() v1alpha1.PluginInterface {
-	return &FakePlugins{c}
+	return newFakePlugins(c)
 }
 
 func (c *FakePluginV1alpha1) PluginChains(namespace string) v1alpha1.PluginChainInterface {
-	return &FakePluginChains{c, namespace}
+	return newFakePluginChains(c, namespace)
 }
 
 func (c *FakePluginV1alpha1) PluginConfigs(namespace string) v1alpha1.PluginConfigInterface {
-	return &FakePluginConfigs{c, namespace}
+	return newFakePluginConfigs(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

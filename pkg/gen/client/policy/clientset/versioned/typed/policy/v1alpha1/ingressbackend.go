@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type IngressBackendsGetter interface {
 
 // IngressBackendInterface has methods to work with IngressBackend resources.
 type IngressBackendInterface interface {
-	Create(ctx context.Context, ingressBackend *v1alpha1.IngressBackend, opts v1.CreateOptions) (*v1alpha1.IngressBackend, error)
-	Update(ctx context.Context, ingressBackend *v1alpha1.IngressBackend, opts v1.UpdateOptions) (*v1alpha1.IngressBackend, error)
+	Create(ctx context.Context, ingressBackend *policyv1alpha1.IngressBackend, opts v1.CreateOptions) (*policyv1alpha1.IngressBackend, error)
+	Update(ctx context.Context, ingressBackend *policyv1alpha1.IngressBackend, opts v1.UpdateOptions) (*policyv1alpha1.IngressBackend, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, ingressBackend *v1alpha1.IngressBackend, opts v1.UpdateOptions) (*v1alpha1.IngressBackend, error)
+	UpdateStatus(ctx context.Context, ingressBackend *policyv1alpha1.IngressBackend, opts v1.UpdateOptions) (*policyv1alpha1.IngressBackend, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.IngressBackend, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.IngressBackendList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*policyv1alpha1.IngressBackend, error)
+	List(ctx context.Context, opts v1.ListOptions) (*policyv1alpha1.IngressBackendList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.IngressBackend, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *policyv1alpha1.IngressBackend, err error)
 	IngressBackendExpansion
 }
 
 // ingressBackends implements IngressBackendInterface
 type ingressBackends struct {
-	*gentype.ClientWithList[*v1alpha1.IngressBackend, *v1alpha1.IngressBackendList]
+	*gentype.ClientWithList[*policyv1alpha1.IngressBackend, *policyv1alpha1.IngressBackendList]
 }
 
 // newIngressBackends returns a IngressBackends
 func newIngressBackends(c *PolicyV1alpha1Client, namespace string) *ingressBackends {
 	return &ingressBackends{
-		gentype.NewClientWithList[*v1alpha1.IngressBackend, *v1alpha1.IngressBackendList](
+		gentype.NewClientWithList[*policyv1alpha1.IngressBackend, *policyv1alpha1.IngressBackendList](
 			"ingressbackends",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.IngressBackend { return &v1alpha1.IngressBackend{} },
-			func() *v1alpha1.IngressBackendList { return &v1alpha1.IngressBackendList{} }),
+			func() *policyv1alpha1.IngressBackend { return &policyv1alpha1.IngressBackend{} },
+			func() *policyv1alpha1.IngressBackendList { return &policyv1alpha1.IngressBackendList{} },
+		),
 	}
 }

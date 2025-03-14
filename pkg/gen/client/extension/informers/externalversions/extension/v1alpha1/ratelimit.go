@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	apisextensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/extension/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // RateLimits.
 type RateLimitInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.RateLimitLister
+	Lister() extensionv1alpha1.RateLimitLister
 }
 
 type rateLimitInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredRateLimitInformer(client versioned.Interface, namespace string, 
 				return client.ExtensionV1alpha1().RateLimits(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&extensionv1alpha1.RateLimit{},
+		&apisextensionv1alpha1.RateLimit{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *rateLimitInformer) defaultInformer(client versioned.Interface, resyncPe
 }
 
 func (f *rateLimitInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&extensionv1alpha1.RateLimit{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisextensionv1alpha1.RateLimit{}, f.defaultInformer)
 }
 
-func (f *rateLimitInformer) Lister() v1alpha1.RateLimitLister {
-	return v1alpha1.NewRateLimitLister(f.Informer().GetIndexer())
+func (f *rateLimitInformer) Lister() extensionv1alpha1.RateLimitLister {
+	return extensionv1alpha1.NewRateLimitLister(f.Informer().GetIndexer())
 }

@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // ServiceExportLister helps list ServiceExports.
@@ -27,7 +27,7 @@ import (
 type ServiceExportLister interface {
 	// List lists all ServiceExports in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ServiceExport, err error)
+	List(selector labels.Selector) (ret []*multiclusterv1alpha1.ServiceExport, err error)
 	// ServiceExports returns an object that can list and get ServiceExports.
 	ServiceExports(namespace string) ServiceExportNamespaceLister
 	ServiceExportListerExpansion
@@ -35,17 +35,17 @@ type ServiceExportLister interface {
 
 // serviceExportLister implements the ServiceExportLister interface.
 type serviceExportLister struct {
-	listers.ResourceIndexer[*v1alpha1.ServiceExport]
+	listers.ResourceIndexer[*multiclusterv1alpha1.ServiceExport]
 }
 
 // NewServiceExportLister returns a new ServiceExportLister.
 func NewServiceExportLister(indexer cache.Indexer) ServiceExportLister {
-	return &serviceExportLister{listers.New[*v1alpha1.ServiceExport](indexer, v1alpha1.Resource("serviceexport"))}
+	return &serviceExportLister{listers.New[*multiclusterv1alpha1.ServiceExport](indexer, multiclusterv1alpha1.Resource("serviceexport"))}
 }
 
 // ServiceExports returns an object that can list and get ServiceExports.
 func (s *serviceExportLister) ServiceExports(namespace string) ServiceExportNamespaceLister {
-	return serviceExportNamespaceLister{listers.NewNamespaced[*v1alpha1.ServiceExport](s.ResourceIndexer, namespace)}
+	return serviceExportNamespaceLister{listers.NewNamespaced[*multiclusterv1alpha1.ServiceExport](s.ResourceIndexer, namespace)}
 }
 
 // ServiceExportNamespaceLister helps list and get ServiceExports.
@@ -53,15 +53,15 @@ func (s *serviceExportLister) ServiceExports(namespace string) ServiceExportName
 type ServiceExportNamespaceLister interface {
 	// List lists all ServiceExports in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ServiceExport, err error)
+	List(selector labels.Selector) (ret []*multiclusterv1alpha1.ServiceExport, err error)
 	// Get retrieves the ServiceExport from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.ServiceExport, error)
+	Get(name string) (*multiclusterv1alpha1.ServiceExport, error)
 	ServiceExportNamespaceListerExpansion
 }
 
 // serviceExportNamespaceLister implements the ServiceExportNamespaceLister
 // interface.
 type serviceExportNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.ServiceExport]
+	listers.ResourceIndexer[*multiclusterv1alpha1.ServiceExport]
 }

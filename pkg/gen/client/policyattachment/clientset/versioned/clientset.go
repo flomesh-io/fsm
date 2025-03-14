@@ -16,8 +16,8 @@ limitations under the License.
 package versioned
 
 import (
-	"fmt"
-	"net/http"
+	fmt "fmt"
+	http "net/http"
 
 	gatewayv1alpha2 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned/typed/policyattachment/v1alpha2"
 	discovery "k8s.io/client-go/discovery"

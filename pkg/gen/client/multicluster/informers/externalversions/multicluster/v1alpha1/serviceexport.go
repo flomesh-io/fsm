@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	apismulticlusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/listers/multicluster/v1alpha1"
+	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/listers/multicluster/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // ServiceExports.
 type ServiceExportInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.ServiceExportLister
+	Lister() multiclusterv1alpha1.ServiceExportLister
 }
 
 type serviceExportInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredServiceExportInformer(client versioned.Interface, namespace stri
 				return client.MulticlusterV1alpha1().ServiceExports(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&multiclusterv1alpha1.ServiceExport{},
+		&apismulticlusterv1alpha1.ServiceExport{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *serviceExportInformer) defaultInformer(client versioned.Interface, resy
 }
 
 func (f *serviceExportInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&multiclusterv1alpha1.ServiceExport{}, f.defaultInformer)
+	return f.factory.InformerFor(&apismulticlusterv1alpha1.ServiceExport{}, f.defaultInformer)
 }
 
-func (f *serviceExportInformer) Lister() v1alpha1.ServiceExportLister {
-	return v1alpha1.NewServiceExportLister(f.Informer().GetIndexer())
+func (f *serviceExportInformer) Lister() multiclusterv1alpha1.ServiceExportLister {
+	return multiclusterv1alpha1.NewServiceExportLister(f.Informer().GetIndexer())
 }

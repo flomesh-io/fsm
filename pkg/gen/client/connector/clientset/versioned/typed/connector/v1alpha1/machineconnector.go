@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type MachineConnectorsGetter interface {
 
 // MachineConnectorInterface has methods to work with MachineConnector resources.
 type MachineConnectorInterface interface {
-	Create(ctx context.Context, machineConnector *v1alpha1.MachineConnector, opts v1.CreateOptions) (*v1alpha1.MachineConnector, error)
-	Update(ctx context.Context, machineConnector *v1alpha1.MachineConnector, opts v1.UpdateOptions) (*v1alpha1.MachineConnector, error)
+	Create(ctx context.Context, machineConnector *connectorv1alpha1.MachineConnector, opts v1.CreateOptions) (*connectorv1alpha1.MachineConnector, error)
+	Update(ctx context.Context, machineConnector *connectorv1alpha1.MachineConnector, opts v1.UpdateOptions) (*connectorv1alpha1.MachineConnector, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, machineConnector *v1alpha1.MachineConnector, opts v1.UpdateOptions) (*v1alpha1.MachineConnector, error)
+	UpdateStatus(ctx context.Context, machineConnector *connectorv1alpha1.MachineConnector, opts v1.UpdateOptions) (*connectorv1alpha1.MachineConnector, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.MachineConnector, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.MachineConnectorList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*connectorv1alpha1.MachineConnector, error)
+	List(ctx context.Context, opts v1.ListOptions) (*connectorv1alpha1.MachineConnectorList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.MachineConnector, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *connectorv1alpha1.MachineConnector, err error)
 	MachineConnectorExpansion
 }
 
 // machineConnectors implements MachineConnectorInterface
 type machineConnectors struct {
-	*gentype.ClientWithList[*v1alpha1.MachineConnector, *v1alpha1.MachineConnectorList]
+	*gentype.ClientWithList[*connectorv1alpha1.MachineConnector, *connectorv1alpha1.MachineConnectorList]
 }
 
 // newMachineConnectors returns a MachineConnectors
 func newMachineConnectors(c *ConnectorV1alpha1Client, namespace string) *machineConnectors {
 	return &machineConnectors{
-		gentype.NewClientWithList[*v1alpha1.MachineConnector, *v1alpha1.MachineConnectorList](
+		gentype.NewClientWithList[*connectorv1alpha1.MachineConnector, *connectorv1alpha1.MachineConnectorList](
 			"machineconnectors",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.MachineConnector { return &v1alpha1.MachineConnector{} },
-			func() *v1alpha1.MachineConnectorList { return &v1alpha1.MachineConnectorList{} }),
+			func() *connectorv1alpha1.MachineConnector { return &connectorv1alpha1.MachineConnector{} },
+			func() *connectorv1alpha1.MachineConnectorList { return &connectorv1alpha1.MachineConnectorList{} },
+		),
 	}
 }

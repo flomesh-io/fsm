@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // GlobalTrafficPolicyLister helps list GlobalTrafficPolicies.
@@ -27,7 +27,7 @@ import (
 type GlobalTrafficPolicyLister interface {
 	// List lists all GlobalTrafficPolicies in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.GlobalTrafficPolicy, err error)
+	List(selector labels.Selector) (ret []*multiclusterv1alpha1.GlobalTrafficPolicy, err error)
 	// GlobalTrafficPolicies returns an object that can list and get GlobalTrafficPolicies.
 	GlobalTrafficPolicies(namespace string) GlobalTrafficPolicyNamespaceLister
 	GlobalTrafficPolicyListerExpansion
@@ -35,17 +35,17 @@ type GlobalTrafficPolicyLister interface {
 
 // globalTrafficPolicyLister implements the GlobalTrafficPolicyLister interface.
 type globalTrafficPolicyLister struct {
-	listers.ResourceIndexer[*v1alpha1.GlobalTrafficPolicy]
+	listers.ResourceIndexer[*multiclusterv1alpha1.GlobalTrafficPolicy]
 }
 
 // NewGlobalTrafficPolicyLister returns a new GlobalTrafficPolicyLister.
 func NewGlobalTrafficPolicyLister(indexer cache.Indexer) GlobalTrafficPolicyLister {
-	return &globalTrafficPolicyLister{listers.New[*v1alpha1.GlobalTrafficPolicy](indexer, v1alpha1.Resource("globaltrafficpolicy"))}
+	return &globalTrafficPolicyLister{listers.New[*multiclusterv1alpha1.GlobalTrafficPolicy](indexer, multiclusterv1alpha1.Resource("globaltrafficpolicy"))}
 }
 
 // GlobalTrafficPolicies returns an object that can list and get GlobalTrafficPolicies.
 func (s *globalTrafficPolicyLister) GlobalTrafficPolicies(namespace string) GlobalTrafficPolicyNamespaceLister {
-	return globalTrafficPolicyNamespaceLister{listers.NewNamespaced[*v1alpha1.GlobalTrafficPolicy](s.ResourceIndexer, namespace)}
+	return globalTrafficPolicyNamespaceLister{listers.NewNamespaced[*multiclusterv1alpha1.GlobalTrafficPolicy](s.ResourceIndexer, namespace)}
 }
 
 // GlobalTrafficPolicyNamespaceLister helps list and get GlobalTrafficPolicies.
@@ -53,15 +53,15 @@ func (s *globalTrafficPolicyLister) GlobalTrafficPolicies(namespace string) Glob
 type GlobalTrafficPolicyNamespaceLister interface {
 	// List lists all GlobalTrafficPolicies in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.GlobalTrafficPolicy, err error)
+	List(selector labels.Selector) (ret []*multiclusterv1alpha1.GlobalTrafficPolicy, err error)
 	// Get retrieves the GlobalTrafficPolicy from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.GlobalTrafficPolicy, error)
+	Get(name string) (*multiclusterv1alpha1.GlobalTrafficPolicy, error)
 	GlobalTrafficPolicyNamespaceListerExpansion
 }
 
 // globalTrafficPolicyNamespaceLister implements the GlobalTrafficPolicyNamespaceLister
 // interface.
 type globalTrafficPolicyNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.GlobalTrafficPolicy]
+	listers.ResourceIndexer[*multiclusterv1alpha1.GlobalTrafficPolicy]
 }

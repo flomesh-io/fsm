@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type CircuitBreakersGetter interface {
 
 // CircuitBreakerInterface has methods to work with CircuitBreaker resources.
 type CircuitBreakerInterface interface {
-	Create(ctx context.Context, circuitBreaker *v1alpha1.CircuitBreaker, opts v1.CreateOptions) (*v1alpha1.CircuitBreaker, error)
-	Update(ctx context.Context, circuitBreaker *v1alpha1.CircuitBreaker, opts v1.UpdateOptions) (*v1alpha1.CircuitBreaker, error)
+	Create(ctx context.Context, circuitBreaker *extensionv1alpha1.CircuitBreaker, opts v1.CreateOptions) (*extensionv1alpha1.CircuitBreaker, error)
+	Update(ctx context.Context, circuitBreaker *extensionv1alpha1.CircuitBreaker, opts v1.UpdateOptions) (*extensionv1alpha1.CircuitBreaker, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, circuitBreaker *v1alpha1.CircuitBreaker, opts v1.UpdateOptions) (*v1alpha1.CircuitBreaker, error)
+	UpdateStatus(ctx context.Context, circuitBreaker *extensionv1alpha1.CircuitBreaker, opts v1.UpdateOptions) (*extensionv1alpha1.CircuitBreaker, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.CircuitBreaker, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.CircuitBreakerList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*extensionv1alpha1.CircuitBreaker, error)
+	List(ctx context.Context, opts v1.ListOptions) (*extensionv1alpha1.CircuitBreakerList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.CircuitBreaker, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *extensionv1alpha1.CircuitBreaker, err error)
 	CircuitBreakerExpansion
 }
 
 // circuitBreakers implements CircuitBreakerInterface
 type circuitBreakers struct {
-	*gentype.ClientWithList[*v1alpha1.CircuitBreaker, *v1alpha1.CircuitBreakerList]
+	*gentype.ClientWithList[*extensionv1alpha1.CircuitBreaker, *extensionv1alpha1.CircuitBreakerList]
 }
 
 // newCircuitBreakers returns a CircuitBreakers
 func newCircuitBreakers(c *ExtensionV1alpha1Client, namespace string) *circuitBreakers {
 	return &circuitBreakers{
-		gentype.NewClientWithList[*v1alpha1.CircuitBreaker, *v1alpha1.CircuitBreakerList](
+		gentype.NewClientWithList[*extensionv1alpha1.CircuitBreaker, *extensionv1alpha1.CircuitBreakerList](
 			"circuitbreakers",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.CircuitBreaker { return &v1alpha1.CircuitBreaker{} },
-			func() *v1alpha1.CircuitBreakerList { return &v1alpha1.CircuitBreakerList{} }),
+			func() *extensionv1alpha1.CircuitBreaker { return &extensionv1alpha1.CircuitBreaker{} },
+			func() *extensionv1alpha1.CircuitBreakerList { return &extensionv1alpha1.CircuitBreakerList{} },
+		),
 	}
 }

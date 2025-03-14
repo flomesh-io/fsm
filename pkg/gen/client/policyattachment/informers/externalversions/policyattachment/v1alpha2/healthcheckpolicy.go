@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha2
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	policyattachmentv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+	apispolicyattachmentv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/informers/externalversions/internalinterfaces"
-	v1alpha2 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/listers/policyattachment/v1alpha2"
+	policyattachmentv1alpha2 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/listers/policyattachment/v1alpha2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // HealthCheckPolicies.
 type HealthCheckPolicyInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha2.HealthCheckPolicyLister
+	Lister() policyattachmentv1alpha2.HealthCheckPolicyLister
 }
 
 type healthCheckPolicyInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredHealthCheckPolicyInformer(client versioned.Interface, namespace 
 				return client.GatewayV1alpha2().HealthCheckPolicies(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&policyattachmentv1alpha2.HealthCheckPolicy{},
+		&apispolicyattachmentv1alpha2.HealthCheckPolicy{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *healthCheckPolicyInformer) defaultInformer(client versioned.Interface, 
 }
 
 func (f *healthCheckPolicyInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&policyattachmentv1alpha2.HealthCheckPolicy{}, f.defaultInformer)
+	return f.factory.InformerFor(&apispolicyattachmentv1alpha2.HealthCheckPolicy{}, f.defaultInformer)
 }
 
-func (f *healthCheckPolicyInformer) Lister() v1alpha2.HealthCheckPolicyLister {
-	return v1alpha2.NewHealthCheckPolicyLister(f.Informer().GetIndexer())
+func (f *healthCheckPolicyInformer) Lister() policyattachmentv1alpha2.HealthCheckPolicyLister {
+	return policyattachmentv1alpha2.NewHealthCheckPolicyLister(f.Informer().GetIndexer())
 }

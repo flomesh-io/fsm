@@ -16,129 +16,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned/typed/machine/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeVirtualMachines implements VirtualMachineInterface
-type FakeVirtualMachines struct {
+// fakeVirtualMachines implements VirtualMachineInterface
+type fakeVirtualMachines struct {
+	*gentype.FakeClientWithList[*v1alpha1.VirtualMachine, *v1alpha1.VirtualMachineList]
 	Fake *FakeMachineV1alpha1
-	ns   string
 }
 
-var virtualmachinesResource = v1alpha1.SchemeGroupVersion.WithResource("virtualmachines")
-
-var virtualmachinesKind = v1alpha1.SchemeGroupVersion.WithKind("VirtualMachine")
-
-// Get takes name of the virtualMachine, and returns the corresponding virtualMachine object, and an error if there is any.
-func (c *FakeVirtualMachines) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.VirtualMachine, err error) {
-	emptyResult := &v1alpha1.VirtualMachine{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(virtualmachinesResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakeVirtualMachines(fake *FakeMachineV1alpha1, namespace string) machinev1alpha1.VirtualMachineInterface {
+	return &fakeVirtualMachines{
+		gentype.NewFakeClientWithList[*v1alpha1.VirtualMachine, *v1alpha1.VirtualMachineList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("virtualmachines"),
+			v1alpha1.SchemeGroupVersion.WithKind("VirtualMachine"),
+			func() *v1alpha1.VirtualMachine { return &v1alpha1.VirtualMachine{} },
+			func() *v1alpha1.VirtualMachineList { return &v1alpha1.VirtualMachineList{} },
+			func(dst, src *v1alpha1.VirtualMachineList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.VirtualMachineList) []*v1alpha1.VirtualMachine {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.VirtualMachineList, items []*v1alpha1.VirtualMachine) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.VirtualMachine), err
-}
-
-// List takes label and field selectors, and returns the list of VirtualMachines that match those selectors.
-func (c *FakeVirtualMachines) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.VirtualMachineList, err error) {
-	emptyResult := &v1alpha1.VirtualMachineList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(virtualmachinesResource, virtualmachinesKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.VirtualMachineList{ListMeta: obj.(*v1alpha1.VirtualMachineList).ListMeta}
-	for _, item := range obj.(*v1alpha1.VirtualMachineList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested virtualMachines.
-func (c *FakeVirtualMachines) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(virtualmachinesResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a virtualMachine and creates it.  Returns the server's representation of the virtualMachine, and an error, if there is any.
-func (c *FakeVirtualMachines) Create(ctx context.Context, virtualMachine *v1alpha1.VirtualMachine, opts v1.CreateOptions) (result *v1alpha1.VirtualMachine, err error) {
-	emptyResult := &v1alpha1.VirtualMachine{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(virtualmachinesResource, c.ns, virtualMachine, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.VirtualMachine), err
-}
-
-// Update takes the representation of a virtualMachine and updates it. Returns the server's representation of the virtualMachine, and an error, if there is any.
-func (c *FakeVirtualMachines) Update(ctx context.Context, virtualMachine *v1alpha1.VirtualMachine, opts v1.UpdateOptions) (result *v1alpha1.VirtualMachine, err error) {
-	emptyResult := &v1alpha1.VirtualMachine{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(virtualmachinesResource, c.ns, virtualMachine, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.VirtualMachine), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeVirtualMachines) UpdateStatus(ctx context.Context, virtualMachine *v1alpha1.VirtualMachine, opts v1.UpdateOptions) (result *v1alpha1.VirtualMachine, err error) {
-	emptyResult := &v1alpha1.VirtualMachine{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceActionWithOptions(virtualmachinesResource, "status", c.ns, virtualMachine, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.VirtualMachine), err
-}
-
-// Delete takes name of the virtualMachine and deletes it. Returns an error if one occurs.
-func (c *FakeVirtualMachines) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(virtualmachinesResource, c.ns, name, opts), &v1alpha1.VirtualMachine{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeVirtualMachines) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(virtualmachinesResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.VirtualMachineList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched virtualMachine.
-func (c *FakeVirtualMachines) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.VirtualMachine, err error) {
-	emptyResult := &v1alpha1.VirtualMachine{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(virtualmachinesResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.VirtualMachine), err
 }

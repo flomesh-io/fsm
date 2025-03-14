@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha2
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	policyattachmentv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+	apispolicyattachmentv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/informers/externalversions/internalinterfaces"
-	v1alpha2 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/listers/policyattachment/v1alpha2"
+	policyattachmentv1alpha2 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/listers/policyattachment/v1alpha2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // BackendLBPolicies.
 type BackendLBPolicyInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha2.BackendLBPolicyLister
+	Lister() policyattachmentv1alpha2.BackendLBPolicyLister
 }
 
 type backendLBPolicyInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredBackendLBPolicyInformer(client versioned.Interface, namespace st
 				return client.GatewayV1alpha2().BackendLBPolicies(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&policyattachmentv1alpha2.BackendLBPolicy{},
+		&apispolicyattachmentv1alpha2.BackendLBPolicy{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *backendLBPolicyInformer) defaultInformer(client versioned.Interface, re
 }
 
 func (f *backendLBPolicyInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&policyattachmentv1alpha2.BackendLBPolicy{}, f.defaultInformer)
+	return f.factory.InformerFor(&apispolicyattachmentv1alpha2.BackendLBPolicy{}, f.defaultInformer)
 }
 
-func (f *backendLBPolicyInformer) Lister() v1alpha2.BackendLBPolicyLister {
-	return v1alpha2.NewBackendLBPolicyLister(f.Informer().GetIndexer())
+func (f *backendLBPolicyInformer) Lister() policyattachmentv1alpha2.BackendLBPolicyLister {
+	return policyattachmentv1alpha2.NewBackendLBPolicyLister(f.Informer().GetIndexer())
 }

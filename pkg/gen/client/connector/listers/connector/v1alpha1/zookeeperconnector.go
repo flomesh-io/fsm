@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // ZookeeperConnectorLister helps list ZookeeperConnectors.
@@ -27,7 +27,7 @@ import (
 type ZookeeperConnectorLister interface {
 	// List lists all ZookeeperConnectors in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ZookeeperConnector, err error)
+	List(selector labels.Selector) (ret []*connectorv1alpha1.ZookeeperConnector, err error)
 	// ZookeeperConnectors returns an object that can list and get ZookeeperConnectors.
 	ZookeeperConnectors(namespace string) ZookeeperConnectorNamespaceLister
 	ZookeeperConnectorListerExpansion
@@ -35,17 +35,17 @@ type ZookeeperConnectorLister interface {
 
 // zookeeperConnectorLister implements the ZookeeperConnectorLister interface.
 type zookeeperConnectorLister struct {
-	listers.ResourceIndexer[*v1alpha1.ZookeeperConnector]
+	listers.ResourceIndexer[*connectorv1alpha1.ZookeeperConnector]
 }
 
 // NewZookeeperConnectorLister returns a new ZookeeperConnectorLister.
 func NewZookeeperConnectorLister(indexer cache.Indexer) ZookeeperConnectorLister {
-	return &zookeeperConnectorLister{listers.New[*v1alpha1.ZookeeperConnector](indexer, v1alpha1.Resource("zookeeperconnector"))}
+	return &zookeeperConnectorLister{listers.New[*connectorv1alpha1.ZookeeperConnector](indexer, connectorv1alpha1.Resource("zookeeperconnector"))}
 }
 
 // ZookeeperConnectors returns an object that can list and get ZookeeperConnectors.
 func (s *zookeeperConnectorLister) ZookeeperConnectors(namespace string) ZookeeperConnectorNamespaceLister {
-	return zookeeperConnectorNamespaceLister{listers.NewNamespaced[*v1alpha1.ZookeeperConnector](s.ResourceIndexer, namespace)}
+	return zookeeperConnectorNamespaceLister{listers.NewNamespaced[*connectorv1alpha1.ZookeeperConnector](s.ResourceIndexer, namespace)}
 }
 
 // ZookeeperConnectorNamespaceLister helps list and get ZookeeperConnectors.
@@ -53,15 +53,15 @@ func (s *zookeeperConnectorLister) ZookeeperConnectors(namespace string) Zookeep
 type ZookeeperConnectorNamespaceLister interface {
 	// List lists all ZookeeperConnectors in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ZookeeperConnector, err error)
+	List(selector labels.Selector) (ret []*connectorv1alpha1.ZookeeperConnector, err error)
 	// Get retrieves the ZookeeperConnector from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.ZookeeperConnector, error)
+	Get(name string) (*connectorv1alpha1.ZookeeperConnector, error)
 	ZookeeperConnectorNamespaceListerExpansion
 }
 
 // zookeeperConnectorNamespaceLister implements the ZookeeperConnectorNamespaceLister
 // interface.
 type zookeeperConnectorNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.ZookeeperConnector]
+	listers.ResourceIndexer[*connectorv1alpha1.ZookeeperConnector]
 }

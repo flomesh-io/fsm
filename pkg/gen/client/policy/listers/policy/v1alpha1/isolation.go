@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // IsolationLister helps list Isolations.
@@ -27,7 +27,7 @@ import (
 type IsolationLister interface {
 	// List lists all Isolations in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.Isolation, err error)
+	List(selector labels.Selector) (ret []*policyv1alpha1.Isolation, err error)
 	// Isolations returns an object that can list and get Isolations.
 	Isolations(namespace string) IsolationNamespaceLister
 	IsolationListerExpansion
@@ -35,17 +35,17 @@ type IsolationLister interface {
 
 // isolationLister implements the IsolationLister interface.
 type isolationLister struct {
-	listers.ResourceIndexer[*v1alpha1.Isolation]
+	listers.ResourceIndexer[*policyv1alpha1.Isolation]
 }
 
 // NewIsolationLister returns a new IsolationLister.
 func NewIsolationLister(indexer cache.Indexer) IsolationLister {
-	return &isolationLister{listers.New[*v1alpha1.Isolation](indexer, v1alpha1.Resource("isolation"))}
+	return &isolationLister{listers.New[*policyv1alpha1.Isolation](indexer, policyv1alpha1.Resource("isolation"))}
 }
 
 // Isolations returns an object that can list and get Isolations.
 func (s *isolationLister) Isolations(namespace string) IsolationNamespaceLister {
-	return isolationNamespaceLister{listers.NewNamespaced[*v1alpha1.Isolation](s.ResourceIndexer, namespace)}
+	return isolationNamespaceLister{listers.NewNamespaced[*policyv1alpha1.Isolation](s.ResourceIndexer, namespace)}
 }
 
 // IsolationNamespaceLister helps list and get Isolations.
@@ -53,15 +53,15 @@ func (s *isolationLister) Isolations(namespace string) IsolationNamespaceLister 
 type IsolationNamespaceLister interface {
 	// List lists all Isolations in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.Isolation, err error)
+	List(selector labels.Selector) (ret []*policyv1alpha1.Isolation, err error)
 	// Get retrieves the Isolation from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.Isolation, error)
+	Get(name string) (*policyv1alpha1.Isolation, error)
 	IsolationNamespaceListerExpansion
 }
 
 // isolationNamespaceLister implements the IsolationNamespaceLister
 // interface.
 type isolationNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.Isolation]
+	listers.ResourceIndexer[*policyv1alpha1.Isolation]
 }

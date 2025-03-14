@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type AccessControlsGetter interface {
 
 // AccessControlInterface has methods to work with AccessControl resources.
 type AccessControlInterface interface {
-	Create(ctx context.Context, accessControl *v1alpha1.AccessControl, opts v1.CreateOptions) (*v1alpha1.AccessControl, error)
-	Update(ctx context.Context, accessControl *v1alpha1.AccessControl, opts v1.UpdateOptions) (*v1alpha1.AccessControl, error)
+	Create(ctx context.Context, accessControl *policyv1alpha1.AccessControl, opts v1.CreateOptions) (*policyv1alpha1.AccessControl, error)
+	Update(ctx context.Context, accessControl *policyv1alpha1.AccessControl, opts v1.UpdateOptions) (*policyv1alpha1.AccessControl, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, accessControl *v1alpha1.AccessControl, opts v1.UpdateOptions) (*v1alpha1.AccessControl, error)
+	UpdateStatus(ctx context.Context, accessControl *policyv1alpha1.AccessControl, opts v1.UpdateOptions) (*policyv1alpha1.AccessControl, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.AccessControl, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.AccessControlList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*policyv1alpha1.AccessControl, error)
+	List(ctx context.Context, opts v1.ListOptions) (*policyv1alpha1.AccessControlList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AccessControl, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *policyv1alpha1.AccessControl, err error)
 	AccessControlExpansion
 }
 
 // accessControls implements AccessControlInterface
 type accessControls struct {
-	*gentype.ClientWithList[*v1alpha1.AccessControl, *v1alpha1.AccessControlList]
+	*gentype.ClientWithList[*policyv1alpha1.AccessControl, *policyv1alpha1.AccessControlList]
 }
 
 // newAccessControls returns a AccessControls
 func newAccessControls(c *PolicyV1alpha1Client, namespace string) *accessControls {
 	return &accessControls{
-		gentype.NewClientWithList[*v1alpha1.AccessControl, *v1alpha1.AccessControlList](
+		gentype.NewClientWithList[*policyv1alpha1.AccessControl, *policyv1alpha1.AccessControlList](
 			"accesscontrols",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.AccessControl { return &v1alpha1.AccessControl{} },
-			func() *v1alpha1.AccessControlList { return &v1alpha1.AccessControlList{} }),
+			func() *policyv1alpha1.AccessControl { return &policyv1alpha1.AccessControl{} },
+			func() *policyv1alpha1.AccessControlList { return &policyv1alpha1.AccessControlList{} },
+		),
 	}
 }

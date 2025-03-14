@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // FaultInjectionLister helps list FaultInjections.
@@ -27,7 +27,7 @@ import (
 type FaultInjectionLister interface {
 	// List lists all FaultInjections in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.FaultInjection, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.FaultInjection, err error)
 	// FaultInjections returns an object that can list and get FaultInjections.
 	FaultInjections(namespace string) FaultInjectionNamespaceLister
 	FaultInjectionListerExpansion
@@ -35,17 +35,17 @@ type FaultInjectionLister interface {
 
 // faultInjectionLister implements the FaultInjectionLister interface.
 type faultInjectionLister struct {
-	listers.ResourceIndexer[*v1alpha1.FaultInjection]
+	listers.ResourceIndexer[*extensionv1alpha1.FaultInjection]
 }
 
 // NewFaultInjectionLister returns a new FaultInjectionLister.
 func NewFaultInjectionLister(indexer cache.Indexer) FaultInjectionLister {
-	return &faultInjectionLister{listers.New[*v1alpha1.FaultInjection](indexer, v1alpha1.Resource("faultinjection"))}
+	return &faultInjectionLister{listers.New[*extensionv1alpha1.FaultInjection](indexer, extensionv1alpha1.Resource("faultinjection"))}
 }
 
 // FaultInjections returns an object that can list and get FaultInjections.
 func (s *faultInjectionLister) FaultInjections(namespace string) FaultInjectionNamespaceLister {
-	return faultInjectionNamespaceLister{listers.NewNamespaced[*v1alpha1.FaultInjection](s.ResourceIndexer, namespace)}
+	return faultInjectionNamespaceLister{listers.NewNamespaced[*extensionv1alpha1.FaultInjection](s.ResourceIndexer, namespace)}
 }
 
 // FaultInjectionNamespaceLister helps list and get FaultInjections.
@@ -53,15 +53,15 @@ func (s *faultInjectionLister) FaultInjections(namespace string) FaultInjectionN
 type FaultInjectionNamespaceLister interface {
 	// List lists all FaultInjections in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.FaultInjection, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.FaultInjection, err error)
 	// Get retrieves the FaultInjection from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.FaultInjection, error)
+	Get(name string) (*extensionv1alpha1.FaultInjection, error)
 	FaultInjectionNamespaceListerExpansion
 }
 
 // faultInjectionNamespaceLister implements the FaultInjectionNamespaceLister
 // interface.
 type faultInjectionNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.FaultInjection]
+	listers.ResourceIndexer[*extensionv1alpha1.FaultInjection]
 }

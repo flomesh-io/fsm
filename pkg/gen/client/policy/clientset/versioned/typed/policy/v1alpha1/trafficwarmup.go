@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type TrafficWarmupsGetter interface {
 
 // TrafficWarmupInterface has methods to work with TrafficWarmup resources.
 type TrafficWarmupInterface interface {
-	Create(ctx context.Context, trafficWarmup *v1alpha1.TrafficWarmup, opts v1.CreateOptions) (*v1alpha1.TrafficWarmup, error)
-	Update(ctx context.Context, trafficWarmup *v1alpha1.TrafficWarmup, opts v1.UpdateOptions) (*v1alpha1.TrafficWarmup, error)
+	Create(ctx context.Context, trafficWarmup *policyv1alpha1.TrafficWarmup, opts v1.CreateOptions) (*policyv1alpha1.TrafficWarmup, error)
+	Update(ctx context.Context, trafficWarmup *policyv1alpha1.TrafficWarmup, opts v1.UpdateOptions) (*policyv1alpha1.TrafficWarmup, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, trafficWarmup *v1alpha1.TrafficWarmup, opts v1.UpdateOptions) (*v1alpha1.TrafficWarmup, error)
+	UpdateStatus(ctx context.Context, trafficWarmup *policyv1alpha1.TrafficWarmup, opts v1.UpdateOptions) (*policyv1alpha1.TrafficWarmup, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.TrafficWarmup, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.TrafficWarmupList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*policyv1alpha1.TrafficWarmup, error)
+	List(ctx context.Context, opts v1.ListOptions) (*policyv1alpha1.TrafficWarmupList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.TrafficWarmup, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *policyv1alpha1.TrafficWarmup, err error)
 	TrafficWarmupExpansion
 }
 
 // trafficWarmups implements TrafficWarmupInterface
 type trafficWarmups struct {
-	*gentype.ClientWithList[*v1alpha1.TrafficWarmup, *v1alpha1.TrafficWarmupList]
+	*gentype.ClientWithList[*policyv1alpha1.TrafficWarmup, *policyv1alpha1.TrafficWarmupList]
 }
 
 // newTrafficWarmups returns a TrafficWarmups
 func newTrafficWarmups(c *PolicyV1alpha1Client, namespace string) *trafficWarmups {
 	return &trafficWarmups{
-		gentype.NewClientWithList[*v1alpha1.TrafficWarmup, *v1alpha1.TrafficWarmupList](
+		gentype.NewClientWithList[*policyv1alpha1.TrafficWarmup, *policyv1alpha1.TrafficWarmupList](
 			"trafficwarmups",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.TrafficWarmup { return &v1alpha1.TrafficWarmup{} },
-			func() *v1alpha1.TrafficWarmupList { return &v1alpha1.TrafficWarmupList{} }),
+			func() *policyv1alpha1.TrafficWarmup { return &policyv1alpha1.TrafficWarmup{} },
+			func() *policyv1alpha1.TrafficWarmupList { return &policyv1alpha1.TrafficWarmupList{} },
+		),
 	}
 }

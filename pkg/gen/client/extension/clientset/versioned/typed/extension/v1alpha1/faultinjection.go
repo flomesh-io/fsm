@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type FaultInjectionsGetter interface {
 
 // FaultInjectionInterface has methods to work with FaultInjection resources.
 type FaultInjectionInterface interface {
-	Create(ctx context.Context, faultInjection *v1alpha1.FaultInjection, opts v1.CreateOptions) (*v1alpha1.FaultInjection, error)
-	Update(ctx context.Context, faultInjection *v1alpha1.FaultInjection, opts v1.UpdateOptions) (*v1alpha1.FaultInjection, error)
+	Create(ctx context.Context, faultInjection *extensionv1alpha1.FaultInjection, opts v1.CreateOptions) (*extensionv1alpha1.FaultInjection, error)
+	Update(ctx context.Context, faultInjection *extensionv1alpha1.FaultInjection, opts v1.UpdateOptions) (*extensionv1alpha1.FaultInjection, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, faultInjection *v1alpha1.FaultInjection, opts v1.UpdateOptions) (*v1alpha1.FaultInjection, error)
+	UpdateStatus(ctx context.Context, faultInjection *extensionv1alpha1.FaultInjection, opts v1.UpdateOptions) (*extensionv1alpha1.FaultInjection, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.FaultInjection, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.FaultInjectionList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*extensionv1alpha1.FaultInjection, error)
+	List(ctx context.Context, opts v1.ListOptions) (*extensionv1alpha1.FaultInjectionList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.FaultInjection, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *extensionv1alpha1.FaultInjection, err error)
 	FaultInjectionExpansion
 }
 
 // faultInjections implements FaultInjectionInterface
 type faultInjections struct {
-	*gentype.ClientWithList[*v1alpha1.FaultInjection, *v1alpha1.FaultInjectionList]
+	*gentype.ClientWithList[*extensionv1alpha1.FaultInjection, *extensionv1alpha1.FaultInjectionList]
 }
 
 // newFaultInjections returns a FaultInjections
 func newFaultInjections(c *ExtensionV1alpha1Client, namespace string) *faultInjections {
 	return &faultInjections{
-		gentype.NewClientWithList[*v1alpha1.FaultInjection, *v1alpha1.FaultInjectionList](
+		gentype.NewClientWithList[*extensionv1alpha1.FaultInjection, *extensionv1alpha1.FaultInjectionList](
 			"faultinjections",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.FaultInjection { return &v1alpha1.FaultInjection{} },
-			func() *v1alpha1.FaultInjectionList { return &v1alpha1.FaultInjectionList{} }),
+			func() *extensionv1alpha1.FaultInjection { return &extensionv1alpha1.FaultInjection{} },
+			func() *extensionv1alpha1.FaultInjectionList { return &extensionv1alpha1.FaultInjectionList{} },
+		),
 	}
 }

@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	apismulticlusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/listers/multicluster/v1alpha1"
+	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/listers/multicluster/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // GlobalTrafficPolicies.
 type GlobalTrafficPolicyInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.GlobalTrafficPolicyLister
+	Lister() multiclusterv1alpha1.GlobalTrafficPolicyLister
 }
 
 type globalTrafficPolicyInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredGlobalTrafficPolicyInformer(client versioned.Interface, namespac
 				return client.MulticlusterV1alpha1().GlobalTrafficPolicies(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&multiclusterv1alpha1.GlobalTrafficPolicy{},
+		&apismulticlusterv1alpha1.GlobalTrafficPolicy{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *globalTrafficPolicyInformer) defaultInformer(client versioned.Interface
 }
 
 func (f *globalTrafficPolicyInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&multiclusterv1alpha1.GlobalTrafficPolicy{}, f.defaultInformer)
+	return f.factory.InformerFor(&apismulticlusterv1alpha1.GlobalTrafficPolicy{}, f.defaultInformer)
 }
 
-func (f *globalTrafficPolicyInformer) Lister() v1alpha1.GlobalTrafficPolicyLister {
-	return v1alpha1.NewGlobalTrafficPolicyLister(f.Informer().GetIndexer())
+func (f *globalTrafficPolicyInformer) Lister() multiclusterv1alpha1.GlobalTrafficPolicyLister {
+	return multiclusterv1alpha1.NewGlobalTrafficPolicyLister(f.Informer().GetIndexer())
 }

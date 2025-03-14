@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	apisextensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/extension/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // ConcurrencyLimits.
 type ConcurrencyLimitInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.ConcurrencyLimitLister
+	Lister() extensionv1alpha1.ConcurrencyLimitLister
 }
 
 type concurrencyLimitInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredConcurrencyLimitInformer(client versioned.Interface, namespace s
 				return client.ExtensionV1alpha1().ConcurrencyLimits(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&extensionv1alpha1.ConcurrencyLimit{},
+		&apisextensionv1alpha1.ConcurrencyLimit{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *concurrencyLimitInformer) defaultInformer(client versioned.Interface, r
 }
 
 func (f *concurrencyLimitInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&extensionv1alpha1.ConcurrencyLimit{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisextensionv1alpha1.ConcurrencyLimit{}, f.defaultInformer)
 }
 
-func (f *concurrencyLimitInformer) Lister() v1alpha1.ConcurrencyLimitLister {
-	return v1alpha1.NewConcurrencyLimitLister(f.Informer().GetIndexer())
+func (f *concurrencyLimitInformer) Lister() extensionv1alpha1.ConcurrencyLimitLister {
+	return extensionv1alpha1.NewConcurrencyLimitLister(f.Informer().GetIndexer())
 }

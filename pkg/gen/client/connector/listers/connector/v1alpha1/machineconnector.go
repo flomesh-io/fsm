@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // MachineConnectorLister helps list MachineConnectors.
@@ -27,7 +27,7 @@ import (
 type MachineConnectorLister interface {
 	// List lists all MachineConnectors in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.MachineConnector, err error)
+	List(selector labels.Selector) (ret []*connectorv1alpha1.MachineConnector, err error)
 	// MachineConnectors returns an object that can list and get MachineConnectors.
 	MachineConnectors(namespace string) MachineConnectorNamespaceLister
 	MachineConnectorListerExpansion
@@ -35,17 +35,17 @@ type MachineConnectorLister interface {
 
 // machineConnectorLister implements the MachineConnectorLister interface.
 type machineConnectorLister struct {
-	listers.ResourceIndexer[*v1alpha1.MachineConnector]
+	listers.ResourceIndexer[*connectorv1alpha1.MachineConnector]
 }
 
 // NewMachineConnectorLister returns a new MachineConnectorLister.
 func NewMachineConnectorLister(indexer cache.Indexer) MachineConnectorLister {
-	return &machineConnectorLister{listers.New[*v1alpha1.MachineConnector](indexer, v1alpha1.Resource("machineconnector"))}
+	return &machineConnectorLister{listers.New[*connectorv1alpha1.MachineConnector](indexer, connectorv1alpha1.Resource("machineconnector"))}
 }
 
 // MachineConnectors returns an object that can list and get MachineConnectors.
 func (s *machineConnectorLister) MachineConnectors(namespace string) MachineConnectorNamespaceLister {
-	return machineConnectorNamespaceLister{listers.NewNamespaced[*v1alpha1.MachineConnector](s.ResourceIndexer, namespace)}
+	return machineConnectorNamespaceLister{listers.NewNamespaced[*connectorv1alpha1.MachineConnector](s.ResourceIndexer, namespace)}
 }
 
 // MachineConnectorNamespaceLister helps list and get MachineConnectors.
@@ -53,15 +53,15 @@ func (s *machineConnectorLister) MachineConnectors(namespace string) MachineConn
 type MachineConnectorNamespaceLister interface {
 	// List lists all MachineConnectors in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.MachineConnector, err error)
+	List(selector labels.Selector) (ret []*connectorv1alpha1.MachineConnector, err error)
 	// Get retrieves the MachineConnector from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.MachineConnector, error)
+	Get(name string) (*connectorv1alpha1.MachineConnector, error)
 	MachineConnectorNamespaceListerExpansion
 }
 
 // machineConnectorNamespaceLister implements the MachineConnectorNamespaceLister
 // interface.
 type machineConnectorNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.MachineConnector]
+	listers.ResourceIndexer[*connectorv1alpha1.MachineConnector]
 }

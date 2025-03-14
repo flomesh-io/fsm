@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	apispolicyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/policy/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/listers/policy/v1alpha1"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/listers/policy/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // UpstreamTrafficSettings.
 type UpstreamTrafficSettingInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.UpstreamTrafficSettingLister
+	Lister() policyv1alpha1.UpstreamTrafficSettingLister
 }
 
 type upstreamTrafficSettingInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredUpstreamTrafficSettingInformer(client versioned.Interface, names
 				return client.PolicyV1alpha1().UpstreamTrafficSettings(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&policyv1alpha1.UpstreamTrafficSetting{},
+		&apispolicyv1alpha1.UpstreamTrafficSetting{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *upstreamTrafficSettingInformer) defaultInformer(client versioned.Interf
 }
 
 func (f *upstreamTrafficSettingInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&policyv1alpha1.UpstreamTrafficSetting{}, f.defaultInformer)
+	return f.factory.InformerFor(&apispolicyv1alpha1.UpstreamTrafficSetting{}, f.defaultInformer)
 }
 
-func (f *upstreamTrafficSettingInformer) Lister() v1alpha1.UpstreamTrafficSettingLister {
-	return v1alpha1.NewUpstreamTrafficSettingLister(f.Informer().GetIndexer())
+func (f *upstreamTrafficSettingInformer) Lister() policyv1alpha1.UpstreamTrafficSettingLister {
+	return policyv1alpha1.NewUpstreamTrafficSettingLister(f.Informer().GetIndexer())
 }

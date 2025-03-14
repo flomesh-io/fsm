@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha2
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	apisconfigv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/config/informers/externalversions/internalinterfaces"
-	v1alpha2 "github.com/flomesh-io/fsm/pkg/gen/client/config/listers/config/v1alpha2"
+	configv1alpha2 "github.com/flomesh-io/fsm/pkg/gen/client/config/listers/config/v1alpha2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // MeshRootCertificates.
 type MeshRootCertificateInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha2.MeshRootCertificateLister
+	Lister() configv1alpha2.MeshRootCertificateLister
 }
 
 type meshRootCertificateInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredMeshRootCertificateInformer(client versioned.Interface, namespac
 				return client.ConfigV1alpha2().MeshRootCertificates(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&configv1alpha2.MeshRootCertificate{},
+		&apisconfigv1alpha2.MeshRootCertificate{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *meshRootCertificateInformer) defaultInformer(client versioned.Interface
 }
 
 func (f *meshRootCertificateInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&configv1alpha2.MeshRootCertificate{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisconfigv1alpha2.MeshRootCertificate{}, f.defaultInformer)
 }
 
-func (f *meshRootCertificateInformer) Lister() v1alpha2.MeshRootCertificateLister {
-	return v1alpha2.NewMeshRootCertificateLister(f.Informer().GetIndexer())
+func (f *meshRootCertificateInformer) Lister() configv1alpha2.MeshRootCertificateLister {
+	return configv1alpha2.NewMeshRootCertificateLister(f.Informer().GetIndexer())
 }

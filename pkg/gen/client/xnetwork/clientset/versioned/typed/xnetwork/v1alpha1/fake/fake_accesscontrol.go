@@ -16,116 +16,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/xnetwork/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	xnetworkv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/xnetwork/clientset/versioned/typed/xnetwork/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeAccessControls implements AccessControlInterface
-type FakeAccessControls struct {
+// fakeAccessControls implements AccessControlInterface
+type fakeAccessControls struct {
+	*gentype.FakeClientWithList[*v1alpha1.AccessControl, *v1alpha1.AccessControlList]
 	Fake *FakeXnetworkV1alpha1
-	ns   string
 }
 
-var accesscontrolsResource = v1alpha1.SchemeGroupVersion.WithResource("accesscontrols")
-
-var accesscontrolsKind = v1alpha1.SchemeGroupVersion.WithKind("AccessControl")
-
-// Get takes name of the accessControl, and returns the corresponding accessControl object, and an error if there is any.
-func (c *FakeAccessControls) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.AccessControl, err error) {
-	emptyResult := &v1alpha1.AccessControl{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(accesscontrolsResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakeAccessControls(fake *FakeXnetworkV1alpha1, namespace string) xnetworkv1alpha1.AccessControlInterface {
+	return &fakeAccessControls{
+		gentype.NewFakeClientWithList[*v1alpha1.AccessControl, *v1alpha1.AccessControlList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("accesscontrols"),
+			v1alpha1.SchemeGroupVersion.WithKind("AccessControl"),
+			func() *v1alpha1.AccessControl { return &v1alpha1.AccessControl{} },
+			func() *v1alpha1.AccessControlList { return &v1alpha1.AccessControlList{} },
+			func(dst, src *v1alpha1.AccessControlList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.AccessControlList) []*v1alpha1.AccessControl {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.AccessControlList, items []*v1alpha1.AccessControl) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.AccessControl), err
-}
-
-// List takes label and field selectors, and returns the list of AccessControls that match those selectors.
-func (c *FakeAccessControls) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.AccessControlList, err error) {
-	emptyResult := &v1alpha1.AccessControlList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(accesscontrolsResource, accesscontrolsKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.AccessControlList{ListMeta: obj.(*v1alpha1.AccessControlList).ListMeta}
-	for _, item := range obj.(*v1alpha1.AccessControlList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested accessControls.
-func (c *FakeAccessControls) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(accesscontrolsResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a accessControl and creates it.  Returns the server's representation of the accessControl, and an error, if there is any.
-func (c *FakeAccessControls) Create(ctx context.Context, accessControl *v1alpha1.AccessControl, opts v1.CreateOptions) (result *v1alpha1.AccessControl, err error) {
-	emptyResult := &v1alpha1.AccessControl{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(accesscontrolsResource, c.ns, accessControl, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.AccessControl), err
-}
-
-// Update takes the representation of a accessControl and updates it. Returns the server's representation of the accessControl, and an error, if there is any.
-func (c *FakeAccessControls) Update(ctx context.Context, accessControl *v1alpha1.AccessControl, opts v1.UpdateOptions) (result *v1alpha1.AccessControl, err error) {
-	emptyResult := &v1alpha1.AccessControl{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(accesscontrolsResource, c.ns, accessControl, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.AccessControl), err
-}
-
-// Delete takes name of the accessControl and deletes it. Returns an error if one occurs.
-func (c *FakeAccessControls) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(accesscontrolsResource, c.ns, name, opts), &v1alpha1.AccessControl{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeAccessControls) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(accesscontrolsResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.AccessControlList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched accessControl.
-func (c *FakeAccessControls) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AccessControl, err error) {
-	emptyResult := &v1alpha1.AccessControl{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(accesscontrolsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.AccessControl), err
 }

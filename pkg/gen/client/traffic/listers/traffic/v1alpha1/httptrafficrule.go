@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/traffic/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	trafficv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/traffic/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // HTTPTrafficRuleLister helps list HTTPTrafficRules.
@@ -27,7 +27,7 @@ import (
 type HTTPTrafficRuleLister interface {
 	// List lists all HTTPTrafficRules in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.HTTPTrafficRule, err error)
+	List(selector labels.Selector) (ret []*trafficv1alpha1.HTTPTrafficRule, err error)
 	// HTTPTrafficRules returns an object that can list and get HTTPTrafficRules.
 	HTTPTrafficRules(namespace string) HTTPTrafficRuleNamespaceLister
 	HTTPTrafficRuleListerExpansion
@@ -35,17 +35,17 @@ type HTTPTrafficRuleLister interface {
 
 // hTTPTrafficRuleLister implements the HTTPTrafficRuleLister interface.
 type hTTPTrafficRuleLister struct {
-	listers.ResourceIndexer[*v1alpha1.HTTPTrafficRule]
+	listers.ResourceIndexer[*trafficv1alpha1.HTTPTrafficRule]
 }
 
 // NewHTTPTrafficRuleLister returns a new HTTPTrafficRuleLister.
 func NewHTTPTrafficRuleLister(indexer cache.Indexer) HTTPTrafficRuleLister {
-	return &hTTPTrafficRuleLister{listers.New[*v1alpha1.HTTPTrafficRule](indexer, v1alpha1.Resource("httptrafficrule"))}
+	return &hTTPTrafficRuleLister{listers.New[*trafficv1alpha1.HTTPTrafficRule](indexer, trafficv1alpha1.Resource("httptrafficrule"))}
 }
 
 // HTTPTrafficRules returns an object that can list and get HTTPTrafficRules.
 func (s *hTTPTrafficRuleLister) HTTPTrafficRules(namespace string) HTTPTrafficRuleNamespaceLister {
-	return hTTPTrafficRuleNamespaceLister{listers.NewNamespaced[*v1alpha1.HTTPTrafficRule](s.ResourceIndexer, namespace)}
+	return hTTPTrafficRuleNamespaceLister{listers.NewNamespaced[*trafficv1alpha1.HTTPTrafficRule](s.ResourceIndexer, namespace)}
 }
 
 // HTTPTrafficRuleNamespaceLister helps list and get HTTPTrafficRules.
@@ -53,15 +53,15 @@ func (s *hTTPTrafficRuleLister) HTTPTrafficRules(namespace string) HTTPTrafficRu
 type HTTPTrafficRuleNamespaceLister interface {
 	// List lists all HTTPTrafficRules in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.HTTPTrafficRule, err error)
+	List(selector labels.Selector) (ret []*trafficv1alpha1.HTTPTrafficRule, err error)
 	// Get retrieves the HTTPTrafficRule from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.HTTPTrafficRule, error)
+	Get(name string) (*trafficv1alpha1.HTTPTrafficRule, error)
 	HTTPTrafficRuleNamespaceListerExpansion
 }
 
 // hTTPTrafficRuleNamespaceLister implements the HTTPTrafficRuleNamespaceLister
 // interface.
 type hTTPTrafficRuleNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.HTTPTrafficRule]
+	listers.ResourceIndexer[*trafficv1alpha1.HTTPTrafficRule]
 }

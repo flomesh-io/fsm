@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha2
 
 import (
-	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // MeshRootCertificateLister helps list MeshRootCertificates.
@@ -27,7 +27,7 @@ import (
 type MeshRootCertificateLister interface {
 	// List lists all MeshRootCertificates in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha2.MeshRootCertificate, err error)
+	List(selector labels.Selector) (ret []*configv1alpha2.MeshRootCertificate, err error)
 	// MeshRootCertificates returns an object that can list and get MeshRootCertificates.
 	MeshRootCertificates(namespace string) MeshRootCertificateNamespaceLister
 	MeshRootCertificateListerExpansion
@@ -35,17 +35,17 @@ type MeshRootCertificateLister interface {
 
 // meshRootCertificateLister implements the MeshRootCertificateLister interface.
 type meshRootCertificateLister struct {
-	listers.ResourceIndexer[*v1alpha2.MeshRootCertificate]
+	listers.ResourceIndexer[*configv1alpha2.MeshRootCertificate]
 }
 
 // NewMeshRootCertificateLister returns a new MeshRootCertificateLister.
 func NewMeshRootCertificateLister(indexer cache.Indexer) MeshRootCertificateLister {
-	return &meshRootCertificateLister{listers.New[*v1alpha2.MeshRootCertificate](indexer, v1alpha2.Resource("meshrootcertificate"))}
+	return &meshRootCertificateLister{listers.New[*configv1alpha2.MeshRootCertificate](indexer, configv1alpha2.Resource("meshrootcertificate"))}
 }
 
 // MeshRootCertificates returns an object that can list and get MeshRootCertificates.
 func (s *meshRootCertificateLister) MeshRootCertificates(namespace string) MeshRootCertificateNamespaceLister {
-	return meshRootCertificateNamespaceLister{listers.NewNamespaced[*v1alpha2.MeshRootCertificate](s.ResourceIndexer, namespace)}
+	return meshRootCertificateNamespaceLister{listers.NewNamespaced[*configv1alpha2.MeshRootCertificate](s.ResourceIndexer, namespace)}
 }
 
 // MeshRootCertificateNamespaceLister helps list and get MeshRootCertificates.
@@ -53,15 +53,15 @@ func (s *meshRootCertificateLister) MeshRootCertificates(namespace string) MeshR
 type MeshRootCertificateNamespaceLister interface {
 	// List lists all MeshRootCertificates in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha2.MeshRootCertificate, err error)
+	List(selector labels.Selector) (ret []*configv1alpha2.MeshRootCertificate, err error)
 	// Get retrieves the MeshRootCertificate from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha2.MeshRootCertificate, error)
+	Get(name string) (*configv1alpha2.MeshRootCertificate, error)
 	MeshRootCertificateNamespaceListerExpansion
 }
 
 // meshRootCertificateNamespaceLister implements the MeshRootCertificateNamespaceLister
 // interface.
 type meshRootCertificateNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha2.MeshRootCertificate]
+	listers.ResourceIndexer[*configv1alpha2.MeshRootCertificate]
 }

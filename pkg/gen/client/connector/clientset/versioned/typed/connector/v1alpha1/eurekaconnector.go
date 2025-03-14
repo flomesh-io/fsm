@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type EurekaConnectorsGetter interface {
 
 // EurekaConnectorInterface has methods to work with EurekaConnector resources.
 type EurekaConnectorInterface interface {
-	Create(ctx context.Context, eurekaConnector *v1alpha1.EurekaConnector, opts v1.CreateOptions) (*v1alpha1.EurekaConnector, error)
-	Update(ctx context.Context, eurekaConnector *v1alpha1.EurekaConnector, opts v1.UpdateOptions) (*v1alpha1.EurekaConnector, error)
+	Create(ctx context.Context, eurekaConnector *connectorv1alpha1.EurekaConnector, opts v1.CreateOptions) (*connectorv1alpha1.EurekaConnector, error)
+	Update(ctx context.Context, eurekaConnector *connectorv1alpha1.EurekaConnector, opts v1.UpdateOptions) (*connectorv1alpha1.EurekaConnector, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, eurekaConnector *v1alpha1.EurekaConnector, opts v1.UpdateOptions) (*v1alpha1.EurekaConnector, error)
+	UpdateStatus(ctx context.Context, eurekaConnector *connectorv1alpha1.EurekaConnector, opts v1.UpdateOptions) (*connectorv1alpha1.EurekaConnector, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.EurekaConnector, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.EurekaConnectorList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*connectorv1alpha1.EurekaConnector, error)
+	List(ctx context.Context, opts v1.ListOptions) (*connectorv1alpha1.EurekaConnectorList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.EurekaConnector, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *connectorv1alpha1.EurekaConnector, err error)
 	EurekaConnectorExpansion
 }
 
 // eurekaConnectors implements EurekaConnectorInterface
 type eurekaConnectors struct {
-	*gentype.ClientWithList[*v1alpha1.EurekaConnector, *v1alpha1.EurekaConnectorList]
+	*gentype.ClientWithList[*connectorv1alpha1.EurekaConnector, *connectorv1alpha1.EurekaConnectorList]
 }
 
 // newEurekaConnectors returns a EurekaConnectors
 func newEurekaConnectors(c *ConnectorV1alpha1Client, namespace string) *eurekaConnectors {
 	return &eurekaConnectors{
-		gentype.NewClientWithList[*v1alpha1.EurekaConnector, *v1alpha1.EurekaConnectorList](
+		gentype.NewClientWithList[*connectorv1alpha1.EurekaConnector, *connectorv1alpha1.EurekaConnectorList](
 			"eurekaconnectors",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.EurekaConnector { return &v1alpha1.EurekaConnector{} },
-			func() *v1alpha1.EurekaConnectorList { return &v1alpha1.EurekaConnectorList{} }),
+			func() *connectorv1alpha1.EurekaConnector { return &connectorv1alpha1.EurekaConnector{} },
+			func() *connectorv1alpha1.EurekaConnectorList { return &connectorv1alpha1.EurekaConnectorList{} },
+		),
 	}
 }

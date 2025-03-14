@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha2
 
 import (
-	"context"
+	context "context"
 
-	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,31 +34,32 @@ type MeshConfigsGetter interface {
 
 // MeshConfigInterface has methods to work with MeshConfig resources.
 type MeshConfigInterface interface {
-	Create(ctx context.Context, meshConfig *v1alpha2.MeshConfig, opts v1.CreateOptions) (*v1alpha2.MeshConfig, error)
-	Update(ctx context.Context, meshConfig *v1alpha2.MeshConfig, opts v1.UpdateOptions) (*v1alpha2.MeshConfig, error)
+	Create(ctx context.Context, meshConfig *configv1alpha2.MeshConfig, opts v1.CreateOptions) (*configv1alpha2.MeshConfig, error)
+	Update(ctx context.Context, meshConfig *configv1alpha2.MeshConfig, opts v1.UpdateOptions) (*configv1alpha2.MeshConfig, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha2.MeshConfig, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha2.MeshConfigList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*configv1alpha2.MeshConfig, error)
+	List(ctx context.Context, opts v1.ListOptions) (*configv1alpha2.MeshConfigList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha2.MeshConfig, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *configv1alpha2.MeshConfig, err error)
 	MeshConfigExpansion
 }
 
 // meshConfigs implements MeshConfigInterface
 type meshConfigs struct {
-	*gentype.ClientWithList[*v1alpha2.MeshConfig, *v1alpha2.MeshConfigList]
+	*gentype.ClientWithList[*configv1alpha2.MeshConfig, *configv1alpha2.MeshConfigList]
 }
 
 // newMeshConfigs returns a MeshConfigs
 func newMeshConfigs(c *ConfigV1alpha2Client, namespace string) *meshConfigs {
 	return &meshConfigs{
-		gentype.NewClientWithList[*v1alpha2.MeshConfig, *v1alpha2.MeshConfigList](
+		gentype.NewClientWithList[*configv1alpha2.MeshConfig, *configv1alpha2.MeshConfigList](
 			"meshconfigs",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha2.MeshConfig { return &v1alpha2.MeshConfig{} },
-			func() *v1alpha2.MeshConfigList { return &v1alpha2.MeshConfigList{} }),
+			func() *configv1alpha2.MeshConfig { return &configv1alpha2.MeshConfig{} },
+			func() *configv1alpha2.MeshConfigList { return &configv1alpha2.MeshConfigList{} },
+		),
 	}
 }

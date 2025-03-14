@@ -26,15 +26,15 @@ type FakeGatewayV1alpha2 struct {
 }
 
 func (c *FakeGatewayV1alpha2) BackendLBPolicies(namespace string) v1alpha2.BackendLBPolicyInterface {
-	return &FakeBackendLBPolicies{c, namespace}
+	return newFakeBackendLBPolicies(c, namespace)
 }
 
 func (c *FakeGatewayV1alpha2) HealthCheckPolicies(namespace string) v1alpha2.HealthCheckPolicyInterface {
-	return &FakeHealthCheckPolicies{c, namespace}
+	return newFakeHealthCheckPolicies(c, namespace)
 }
 
 func (c *FakeGatewayV1alpha2) RouteRuleFilterPolicies(namespace string) v1alpha2.RouteRuleFilterPolicyInterface {
-	return &FakeRouteRuleFilterPolicies{c, namespace}
+	return newFakeRouteRuleFilterPolicies(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

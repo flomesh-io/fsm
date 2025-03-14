@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // IngressBackendLister helps list IngressBackends.
@@ -27,7 +27,7 @@ import (
 type IngressBackendLister interface {
 	// List lists all IngressBackends in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.IngressBackend, err error)
+	List(selector labels.Selector) (ret []*policyv1alpha1.IngressBackend, err error)
 	// IngressBackends returns an object that can list and get IngressBackends.
 	IngressBackends(namespace string) IngressBackendNamespaceLister
 	IngressBackendListerExpansion
@@ -35,17 +35,17 @@ type IngressBackendLister interface {
 
 // ingressBackendLister implements the IngressBackendLister interface.
 type ingressBackendLister struct {
-	listers.ResourceIndexer[*v1alpha1.IngressBackend]
+	listers.ResourceIndexer[*policyv1alpha1.IngressBackend]
 }
 
 // NewIngressBackendLister returns a new IngressBackendLister.
 func NewIngressBackendLister(indexer cache.Indexer) IngressBackendLister {
-	return &ingressBackendLister{listers.New[*v1alpha1.IngressBackend](indexer, v1alpha1.Resource("ingressbackend"))}
+	return &ingressBackendLister{listers.New[*policyv1alpha1.IngressBackend](indexer, policyv1alpha1.Resource("ingressbackend"))}
 }
 
 // IngressBackends returns an object that can list and get IngressBackends.
 func (s *ingressBackendLister) IngressBackends(namespace string) IngressBackendNamespaceLister {
-	return ingressBackendNamespaceLister{listers.NewNamespaced[*v1alpha1.IngressBackend](s.ResourceIndexer, namespace)}
+	return ingressBackendNamespaceLister{listers.NewNamespaced[*policyv1alpha1.IngressBackend](s.ResourceIndexer, namespace)}
 }
 
 // IngressBackendNamespaceLister helps list and get IngressBackends.
@@ -53,15 +53,15 @@ func (s *ingressBackendLister) IngressBackends(namespace string) IngressBackendN
 type IngressBackendNamespaceLister interface {
 	// List lists all IngressBackends in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.IngressBackend, err error)
+	List(selector labels.Selector) (ret []*policyv1alpha1.IngressBackend, err error)
 	// Get retrieves the IngressBackend from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.IngressBackend, error)
+	Get(name string) (*policyv1alpha1.IngressBackend, error)
 	IngressBackendNamespaceListerExpansion
 }
 
 // ingressBackendNamespaceLister implements the IngressBackendNamespaceLister
 // interface.
 type ingressBackendNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.IngressBackend]
+	listers.ResourceIndexer[*policyv1alpha1.IngressBackend]
 }

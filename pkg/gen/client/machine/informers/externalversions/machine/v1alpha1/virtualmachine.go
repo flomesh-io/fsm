@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
+	apismachinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/machine/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/machine/listers/machine/v1alpha1"
+	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/machine/listers/machine/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // VirtualMachines.
 type VirtualMachineInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.VirtualMachineLister
+	Lister() machinev1alpha1.VirtualMachineLister
 }
 
 type virtualMachineInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredVirtualMachineInformer(client versioned.Interface, namespace str
 				return client.MachineV1alpha1().VirtualMachines(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&machinev1alpha1.VirtualMachine{},
+		&apismachinev1alpha1.VirtualMachine{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *virtualMachineInformer) defaultInformer(client versioned.Interface, res
 }
 
 func (f *virtualMachineInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&machinev1alpha1.VirtualMachine{}, f.defaultInformer)
+	return f.factory.InformerFor(&apismachinev1alpha1.VirtualMachine{}, f.defaultInformer)
 }
 
-func (f *virtualMachineInformer) Lister() v1alpha1.VirtualMachineLister {
-	return v1alpha1.NewVirtualMachineLister(f.Informer().GetIndexer())
+func (f *virtualMachineInformer) Lister() machinev1alpha1.VirtualMachineLister {
+	return machinev1alpha1.NewVirtualMachineLister(f.Informer().GetIndexer())
 }

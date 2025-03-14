@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type RateLimitsGetter interface {
 
 // RateLimitInterface has methods to work with RateLimit resources.
 type RateLimitInterface interface {
-	Create(ctx context.Context, rateLimit *v1alpha1.RateLimit, opts v1.CreateOptions) (*v1alpha1.RateLimit, error)
-	Update(ctx context.Context, rateLimit *v1alpha1.RateLimit, opts v1.UpdateOptions) (*v1alpha1.RateLimit, error)
+	Create(ctx context.Context, rateLimit *extensionv1alpha1.RateLimit, opts v1.CreateOptions) (*extensionv1alpha1.RateLimit, error)
+	Update(ctx context.Context, rateLimit *extensionv1alpha1.RateLimit, opts v1.UpdateOptions) (*extensionv1alpha1.RateLimit, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, rateLimit *v1alpha1.RateLimit, opts v1.UpdateOptions) (*v1alpha1.RateLimit, error)
+	UpdateStatus(ctx context.Context, rateLimit *extensionv1alpha1.RateLimit, opts v1.UpdateOptions) (*extensionv1alpha1.RateLimit, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.RateLimit, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.RateLimitList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*extensionv1alpha1.RateLimit, error)
+	List(ctx context.Context, opts v1.ListOptions) (*extensionv1alpha1.RateLimitList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.RateLimit, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *extensionv1alpha1.RateLimit, err error)
 	RateLimitExpansion
 }
 
 // rateLimits implements RateLimitInterface
 type rateLimits struct {
-	*gentype.ClientWithList[*v1alpha1.RateLimit, *v1alpha1.RateLimitList]
+	*gentype.ClientWithList[*extensionv1alpha1.RateLimit, *extensionv1alpha1.RateLimitList]
 }
 
 // newRateLimits returns a RateLimits
 func newRateLimits(c *ExtensionV1alpha1Client, namespace string) *rateLimits {
 	return &rateLimits{
-		gentype.NewClientWithList[*v1alpha1.RateLimit, *v1alpha1.RateLimitList](
+		gentype.NewClientWithList[*extensionv1alpha1.RateLimit, *extensionv1alpha1.RateLimitList](
 			"ratelimits",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.RateLimit { return &v1alpha1.RateLimit{} },
-			func() *v1alpha1.RateLimitList { return &v1alpha1.RateLimitList{} }),
+			func() *extensionv1alpha1.RateLimit { return &extensionv1alpha1.RateLimit{} },
+			func() *extensionv1alpha1.RateLimitList { return &extensionv1alpha1.RateLimitList{} },
+		),
 	}
 }

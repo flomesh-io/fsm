@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	apisextensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/extension/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // RequestTerminations.
 type RequestTerminationInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.RequestTerminationLister
+	Lister() extensionv1alpha1.RequestTerminationLister
 }
 
 type requestTerminationInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredRequestTerminationInformer(client versioned.Interface, namespace
 				return client.ExtensionV1alpha1().RequestTerminations(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&extensionv1alpha1.RequestTermination{},
+		&apisextensionv1alpha1.RequestTermination{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *requestTerminationInformer) defaultInformer(client versioned.Interface,
 }
 
 func (f *requestTerminationInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&extensionv1alpha1.RequestTermination{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisextensionv1alpha1.RequestTermination{}, f.defaultInformer)
 }
 
-func (f *requestTerminationInformer) Lister() v1alpha1.RequestTerminationLister {
-	return v1alpha1.NewRequestTerminationLister(f.Informer().GetIndexer())
+func (f *requestTerminationInformer) Lister() extensionv1alpha1.RequestTerminationLister {
+	return extensionv1alpha1.NewRequestTerminationLister(f.Informer().GetIndexer())
 }
