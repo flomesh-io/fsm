@@ -28,7 +28,7 @@ require (
 	github.com/go-logr/logr v1.4.2
 	github.com/go-logr/zerologr v1.2.3
 	github.com/go-resty/resty/v2 v2.16.5
-	github.com/go-sql-driver/mysql v1.8.1
+	github.com/go-sql-driver/mysql v1.9.0
 	github.com/gobwas/glob v0.2.3
 	github.com/golang/mock v1.6.0
 	github.com/golangci/golangci-lint v1.64.7
@@ -86,8 +86,8 @@ require (
 	gomodules.xyz/jsonpatch/v2 v2.5.0
 	google.golang.org/grpc v1.71.0
 	gopkg.in/yaml.v2 v2.4.0
-	gorm.io/driver/mysql v1.1.1
-	gorm.io/gorm v1.21.12
+	gorm.io/driver/mysql v1.5.7
+	gorm.io/gorm v1.25.12
 	helm.sh/helm/v3 v3.16.4
 	k8s.io/api v0.31.7
 	k8s.io/apiextensions-apiserver v0.31.7
