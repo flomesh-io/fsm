@@ -106,6 +106,9 @@ type ConsulSyncToK8SSpec struct {
 	GenerateInternalServiceHealthCheck bool `json:"generateInternalServiceHealthCheck,omitempty"`
 
 	// +optional
+	MetadataStrategy *MetadataStrategy `json:"tagStrategy,omitempty"`
+
+	// +optional
 	ConversionStrategy *ConversionStrategy `json:"conversionStrategy,omitempty"`
 }
 

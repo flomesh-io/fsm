@@ -168,8 +168,6 @@ spec:
                           properties:
                             convertName:
                               type: string
-                            externalName:
-                              type: string
                             namespace:
                               type: string
                             service:

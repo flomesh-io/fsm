@@ -26,10 +26,6 @@ type C2KContext struct {
 	// Holds native services without extended by prefix and suffix.
 	NativeServices map[KubeSvcName]CloudSvcName
 
-	// NativeServices maps from k8s service name to cloud service name.
-	// Holds native services without extended by prefix and suffix.
-	ExternalServices map[CloudSvcName]ExternalName
-
 	// CatalogServices holds catalog services
 	CatalogServices     []ctv1.NamespacedService
 	CatalogServicesHash uint64
@@ -109,7 +105,6 @@ func NewC2KContext() *C2KContext {
 		EndpointsKeyToName:     make(map[string]string),
 		SourceServices:         make(map[KubeSvcName]CloudSvcName),
 		NativeServices:         make(map[KubeSvcName]CloudSvcName),
-		ExternalServices:       make(map[CloudSvcName]ExternalName),
 		KubeServiceCache:       make(map[KubeSvcKey]*corev1.Service),
 		SyncedKubeServiceCache: make(map[KubeSvcName]*corev1.Service),
 		SyncedKubeServiceHash:  make(map[KubeSvcName]uint64),

@@ -18,7 +18,7 @@ var (
 // Aggregator aggregates micro services
 type Aggregator interface {
 	// Aggregate micro services
-	Aggregate(ctx context.Context, kubeSvcName connector.KubeSvcName) map[connector.KubeSvcName]*connector.MicroSvcMeta
+	Aggregate(ctx context.Context, kubeSvcName connector.KubeSvcName) (svcMetaMap map[connector.KubeSvcName]*connector.MicroSvcMeta, labels, annotations map[string]string, err error)
 }
 
 type syncCreate struct {

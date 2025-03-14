@@ -299,8 +299,6 @@ spec:
                           properties:
                             convertName:
                               type: string
-                            externalName:
-                              type: string
                             namespace:
                               type: string
                             service:
@@ -348,6 +346,20 @@ spec:
                   fixedHttpServicePort:
                     format: int32
                     type: integer
+                  metadataStrategy:
+                    properties:
+                      annotationConversions:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      enable:
+                        default: false
+                        type: boolean
+                      labelConversions:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
                   prefixMetadata:
                     type: string
                   suffixMetadata:

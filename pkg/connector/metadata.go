@@ -21,11 +21,8 @@ type KubeSvcName string
 
 type CloudSvcName string
 
-type ExternalName string
-
 type ServiceConversion struct {
-	Service      CloudSvcName
-	ExternalName ExternalName
+	Service CloudSvcName
 }
 
 // MicroEndpointMeta defines micro endpoint meta
