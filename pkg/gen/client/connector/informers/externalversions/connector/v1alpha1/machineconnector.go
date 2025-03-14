@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	apisconnectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/connector/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/connector/listers/connector/v1alpha1"
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/connector/listers/connector/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // MachineConnectors.
 type MachineConnectorInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.MachineConnectorLister
+	Lister() connectorv1alpha1.MachineConnectorLister
 }
 
 type machineConnectorInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredMachineConnectorInformer(client versioned.Interface, namespace s
 				return client.ConnectorV1alpha1().MachineConnectors(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&connectorv1alpha1.MachineConnector{},
+		&apisconnectorv1alpha1.MachineConnector{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *machineConnectorInformer) defaultInformer(client versioned.Interface, r
 }
 
 func (f *machineConnectorInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&connectorv1alpha1.MachineConnector{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisconnectorv1alpha1.MachineConnector{}, f.defaultInformer)
 }
 
-func (f *machineConnectorInformer) Lister() v1alpha1.MachineConnectorLister {
-	return v1alpha1.NewMachineConnectorLister(f.Informer().GetIndexer())
+func (f *machineConnectorInformer) Lister() connectorv1alpha1.MachineConnectorLister {
+	return connectorv1alpha1.NewMachineConnectorLister(f.Informer().GetIndexer())
 }

@@ -988,7 +988,7 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&gwv1.Gateway{}).
 		WithDefaulter(r.webhook).
 		WithValidator(r.webhook).
-		RecoverPanic().
+		RecoverPanic(true).
 		Complete(); err != nil {
 		return err
 	}

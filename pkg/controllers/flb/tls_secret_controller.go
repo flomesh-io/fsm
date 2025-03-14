@@ -267,7 +267,7 @@ func (r *secretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		WithDefaulter(r.webhook).
 		WithValidator(r.webhook).
 		WithCategoryProvider(r.webhook).
-		RecoverPanic().
+		RecoverPanic(true).
 		Complete(); err != nil {
 		return err
 	}

@@ -16,13 +16,13 @@ limitations under the License.
 package v1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	networkingv1 "github.com/flomesh-io/fsm/pkg/apis/networking/v1"
+	apisnetworkingv1 "github.com/flomesh-io/fsm/pkg/apis/networking/v1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/networking/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/networking/informers/externalversions/internalinterfaces"
-	v1 "github.com/flomesh-io/fsm/pkg/gen/client/networking/listers/networking/v1"
+	networkingv1 "github.com/flomesh-io/fsm/pkg/gen/client/networking/listers/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // IngressClasses.
 type IngressClassInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1.IngressClassLister
+	Lister() networkingv1.IngressClassLister
 }
 
 type ingressClassInformer struct {
@@ -67,7 +67,7 @@ func NewFilteredIngressClassInformer(client versioned.Interface, resyncPeriod ti
 				return client.NetworkingV1().IngressClasses().Watch(context.TODO(), options)
 			},
 		},
-		&networkingv1.IngressClass{},
+		&apisnetworkingv1.IngressClass{},
 		resyncPeriod,
 		indexers,
 	)
@@ -78,9 +78,9 @@ func (f *ingressClassInformer) defaultInformer(client versioned.Interface, resyn
 }
 
 func (f *ingressClassInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&networkingv1.IngressClass{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisnetworkingv1.IngressClass{}, f.defaultInformer)
 }
 
-func (f *ingressClassInformer) Lister() v1.IngressClassLister {
-	return v1.NewIngressClassLister(f.Informer().GetIndexer())
+func (f *ingressClassInformer) Lister() networkingv1.IngressClassLister {
+	return networkingv1.NewIngressClassLister(f.Informer().GetIndexer())
 }

@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	apismulticlusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/listers/multicluster/v1alpha1"
+	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/listers/multicluster/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // ServiceImports.
 type ServiceImportInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.ServiceImportLister
+	Lister() multiclusterv1alpha1.ServiceImportLister
 }
 
 type serviceImportInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredServiceImportInformer(client versioned.Interface, namespace stri
 				return client.MulticlusterV1alpha1().ServiceImports(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&multiclusterv1alpha1.ServiceImport{},
+		&apismulticlusterv1alpha1.ServiceImport{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *serviceImportInformer) defaultInformer(client versioned.Interface, resy
 }
 
 func (f *serviceImportInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&multiclusterv1alpha1.ServiceImport{}, f.defaultInformer)
+	return f.factory.InformerFor(&apismulticlusterv1alpha1.ServiceImport{}, f.defaultInformer)
 }
 
-func (f *serviceImportInformer) Lister() v1alpha1.ServiceImportLister {
-	return v1alpha1.NewServiceImportLister(f.Informer().GetIndexer())
+func (f *serviceImportInformer) Lister() multiclusterv1alpha1.ServiceImportLister {
+	return multiclusterv1alpha1.NewServiceImportLister(f.Informer().GetIndexer())
 }

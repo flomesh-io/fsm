@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,36 @@ type GlobalTrafficPoliciesGetter interface {
 
 // GlobalTrafficPolicyInterface has methods to work with GlobalTrafficPolicy resources.
 type GlobalTrafficPolicyInterface interface {
-	Create(ctx context.Context, globalTrafficPolicy *v1alpha1.GlobalTrafficPolicy, opts v1.CreateOptions) (*v1alpha1.GlobalTrafficPolicy, error)
-	Update(ctx context.Context, globalTrafficPolicy *v1alpha1.GlobalTrafficPolicy, opts v1.UpdateOptions) (*v1alpha1.GlobalTrafficPolicy, error)
+	Create(ctx context.Context, globalTrafficPolicy *multiclusterv1alpha1.GlobalTrafficPolicy, opts v1.CreateOptions) (*multiclusterv1alpha1.GlobalTrafficPolicy, error)
+	Update(ctx context.Context, globalTrafficPolicy *multiclusterv1alpha1.GlobalTrafficPolicy, opts v1.UpdateOptions) (*multiclusterv1alpha1.GlobalTrafficPolicy, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, globalTrafficPolicy *v1alpha1.GlobalTrafficPolicy, opts v1.UpdateOptions) (*v1alpha1.GlobalTrafficPolicy, error)
+	UpdateStatus(ctx context.Context, globalTrafficPolicy *multiclusterv1alpha1.GlobalTrafficPolicy, opts v1.UpdateOptions) (*multiclusterv1alpha1.GlobalTrafficPolicy, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.GlobalTrafficPolicy, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.GlobalTrafficPolicyList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*multiclusterv1alpha1.GlobalTrafficPolicy, error)
+	List(ctx context.Context, opts v1.ListOptions) (*multiclusterv1alpha1.GlobalTrafficPolicyList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.GlobalTrafficPolicy, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *multiclusterv1alpha1.GlobalTrafficPolicy, err error)
 	GlobalTrafficPolicyExpansion
 }
 
 // globalTrafficPolicies implements GlobalTrafficPolicyInterface
 type globalTrafficPolicies struct {
-	*gentype.ClientWithList[*v1alpha1.GlobalTrafficPolicy, *v1alpha1.GlobalTrafficPolicyList]
+	*gentype.ClientWithList[*multiclusterv1alpha1.GlobalTrafficPolicy, *multiclusterv1alpha1.GlobalTrafficPolicyList]
 }
 
 // newGlobalTrafficPolicies returns a GlobalTrafficPolicies
 func newGlobalTrafficPolicies(c *MulticlusterV1alpha1Client, namespace string) *globalTrafficPolicies {
 	return &globalTrafficPolicies{
-		gentype.NewClientWithList[*v1alpha1.GlobalTrafficPolicy, *v1alpha1.GlobalTrafficPolicyList](
+		gentype.NewClientWithList[*multiclusterv1alpha1.GlobalTrafficPolicy, *multiclusterv1alpha1.GlobalTrafficPolicyList](
 			"globaltrafficpolicies",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.GlobalTrafficPolicy { return &v1alpha1.GlobalTrafficPolicy{} },
-			func() *v1alpha1.GlobalTrafficPolicyList { return &v1alpha1.GlobalTrafficPolicyList{} }),
+			func() *multiclusterv1alpha1.GlobalTrafficPolicy { return &multiclusterv1alpha1.GlobalTrafficPolicy{} },
+			func() *multiclusterv1alpha1.GlobalTrafficPolicyList {
+				return &multiclusterv1alpha1.GlobalTrafficPolicyList{}
+			},
+		),
 	}
 }

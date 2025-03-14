@@ -16,8 +16,8 @@ limitations under the License.
 package versioned
 
 import (
-	"fmt"
-	"net/http"
+	fmt "fmt"
+	http "net/http"
 
 	configv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned/typed/config/v1alpha1"
 	configv1alpha2 "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned/typed/config/v1alpha2"

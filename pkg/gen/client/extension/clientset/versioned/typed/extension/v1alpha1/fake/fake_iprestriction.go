@@ -16,129 +16,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/typed/extension/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeIPRestrictions implements IPRestrictionInterface
-type FakeIPRestrictions struct {
+// fakeIPRestrictions implements IPRestrictionInterface
+type fakeIPRestrictions struct {
+	*gentype.FakeClientWithList[*v1alpha1.IPRestriction, *v1alpha1.IPRestrictionList]
 	Fake *FakeExtensionV1alpha1
-	ns   string
 }
 
-var iprestrictionsResource = v1alpha1.SchemeGroupVersion.WithResource("iprestrictions")
-
-var iprestrictionsKind = v1alpha1.SchemeGroupVersion.WithKind("IPRestriction")
-
-// Get takes name of the iPRestriction, and returns the corresponding iPRestriction object, and an error if there is any.
-func (c *FakeIPRestrictions) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.IPRestriction, err error) {
-	emptyResult := &v1alpha1.IPRestriction{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(iprestrictionsResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakeIPRestrictions(fake *FakeExtensionV1alpha1, namespace string) extensionv1alpha1.IPRestrictionInterface {
+	return &fakeIPRestrictions{
+		gentype.NewFakeClientWithList[*v1alpha1.IPRestriction, *v1alpha1.IPRestrictionList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("iprestrictions"),
+			v1alpha1.SchemeGroupVersion.WithKind("IPRestriction"),
+			func() *v1alpha1.IPRestriction { return &v1alpha1.IPRestriction{} },
+			func() *v1alpha1.IPRestrictionList { return &v1alpha1.IPRestrictionList{} },
+			func(dst, src *v1alpha1.IPRestrictionList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.IPRestrictionList) []*v1alpha1.IPRestriction {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.IPRestrictionList, items []*v1alpha1.IPRestriction) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.IPRestriction), err
-}
-
-// List takes label and field selectors, and returns the list of IPRestrictions that match those selectors.
-func (c *FakeIPRestrictions) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.IPRestrictionList, err error) {
-	emptyResult := &v1alpha1.IPRestrictionList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(iprestrictionsResource, iprestrictionsKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.IPRestrictionList{ListMeta: obj.(*v1alpha1.IPRestrictionList).ListMeta}
-	for _, item := range obj.(*v1alpha1.IPRestrictionList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested iPRestrictions.
-func (c *FakeIPRestrictions) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(iprestrictionsResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a iPRestriction and creates it.  Returns the server's representation of the iPRestriction, and an error, if there is any.
-func (c *FakeIPRestrictions) Create(ctx context.Context, iPRestriction *v1alpha1.IPRestriction, opts v1.CreateOptions) (result *v1alpha1.IPRestriction, err error) {
-	emptyResult := &v1alpha1.IPRestriction{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(iprestrictionsResource, c.ns, iPRestriction, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.IPRestriction), err
-}
-
-// Update takes the representation of a iPRestriction and updates it. Returns the server's representation of the iPRestriction, and an error, if there is any.
-func (c *FakeIPRestrictions) Update(ctx context.Context, iPRestriction *v1alpha1.IPRestriction, opts v1.UpdateOptions) (result *v1alpha1.IPRestriction, err error) {
-	emptyResult := &v1alpha1.IPRestriction{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(iprestrictionsResource, c.ns, iPRestriction, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.IPRestriction), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeIPRestrictions) UpdateStatus(ctx context.Context, iPRestriction *v1alpha1.IPRestriction, opts v1.UpdateOptions) (result *v1alpha1.IPRestriction, err error) {
-	emptyResult := &v1alpha1.IPRestriction{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceActionWithOptions(iprestrictionsResource, "status", c.ns, iPRestriction, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.IPRestriction), err
-}
-
-// Delete takes name of the iPRestriction and deletes it. Returns an error if one occurs.
-func (c *FakeIPRestrictions) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(iprestrictionsResource, c.ns, name, opts), &v1alpha1.IPRestriction{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeIPRestrictions) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(iprestrictionsResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.IPRestrictionList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched iPRestriction.
-func (c *FakeIPRestrictions) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.IPRestriction, err error) {
-	emptyResult := &v1alpha1.IPRestriction{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(iprestrictionsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.IPRestriction), err
 }

@@ -75,7 +75,7 @@ func (r *listenerListenerFilterReconciler) SetupWithManager(mgr ctrl.Manager) er
 		For(&extv1alpha1.ListenerFilter{}).
 		WithDefaulter(r.webhook).
 		WithValidator(r.webhook).
-		RecoverPanic().
+		RecoverPanic(true).
 		Complete(); err != nil {
 		return err
 	}

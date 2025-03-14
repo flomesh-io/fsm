@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	apisextensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/extension/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // ProxyTags.
 type ProxyTagInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.ProxyTagLister
+	Lister() extensionv1alpha1.ProxyTagLister
 }
 
 type proxyTagInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredProxyTagInformer(client versioned.Interface, namespace string, r
 				return client.ExtensionV1alpha1().ProxyTags(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&extensionv1alpha1.ProxyTag{},
+		&apisextensionv1alpha1.ProxyTag{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *proxyTagInformer) defaultInformer(client versioned.Interface, resyncPer
 }
 
 func (f *proxyTagInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&extensionv1alpha1.ProxyTag{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisextensionv1alpha1.ProxyTag{}, f.defaultInformer)
 }
 
-func (f *proxyTagInformer) Lister() v1alpha1.ProxyTagLister {
-	return v1alpha1.NewProxyTagLister(f.Informer().GetIndexer())
+func (f *proxyTagInformer) Lister() extensionv1alpha1.ProxyTagLister {
+	return extensionv1alpha1.NewProxyTagLister(f.Informer().GetIndexer())
 }

@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
+	pluginv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/plugin/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type PluginConfigsGetter interface {
 
 // PluginConfigInterface has methods to work with PluginConfig resources.
 type PluginConfigInterface interface {
-	Create(ctx context.Context, pluginConfig *v1alpha1.PluginConfig, opts v1.CreateOptions) (*v1alpha1.PluginConfig, error)
-	Update(ctx context.Context, pluginConfig *v1alpha1.PluginConfig, opts v1.UpdateOptions) (*v1alpha1.PluginConfig, error)
+	Create(ctx context.Context, pluginConfig *pluginv1alpha1.PluginConfig, opts v1.CreateOptions) (*pluginv1alpha1.PluginConfig, error)
+	Update(ctx context.Context, pluginConfig *pluginv1alpha1.PluginConfig, opts v1.UpdateOptions) (*pluginv1alpha1.PluginConfig, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, pluginConfig *v1alpha1.PluginConfig, opts v1.UpdateOptions) (*v1alpha1.PluginConfig, error)
+	UpdateStatus(ctx context.Context, pluginConfig *pluginv1alpha1.PluginConfig, opts v1.UpdateOptions) (*pluginv1alpha1.PluginConfig, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.PluginConfig, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.PluginConfigList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*pluginv1alpha1.PluginConfig, error)
+	List(ctx context.Context, opts v1.ListOptions) (*pluginv1alpha1.PluginConfigList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.PluginConfig, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *pluginv1alpha1.PluginConfig, err error)
 	PluginConfigExpansion
 }
 
 // pluginConfigs implements PluginConfigInterface
 type pluginConfigs struct {
-	*gentype.ClientWithList[*v1alpha1.PluginConfig, *v1alpha1.PluginConfigList]
+	*gentype.ClientWithList[*pluginv1alpha1.PluginConfig, *pluginv1alpha1.PluginConfigList]
 }
 
 // newPluginConfigs returns a PluginConfigs
 func newPluginConfigs(c *PluginV1alpha1Client, namespace string) *pluginConfigs {
 	return &pluginConfigs{
-		gentype.NewClientWithList[*v1alpha1.PluginConfig, *v1alpha1.PluginConfigList](
+		gentype.NewClientWithList[*pluginv1alpha1.PluginConfig, *pluginv1alpha1.PluginConfigList](
 			"pluginconfigs",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.PluginConfig { return &v1alpha1.PluginConfig{} },
-			func() *v1alpha1.PluginConfigList { return &v1alpha1.PluginConfigList{} }),
+			func() *pluginv1alpha1.PluginConfig { return &pluginv1alpha1.PluginConfig{} },
+			func() *pluginv1alpha1.PluginConfigList { return &pluginv1alpha1.PluginConfigList{} },
+		),
 	}
 }

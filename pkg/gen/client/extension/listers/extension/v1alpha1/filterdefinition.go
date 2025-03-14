@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // FilterDefinitionLister helps list FilterDefinitions.
@@ -27,19 +27,19 @@ import (
 type FilterDefinitionLister interface {
 	// List lists all FilterDefinitions in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.FilterDefinition, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.FilterDefinition, err error)
 	// Get retrieves the FilterDefinition from the index for a given name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.FilterDefinition, error)
+	Get(name string) (*extensionv1alpha1.FilterDefinition, error)
 	FilterDefinitionListerExpansion
 }
 
 // filterDefinitionLister implements the FilterDefinitionLister interface.
 type filterDefinitionLister struct {
-	listers.ResourceIndexer[*v1alpha1.FilterDefinition]
+	listers.ResourceIndexer[*extensionv1alpha1.FilterDefinition]
 }
 
 // NewFilterDefinitionLister returns a new FilterDefinitionLister.
 func NewFilterDefinitionLister(indexer cache.Indexer) FilterDefinitionLister {
-	return &filterDefinitionLister{listers.New[*v1alpha1.FilterDefinition](indexer, v1alpha1.Resource("filterdefinition"))}
+	return &filterDefinitionLister{listers.New[*extensionv1alpha1.FilterDefinition](indexer, extensionv1alpha1.Resource("filterdefinition"))}
 }

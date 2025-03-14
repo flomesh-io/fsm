@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	namespacedingressv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
+	apisnamespacedingressv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/listers/namespacedingress/v1alpha1"
+	namespacedingressv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/listers/namespacedingress/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // NamespacedIngresses.
 type NamespacedIngressInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.NamespacedIngressLister
+	Lister() namespacedingressv1alpha1.NamespacedIngressLister
 }
 
 type namespacedIngressInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredNamespacedIngressInformer(client versioned.Interface, namespace 
 				return client.NetworkingV1alpha1().NamespacedIngresses(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&namespacedingressv1alpha1.NamespacedIngress{},
+		&apisnamespacedingressv1alpha1.NamespacedIngress{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *namespacedIngressInformer) defaultInformer(client versioned.Interface, 
 }
 
 func (f *namespacedIngressInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&namespacedingressv1alpha1.NamespacedIngress{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisnamespacedingressv1alpha1.NamespacedIngress{}, f.defaultInformer)
 }
 
-func (f *namespacedIngressInformer) Lister() v1alpha1.NamespacedIngressLister {
-	return v1alpha1.NewNamespacedIngressLister(f.Informer().GetIndexer())
+func (f *namespacedIngressInformer) Lister() namespacedingressv1alpha1.NamespacedIngressLister {
+	return namespacedingressv1alpha1.NewNamespacedIngressLister(f.Informer().GetIndexer())
 }

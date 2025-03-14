@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type ServiceExportsGetter interface {
 
 // ServiceExportInterface has methods to work with ServiceExport resources.
 type ServiceExportInterface interface {
-	Create(ctx context.Context, serviceExport *v1alpha1.ServiceExport, opts v1.CreateOptions) (*v1alpha1.ServiceExport, error)
-	Update(ctx context.Context, serviceExport *v1alpha1.ServiceExport, opts v1.UpdateOptions) (*v1alpha1.ServiceExport, error)
+	Create(ctx context.Context, serviceExport *multiclusterv1alpha1.ServiceExport, opts v1.CreateOptions) (*multiclusterv1alpha1.ServiceExport, error)
+	Update(ctx context.Context, serviceExport *multiclusterv1alpha1.ServiceExport, opts v1.UpdateOptions) (*multiclusterv1alpha1.ServiceExport, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, serviceExport *v1alpha1.ServiceExport, opts v1.UpdateOptions) (*v1alpha1.ServiceExport, error)
+	UpdateStatus(ctx context.Context, serviceExport *multiclusterv1alpha1.ServiceExport, opts v1.UpdateOptions) (*multiclusterv1alpha1.ServiceExport, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.ServiceExport, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.ServiceExportList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*multiclusterv1alpha1.ServiceExport, error)
+	List(ctx context.Context, opts v1.ListOptions) (*multiclusterv1alpha1.ServiceExportList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ServiceExport, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *multiclusterv1alpha1.ServiceExport, err error)
 	ServiceExportExpansion
 }
 
 // serviceExports implements ServiceExportInterface
 type serviceExports struct {
-	*gentype.ClientWithList[*v1alpha1.ServiceExport, *v1alpha1.ServiceExportList]
+	*gentype.ClientWithList[*multiclusterv1alpha1.ServiceExport, *multiclusterv1alpha1.ServiceExportList]
 }
 
 // newServiceExports returns a ServiceExports
 func newServiceExports(c *MulticlusterV1alpha1Client, namespace string) *serviceExports {
 	return &serviceExports{
-		gentype.NewClientWithList[*v1alpha1.ServiceExport, *v1alpha1.ServiceExportList](
+		gentype.NewClientWithList[*multiclusterv1alpha1.ServiceExport, *multiclusterv1alpha1.ServiceExportList](
 			"serviceexports",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.ServiceExport { return &v1alpha1.ServiceExport{} },
-			func() *v1alpha1.ServiceExportList { return &v1alpha1.ServiceExportList{} }),
+			func() *multiclusterv1alpha1.ServiceExport { return &multiclusterv1alpha1.ServiceExport{} },
+			func() *multiclusterv1alpha1.ServiceExportList { return &multiclusterv1alpha1.ServiceExportList{} },
+		),
 	}
 }

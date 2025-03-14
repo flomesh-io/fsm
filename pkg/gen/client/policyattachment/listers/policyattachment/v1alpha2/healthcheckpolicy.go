@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha2
 
 import (
-	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	policyattachmentv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // HealthCheckPolicyLister helps list HealthCheckPolicies.
@@ -27,7 +27,7 @@ import (
 type HealthCheckPolicyLister interface {
 	// List lists all HealthCheckPolicies in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha2.HealthCheckPolicy, err error)
+	List(selector labels.Selector) (ret []*policyattachmentv1alpha2.HealthCheckPolicy, err error)
 	// HealthCheckPolicies returns an object that can list and get HealthCheckPolicies.
 	HealthCheckPolicies(namespace string) HealthCheckPolicyNamespaceLister
 	HealthCheckPolicyListerExpansion
@@ -35,17 +35,17 @@ type HealthCheckPolicyLister interface {
 
 // healthCheckPolicyLister implements the HealthCheckPolicyLister interface.
 type healthCheckPolicyLister struct {
-	listers.ResourceIndexer[*v1alpha2.HealthCheckPolicy]
+	listers.ResourceIndexer[*policyattachmentv1alpha2.HealthCheckPolicy]
 }
 
 // NewHealthCheckPolicyLister returns a new HealthCheckPolicyLister.
 func NewHealthCheckPolicyLister(indexer cache.Indexer) HealthCheckPolicyLister {
-	return &healthCheckPolicyLister{listers.New[*v1alpha2.HealthCheckPolicy](indexer, v1alpha2.Resource("healthcheckpolicy"))}
+	return &healthCheckPolicyLister{listers.New[*policyattachmentv1alpha2.HealthCheckPolicy](indexer, policyattachmentv1alpha2.Resource("healthcheckpolicy"))}
 }
 
 // HealthCheckPolicies returns an object that can list and get HealthCheckPolicies.
 func (s *healthCheckPolicyLister) HealthCheckPolicies(namespace string) HealthCheckPolicyNamespaceLister {
-	return healthCheckPolicyNamespaceLister{listers.NewNamespaced[*v1alpha2.HealthCheckPolicy](s.ResourceIndexer, namespace)}
+	return healthCheckPolicyNamespaceLister{listers.NewNamespaced[*policyattachmentv1alpha2.HealthCheckPolicy](s.ResourceIndexer, namespace)}
 }
 
 // HealthCheckPolicyNamespaceLister helps list and get HealthCheckPolicies.
@@ -53,15 +53,15 @@ func (s *healthCheckPolicyLister) HealthCheckPolicies(namespace string) HealthCh
 type HealthCheckPolicyNamespaceLister interface {
 	// List lists all HealthCheckPolicies in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha2.HealthCheckPolicy, err error)
+	List(selector labels.Selector) (ret []*policyattachmentv1alpha2.HealthCheckPolicy, err error)
 	// Get retrieves the HealthCheckPolicy from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha2.HealthCheckPolicy, error)
+	Get(name string) (*policyattachmentv1alpha2.HealthCheckPolicy, error)
 	HealthCheckPolicyNamespaceListerExpansion
 }
 
 // healthCheckPolicyNamespaceLister implements the HealthCheckPolicyNamespaceLister
 // interface.
 type healthCheckPolicyNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha2.HealthCheckPolicy]
+	listers.ResourceIndexer[*policyattachmentv1alpha2.HealthCheckPolicy]
 }

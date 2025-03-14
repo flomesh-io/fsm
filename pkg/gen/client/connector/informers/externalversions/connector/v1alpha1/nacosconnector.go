@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	apisconnectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/connector/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/connector/listers/connector/v1alpha1"
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/connector/listers/connector/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // NacosConnectors.
 type NacosConnectorInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.NacosConnectorLister
+	Lister() connectorv1alpha1.NacosConnectorLister
 }
 
 type nacosConnectorInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredNacosConnectorInformer(client versioned.Interface, namespace str
 				return client.ConnectorV1alpha1().NacosConnectors(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&connectorv1alpha1.NacosConnector{},
+		&apisconnectorv1alpha1.NacosConnector{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *nacosConnectorInformer) defaultInformer(client versioned.Interface, res
 }
 
 func (f *nacosConnectorInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&connectorv1alpha1.NacosConnector{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisconnectorv1alpha1.NacosConnector{}, f.defaultInformer)
 }
 
-func (f *nacosConnectorInformer) Lister() v1alpha1.NacosConnectorLister {
-	return v1alpha1.NewNacosConnectorLister(f.Informer().GetIndexer())
+func (f *nacosConnectorInformer) Lister() connectorv1alpha1.NacosConnectorLister {
+	return connectorv1alpha1.NewNacosConnectorLister(f.Informer().GetIndexer())
 }

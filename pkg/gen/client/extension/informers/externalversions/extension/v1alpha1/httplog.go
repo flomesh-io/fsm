@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	apisextensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/extension/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // HTTPLogs.
 type HTTPLogInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.HTTPLogLister
+	Lister() extensionv1alpha1.HTTPLogLister
 }
 
 type hTTPLogInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredHTTPLogInformer(client versioned.Interface, namespace string, re
 				return client.ExtensionV1alpha1().HTTPLogs(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&extensionv1alpha1.HTTPLog{},
+		&apisextensionv1alpha1.HTTPLog{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *hTTPLogInformer) defaultInformer(client versioned.Interface, resyncPeri
 }
 
 func (f *hTTPLogInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&extensionv1alpha1.HTTPLog{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisextensionv1alpha1.HTTPLog{}, f.defaultInformer)
 }
 
-func (f *hTTPLogInformer) Lister() v1alpha1.HTTPLogLister {
-	return v1alpha1.NewHTTPLogLister(f.Informer().GetIndexer())
+func (f *hTTPLogInformer) Lister() extensionv1alpha1.HTTPLogLister {
+	return extensionv1alpha1.NewHTTPLogLister(f.Informer().GetIndexer())
 }

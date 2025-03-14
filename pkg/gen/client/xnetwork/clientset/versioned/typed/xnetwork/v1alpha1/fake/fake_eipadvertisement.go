@@ -16,116 +16,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/xnetwork/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	xnetworkv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/xnetwork/clientset/versioned/typed/xnetwork/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeEIPAdvertisements implements EIPAdvertisementInterface
-type FakeEIPAdvertisements struct {
+// fakeEIPAdvertisements implements EIPAdvertisementInterface
+type fakeEIPAdvertisements struct {
+	*gentype.FakeClientWithList[*v1alpha1.EIPAdvertisement, *v1alpha1.EIPAdvertisementList]
 	Fake *FakeXnetworkV1alpha1
-	ns   string
 }
 
-var eipadvertisementsResource = v1alpha1.SchemeGroupVersion.WithResource("eipadvertisements")
-
-var eipadvertisementsKind = v1alpha1.SchemeGroupVersion.WithKind("EIPAdvertisement")
-
-// Get takes name of the eIPAdvertisement, and returns the corresponding eIPAdvertisement object, and an error if there is any.
-func (c *FakeEIPAdvertisements) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.EIPAdvertisement, err error) {
-	emptyResult := &v1alpha1.EIPAdvertisement{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(eipadvertisementsResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakeEIPAdvertisements(fake *FakeXnetworkV1alpha1, namespace string) xnetworkv1alpha1.EIPAdvertisementInterface {
+	return &fakeEIPAdvertisements{
+		gentype.NewFakeClientWithList[*v1alpha1.EIPAdvertisement, *v1alpha1.EIPAdvertisementList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("eipadvertisements"),
+			v1alpha1.SchemeGroupVersion.WithKind("EIPAdvertisement"),
+			func() *v1alpha1.EIPAdvertisement { return &v1alpha1.EIPAdvertisement{} },
+			func() *v1alpha1.EIPAdvertisementList { return &v1alpha1.EIPAdvertisementList{} },
+			func(dst, src *v1alpha1.EIPAdvertisementList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.EIPAdvertisementList) []*v1alpha1.EIPAdvertisement {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.EIPAdvertisementList, items []*v1alpha1.EIPAdvertisement) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.EIPAdvertisement), err
-}
-
-// List takes label and field selectors, and returns the list of EIPAdvertisements that match those selectors.
-func (c *FakeEIPAdvertisements) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.EIPAdvertisementList, err error) {
-	emptyResult := &v1alpha1.EIPAdvertisementList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(eipadvertisementsResource, eipadvertisementsKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.EIPAdvertisementList{ListMeta: obj.(*v1alpha1.EIPAdvertisementList).ListMeta}
-	for _, item := range obj.(*v1alpha1.EIPAdvertisementList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested eIPAdvertisements.
-func (c *FakeEIPAdvertisements) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(eipadvertisementsResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a eIPAdvertisement and creates it.  Returns the server's representation of the eIPAdvertisement, and an error, if there is any.
-func (c *FakeEIPAdvertisements) Create(ctx context.Context, eIPAdvertisement *v1alpha1.EIPAdvertisement, opts v1.CreateOptions) (result *v1alpha1.EIPAdvertisement, err error) {
-	emptyResult := &v1alpha1.EIPAdvertisement{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(eipadvertisementsResource, c.ns, eIPAdvertisement, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.EIPAdvertisement), err
-}
-
-// Update takes the representation of a eIPAdvertisement and updates it. Returns the server's representation of the eIPAdvertisement, and an error, if there is any.
-func (c *FakeEIPAdvertisements) Update(ctx context.Context, eIPAdvertisement *v1alpha1.EIPAdvertisement, opts v1.UpdateOptions) (result *v1alpha1.EIPAdvertisement, err error) {
-	emptyResult := &v1alpha1.EIPAdvertisement{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(eipadvertisementsResource, c.ns, eIPAdvertisement, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.EIPAdvertisement), err
-}
-
-// Delete takes name of the eIPAdvertisement and deletes it. Returns an error if one occurs.
-func (c *FakeEIPAdvertisements) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(eipadvertisementsResource, c.ns, name, opts), &v1alpha1.EIPAdvertisement{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeEIPAdvertisements) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(eipadvertisementsResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.EIPAdvertisementList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched eIPAdvertisement.
-func (c *FakeEIPAdvertisements) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.EIPAdvertisement, err error) {
-	emptyResult := &v1alpha1.EIPAdvertisement{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(eipadvertisementsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.EIPAdvertisement), err
 }

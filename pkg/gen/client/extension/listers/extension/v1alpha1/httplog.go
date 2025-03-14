@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // HTTPLogLister helps list HTTPLogs.
@@ -27,7 +27,7 @@ import (
 type HTTPLogLister interface {
 	// List lists all HTTPLogs in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.HTTPLog, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.HTTPLog, err error)
 	// HTTPLogs returns an object that can list and get HTTPLogs.
 	HTTPLogs(namespace string) HTTPLogNamespaceLister
 	HTTPLogListerExpansion
@@ -35,17 +35,17 @@ type HTTPLogLister interface {
 
 // hTTPLogLister implements the HTTPLogLister interface.
 type hTTPLogLister struct {
-	listers.ResourceIndexer[*v1alpha1.HTTPLog]
+	listers.ResourceIndexer[*extensionv1alpha1.HTTPLog]
 }
 
 // NewHTTPLogLister returns a new HTTPLogLister.
 func NewHTTPLogLister(indexer cache.Indexer) HTTPLogLister {
-	return &hTTPLogLister{listers.New[*v1alpha1.HTTPLog](indexer, v1alpha1.Resource("httplog"))}
+	return &hTTPLogLister{listers.New[*extensionv1alpha1.HTTPLog](indexer, extensionv1alpha1.Resource("httplog"))}
 }
 
 // HTTPLogs returns an object that can list and get HTTPLogs.
 func (s *hTTPLogLister) HTTPLogs(namespace string) HTTPLogNamespaceLister {
-	return hTTPLogNamespaceLister{listers.NewNamespaced[*v1alpha1.HTTPLog](s.ResourceIndexer, namespace)}
+	return hTTPLogNamespaceLister{listers.NewNamespaced[*extensionv1alpha1.HTTPLog](s.ResourceIndexer, namespace)}
 }
 
 // HTTPLogNamespaceLister helps list and get HTTPLogs.
@@ -53,15 +53,15 @@ func (s *hTTPLogLister) HTTPLogs(namespace string) HTTPLogNamespaceLister {
 type HTTPLogNamespaceLister interface {
 	// List lists all HTTPLogs in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.HTTPLog, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.HTTPLog, err error)
 	// Get retrieves the HTTPLog from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.HTTPLog, error)
+	Get(name string) (*extensionv1alpha1.HTTPLog, error)
 	HTTPLogNamespaceListerExpansion
 }
 
 // hTTPLogNamespaceLister implements the HTTPLogNamespaceLister
 // interface.
 type hTTPLogNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.HTTPLog]
+	listers.ResourceIndexer[*extensionv1alpha1.HTTPLog]
 }

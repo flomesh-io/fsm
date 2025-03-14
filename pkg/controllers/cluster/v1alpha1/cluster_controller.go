@@ -302,7 +302,7 @@ func (r *reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&mcsv1alpha1.Cluster{}).
 		WithDefaulter(r.webhook).
 		WithValidator(r.webhook).
-		RecoverPanic().
+		RecoverPanic(true).
 		Complete(); err != nil {
 		return err
 	}

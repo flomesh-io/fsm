@@ -16,129 +16,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/traffic/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	trafficv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/traffic/clientset/versioned/typed/traffic/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeHTTPTrafficRules implements HTTPTrafficRuleInterface
-type FakeHTTPTrafficRules struct {
+// fakeHTTPTrafficRules implements HTTPTrafficRuleInterface
+type fakeHTTPTrafficRules struct {
+	*gentype.FakeClientWithList[*v1alpha1.HTTPTrafficRule, *v1alpha1.HTTPTrafficRuleList]
 	Fake *FakeTrafficV1alpha1
-	ns   string
 }
 
-var httptrafficrulesResource = v1alpha1.SchemeGroupVersion.WithResource("httptrafficrules")
-
-var httptrafficrulesKind = v1alpha1.SchemeGroupVersion.WithKind("HTTPTrafficRule")
-
-// Get takes name of the hTTPTrafficRule, and returns the corresponding hTTPTrafficRule object, and an error if there is any.
-func (c *FakeHTTPTrafficRules) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.HTTPTrafficRule, err error) {
-	emptyResult := &v1alpha1.HTTPTrafficRule{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(httptrafficrulesResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakeHTTPTrafficRules(fake *FakeTrafficV1alpha1, namespace string) trafficv1alpha1.HTTPTrafficRuleInterface {
+	return &fakeHTTPTrafficRules{
+		gentype.NewFakeClientWithList[*v1alpha1.HTTPTrafficRule, *v1alpha1.HTTPTrafficRuleList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("httptrafficrules"),
+			v1alpha1.SchemeGroupVersion.WithKind("HTTPTrafficRule"),
+			func() *v1alpha1.HTTPTrafficRule { return &v1alpha1.HTTPTrafficRule{} },
+			func() *v1alpha1.HTTPTrafficRuleList { return &v1alpha1.HTTPTrafficRuleList{} },
+			func(dst, src *v1alpha1.HTTPTrafficRuleList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.HTTPTrafficRuleList) []*v1alpha1.HTTPTrafficRule {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.HTTPTrafficRuleList, items []*v1alpha1.HTTPTrafficRule) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.HTTPTrafficRule), err
-}
-
-// List takes label and field selectors, and returns the list of HTTPTrafficRules that match those selectors.
-func (c *FakeHTTPTrafficRules) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.HTTPTrafficRuleList, err error) {
-	emptyResult := &v1alpha1.HTTPTrafficRuleList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(httptrafficrulesResource, httptrafficrulesKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.HTTPTrafficRuleList{ListMeta: obj.(*v1alpha1.HTTPTrafficRuleList).ListMeta}
-	for _, item := range obj.(*v1alpha1.HTTPTrafficRuleList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested hTTPTrafficRules.
-func (c *FakeHTTPTrafficRules) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(httptrafficrulesResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a hTTPTrafficRule and creates it.  Returns the server's representation of the hTTPTrafficRule, and an error, if there is any.
-func (c *FakeHTTPTrafficRules) Create(ctx context.Context, hTTPTrafficRule *v1alpha1.HTTPTrafficRule, opts v1.CreateOptions) (result *v1alpha1.HTTPTrafficRule, err error) {
-	emptyResult := &v1alpha1.HTTPTrafficRule{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(httptrafficrulesResource, c.ns, hTTPTrafficRule, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.HTTPTrafficRule), err
-}
-
-// Update takes the representation of a hTTPTrafficRule and updates it. Returns the server's representation of the hTTPTrafficRule, and an error, if there is any.
-func (c *FakeHTTPTrafficRules) Update(ctx context.Context, hTTPTrafficRule *v1alpha1.HTTPTrafficRule, opts v1.UpdateOptions) (result *v1alpha1.HTTPTrafficRule, err error) {
-	emptyResult := &v1alpha1.HTTPTrafficRule{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(httptrafficrulesResource, c.ns, hTTPTrafficRule, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.HTTPTrafficRule), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeHTTPTrafficRules) UpdateStatus(ctx context.Context, hTTPTrafficRule *v1alpha1.HTTPTrafficRule, opts v1.UpdateOptions) (result *v1alpha1.HTTPTrafficRule, err error) {
-	emptyResult := &v1alpha1.HTTPTrafficRule{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceActionWithOptions(httptrafficrulesResource, "status", c.ns, hTTPTrafficRule, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.HTTPTrafficRule), err
-}
-
-// Delete takes name of the hTTPTrafficRule and deletes it. Returns an error if one occurs.
-func (c *FakeHTTPTrafficRules) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(httptrafficrulesResource, c.ns, name, opts), &v1alpha1.HTTPTrafficRule{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeHTTPTrafficRules) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(httptrafficrulesResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.HTTPTrafficRuleList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched hTTPTrafficRule.
-func (c *FakeHTTPTrafficRules) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.HTTPTrafficRule, err error) {
-	emptyResult := &v1alpha1.HTTPTrafficRule{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(httptrafficrulesResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.HTTPTrafficRule), err
 }

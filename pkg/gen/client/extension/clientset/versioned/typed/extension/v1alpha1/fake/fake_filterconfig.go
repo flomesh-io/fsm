@@ -16,129 +16,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/typed/extension/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeFilterConfigs implements FilterConfigInterface
-type FakeFilterConfigs struct {
+// fakeFilterConfigs implements FilterConfigInterface
+type fakeFilterConfigs struct {
+	*gentype.FakeClientWithList[*v1alpha1.FilterConfig, *v1alpha1.FilterConfigList]
 	Fake *FakeExtensionV1alpha1
-	ns   string
 }
 
-var filterconfigsResource = v1alpha1.SchemeGroupVersion.WithResource("filterconfigs")
-
-var filterconfigsKind = v1alpha1.SchemeGroupVersion.WithKind("FilterConfig")
-
-// Get takes name of the filterConfig, and returns the corresponding filterConfig object, and an error if there is any.
-func (c *FakeFilterConfigs) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.FilterConfig, err error) {
-	emptyResult := &v1alpha1.FilterConfig{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(filterconfigsResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakeFilterConfigs(fake *FakeExtensionV1alpha1, namespace string) extensionv1alpha1.FilterConfigInterface {
+	return &fakeFilterConfigs{
+		gentype.NewFakeClientWithList[*v1alpha1.FilterConfig, *v1alpha1.FilterConfigList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("filterconfigs"),
+			v1alpha1.SchemeGroupVersion.WithKind("FilterConfig"),
+			func() *v1alpha1.FilterConfig { return &v1alpha1.FilterConfig{} },
+			func() *v1alpha1.FilterConfigList { return &v1alpha1.FilterConfigList{} },
+			func(dst, src *v1alpha1.FilterConfigList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.FilterConfigList) []*v1alpha1.FilterConfig {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.FilterConfigList, items []*v1alpha1.FilterConfig) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.FilterConfig), err
-}
-
-// List takes label and field selectors, and returns the list of FilterConfigs that match those selectors.
-func (c *FakeFilterConfigs) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.FilterConfigList, err error) {
-	emptyResult := &v1alpha1.FilterConfigList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(filterconfigsResource, filterconfigsKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.FilterConfigList{ListMeta: obj.(*v1alpha1.FilterConfigList).ListMeta}
-	for _, item := range obj.(*v1alpha1.FilterConfigList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested filterConfigs.
-func (c *FakeFilterConfigs) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(filterconfigsResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a filterConfig and creates it.  Returns the server's representation of the filterConfig, and an error, if there is any.
-func (c *FakeFilterConfigs) Create(ctx context.Context, filterConfig *v1alpha1.FilterConfig, opts v1.CreateOptions) (result *v1alpha1.FilterConfig, err error) {
-	emptyResult := &v1alpha1.FilterConfig{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(filterconfigsResource, c.ns, filterConfig, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.FilterConfig), err
-}
-
-// Update takes the representation of a filterConfig and updates it. Returns the server's representation of the filterConfig, and an error, if there is any.
-func (c *FakeFilterConfigs) Update(ctx context.Context, filterConfig *v1alpha1.FilterConfig, opts v1.UpdateOptions) (result *v1alpha1.FilterConfig, err error) {
-	emptyResult := &v1alpha1.FilterConfig{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(filterconfigsResource, c.ns, filterConfig, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.FilterConfig), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeFilterConfigs) UpdateStatus(ctx context.Context, filterConfig *v1alpha1.FilterConfig, opts v1.UpdateOptions) (result *v1alpha1.FilterConfig, err error) {
-	emptyResult := &v1alpha1.FilterConfig{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceActionWithOptions(filterconfigsResource, "status", c.ns, filterConfig, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.FilterConfig), err
-}
-
-// Delete takes name of the filterConfig and deletes it. Returns an error if one occurs.
-func (c *FakeFilterConfigs) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(filterconfigsResource, c.ns, name, opts), &v1alpha1.FilterConfig{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeFilterConfigs) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(filterconfigsResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.FilterConfigList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched filterConfig.
-func (c *FakeFilterConfigs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.FilterConfig, err error) {
-	emptyResult := &v1alpha1.FilterConfig{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(filterconfigsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.FilterConfig), err
 }

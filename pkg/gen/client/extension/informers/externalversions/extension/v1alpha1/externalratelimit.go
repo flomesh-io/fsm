@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	apisextensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/extension/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // ExternalRateLimits.
 type ExternalRateLimitInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.ExternalRateLimitLister
+	Lister() extensionv1alpha1.ExternalRateLimitLister
 }
 
 type externalRateLimitInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredExternalRateLimitInformer(client versioned.Interface, namespace 
 				return client.ExtensionV1alpha1().ExternalRateLimits(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&extensionv1alpha1.ExternalRateLimit{},
+		&apisextensionv1alpha1.ExternalRateLimit{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *externalRateLimitInformer) defaultInformer(client versioned.Interface, 
 }
 
 func (f *externalRateLimitInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&extensionv1alpha1.ExternalRateLimit{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisextensionv1alpha1.ExternalRateLimit{}, f.defaultInformer)
 }
 
-func (f *externalRateLimitInformer) Lister() v1alpha1.ExternalRateLimitLister {
-	return v1alpha1.NewExternalRateLimitLister(f.Informer().GetIndexer())
+func (f *externalRateLimitInformer) Lister() extensionv1alpha1.ExternalRateLimitLister {
+	return extensionv1alpha1.NewExternalRateLimitLister(f.Informer().GetIndexer())
 }

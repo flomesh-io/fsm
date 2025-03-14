@@ -16,129 +16,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	pluginv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/plugin/clientset/versioned/typed/plugin/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakePluginConfigs implements PluginConfigInterface
-type FakePluginConfigs struct {
+// fakePluginConfigs implements PluginConfigInterface
+type fakePluginConfigs struct {
+	*gentype.FakeClientWithList[*v1alpha1.PluginConfig, *v1alpha1.PluginConfigList]
 	Fake *FakePluginV1alpha1
-	ns   string
 }
 
-var pluginconfigsResource = v1alpha1.SchemeGroupVersion.WithResource("pluginconfigs")
-
-var pluginconfigsKind = v1alpha1.SchemeGroupVersion.WithKind("PluginConfig")
-
-// Get takes name of the pluginConfig, and returns the corresponding pluginConfig object, and an error if there is any.
-func (c *FakePluginConfigs) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.PluginConfig, err error) {
-	emptyResult := &v1alpha1.PluginConfig{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(pluginconfigsResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakePluginConfigs(fake *FakePluginV1alpha1, namespace string) pluginv1alpha1.PluginConfigInterface {
+	return &fakePluginConfigs{
+		gentype.NewFakeClientWithList[*v1alpha1.PluginConfig, *v1alpha1.PluginConfigList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("pluginconfigs"),
+			v1alpha1.SchemeGroupVersion.WithKind("PluginConfig"),
+			func() *v1alpha1.PluginConfig { return &v1alpha1.PluginConfig{} },
+			func() *v1alpha1.PluginConfigList { return &v1alpha1.PluginConfigList{} },
+			func(dst, src *v1alpha1.PluginConfigList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.PluginConfigList) []*v1alpha1.PluginConfig {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.PluginConfigList, items []*v1alpha1.PluginConfig) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.PluginConfig), err
-}
-
-// List takes label and field selectors, and returns the list of PluginConfigs that match those selectors.
-func (c *FakePluginConfigs) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.PluginConfigList, err error) {
-	emptyResult := &v1alpha1.PluginConfigList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(pluginconfigsResource, pluginconfigsKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.PluginConfigList{ListMeta: obj.(*v1alpha1.PluginConfigList).ListMeta}
-	for _, item := range obj.(*v1alpha1.PluginConfigList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested pluginConfigs.
-func (c *FakePluginConfigs) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(pluginconfigsResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a pluginConfig and creates it.  Returns the server's representation of the pluginConfig, and an error, if there is any.
-func (c *FakePluginConfigs) Create(ctx context.Context, pluginConfig *v1alpha1.PluginConfig, opts v1.CreateOptions) (result *v1alpha1.PluginConfig, err error) {
-	emptyResult := &v1alpha1.PluginConfig{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(pluginconfigsResource, c.ns, pluginConfig, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.PluginConfig), err
-}
-
-// Update takes the representation of a pluginConfig and updates it. Returns the server's representation of the pluginConfig, and an error, if there is any.
-func (c *FakePluginConfigs) Update(ctx context.Context, pluginConfig *v1alpha1.PluginConfig, opts v1.UpdateOptions) (result *v1alpha1.PluginConfig, err error) {
-	emptyResult := &v1alpha1.PluginConfig{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(pluginconfigsResource, c.ns, pluginConfig, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.PluginConfig), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakePluginConfigs) UpdateStatus(ctx context.Context, pluginConfig *v1alpha1.PluginConfig, opts v1.UpdateOptions) (result *v1alpha1.PluginConfig, err error) {
-	emptyResult := &v1alpha1.PluginConfig{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceActionWithOptions(pluginconfigsResource, "status", c.ns, pluginConfig, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.PluginConfig), err
-}
-
-// Delete takes name of the pluginConfig and deletes it. Returns an error if one occurs.
-func (c *FakePluginConfigs) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(pluginconfigsResource, c.ns, name, opts), &v1alpha1.PluginConfig{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakePluginConfigs) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(pluginconfigsResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.PluginConfigList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched pluginConfig.
-func (c *FakePluginConfigs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.PluginConfig, err error) {
-	emptyResult := &v1alpha1.PluginConfig{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(pluginconfigsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.PluginConfig), err
 }

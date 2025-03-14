@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	xnetworkv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/xnetwork/v1alpha1"
+	apisxnetworkv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/xnetwork/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/xnetwork/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/xnetwork/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/xnetwork/listers/xnetwork/v1alpha1"
+	xnetworkv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/xnetwork/listers/xnetwork/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // EIPAdvertisements.
 type EIPAdvertisementInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.EIPAdvertisementLister
+	Lister() xnetworkv1alpha1.EIPAdvertisementLister
 }
 
 type eIPAdvertisementInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredEIPAdvertisementInformer(client versioned.Interface, namespace s
 				return client.XnetworkV1alpha1().EIPAdvertisements(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&xnetworkv1alpha1.EIPAdvertisement{},
+		&apisxnetworkv1alpha1.EIPAdvertisement{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *eIPAdvertisementInformer) defaultInformer(client versioned.Interface, r
 }
 
 func (f *eIPAdvertisementInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&xnetworkv1alpha1.EIPAdvertisement{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisxnetworkv1alpha1.EIPAdvertisement{}, f.defaultInformer)
 }
 
-func (f *eIPAdvertisementInformer) Lister() v1alpha1.EIPAdvertisementLister {
-	return v1alpha1.NewEIPAdvertisementLister(f.Informer().GetIndexer())
+func (f *eIPAdvertisementInformer) Lister() xnetworkv1alpha1.EIPAdvertisementLister {
+	return xnetworkv1alpha1.NewEIPAdvertisementLister(f.Informer().GetIndexer())
 }

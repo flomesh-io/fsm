@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	pluginv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
+	apispluginv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/plugin/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/plugin/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/plugin/listers/plugin/v1alpha1"
+	pluginv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/plugin/listers/plugin/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // Plugins.
 type PluginInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.PluginLister
+	Lister() pluginv1alpha1.PluginLister
 }
 
 type pluginInformer struct {
@@ -67,7 +67,7 @@ func NewFilteredPluginInformer(client versioned.Interface, resyncPeriod time.Dur
 				return client.PluginV1alpha1().Plugins().Watch(context.TODO(), options)
 			},
 		},
-		&pluginv1alpha1.Plugin{},
+		&apispluginv1alpha1.Plugin{},
 		resyncPeriod,
 		indexers,
 	)
@@ -78,9 +78,9 @@ func (f *pluginInformer) defaultInformer(client versioned.Interface, resyncPerio
 }
 
 func (f *pluginInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&pluginv1alpha1.Plugin{}, f.defaultInformer)
+	return f.factory.InformerFor(&apispluginv1alpha1.Plugin{}, f.defaultInformer)
 }
 
-func (f *pluginInformer) Lister() v1alpha1.PluginLister {
-	return v1alpha1.NewPluginLister(f.Informer().GetIndexer())
+func (f *pluginInformer) Lister() pluginv1alpha1.PluginLister {
+	return pluginv1alpha1.NewPluginLister(f.Informer().GetIndexer())
 }

@@ -26,39 +26,39 @@ type FakePolicyV1alpha1 struct {
 }
 
 func (c *FakePolicyV1alpha1) AccessCerts(namespace string) v1alpha1.AccessCertInterface {
-	return &FakeAccessCerts{c, namespace}
+	return newFakeAccessCerts(c, namespace)
 }
 
 func (c *FakePolicyV1alpha1) AccessControls(namespace string) v1alpha1.AccessControlInterface {
-	return &FakeAccessControls{c, namespace}
+	return newFakeAccessControls(c, namespace)
 }
 
 func (c *FakePolicyV1alpha1) Egresses(namespace string) v1alpha1.EgressInterface {
-	return &FakeEgresses{c, namespace}
+	return newFakeEgresses(c, namespace)
 }
 
 func (c *FakePolicyV1alpha1) EgressGateways(namespace string) v1alpha1.EgressGatewayInterface {
-	return &FakeEgressGateways{c, namespace}
+	return newFakeEgressGateways(c, namespace)
 }
 
 func (c *FakePolicyV1alpha1) IngressBackends(namespace string) v1alpha1.IngressBackendInterface {
-	return &FakeIngressBackends{c, namespace}
+	return newFakeIngressBackends(c, namespace)
 }
 
 func (c *FakePolicyV1alpha1) Isolations(namespace string) v1alpha1.IsolationInterface {
-	return &FakeIsolations{c, namespace}
+	return newFakeIsolations(c, namespace)
 }
 
 func (c *FakePolicyV1alpha1) Retries(namespace string) v1alpha1.RetryInterface {
-	return &FakeRetries{c, namespace}
+	return newFakeRetries(c, namespace)
 }
 
 func (c *FakePolicyV1alpha1) TrafficWarmups(namespace string) v1alpha1.TrafficWarmupInterface {
-	return &FakeTrafficWarmups{c, namespace}
+	return newFakeTrafficWarmups(c, namespace)
 }
 
 func (c *FakePolicyV1alpha1) UpstreamTrafficSettings(namespace string) v1alpha1.UpstreamTrafficSettingInterface {
-	return &FakeUpstreamTrafficSettings{c, namespace}
+	return newFakeUpstreamTrafficSettings(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

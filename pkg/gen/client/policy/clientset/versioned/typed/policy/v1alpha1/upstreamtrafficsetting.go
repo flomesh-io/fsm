@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type UpstreamTrafficSettingsGetter interface {
 
 // UpstreamTrafficSettingInterface has methods to work with UpstreamTrafficSetting resources.
 type UpstreamTrafficSettingInterface interface {
-	Create(ctx context.Context, upstreamTrafficSetting *v1alpha1.UpstreamTrafficSetting, opts v1.CreateOptions) (*v1alpha1.UpstreamTrafficSetting, error)
-	Update(ctx context.Context, upstreamTrafficSetting *v1alpha1.UpstreamTrafficSetting, opts v1.UpdateOptions) (*v1alpha1.UpstreamTrafficSetting, error)
+	Create(ctx context.Context, upstreamTrafficSetting *policyv1alpha1.UpstreamTrafficSetting, opts v1.CreateOptions) (*policyv1alpha1.UpstreamTrafficSetting, error)
+	Update(ctx context.Context, upstreamTrafficSetting *policyv1alpha1.UpstreamTrafficSetting, opts v1.UpdateOptions) (*policyv1alpha1.UpstreamTrafficSetting, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, upstreamTrafficSetting *v1alpha1.UpstreamTrafficSetting, opts v1.UpdateOptions) (*v1alpha1.UpstreamTrafficSetting, error)
+	UpdateStatus(ctx context.Context, upstreamTrafficSetting *policyv1alpha1.UpstreamTrafficSetting, opts v1.UpdateOptions) (*policyv1alpha1.UpstreamTrafficSetting, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.UpstreamTrafficSetting, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.UpstreamTrafficSettingList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*policyv1alpha1.UpstreamTrafficSetting, error)
+	List(ctx context.Context, opts v1.ListOptions) (*policyv1alpha1.UpstreamTrafficSettingList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.UpstreamTrafficSetting, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *policyv1alpha1.UpstreamTrafficSetting, err error)
 	UpstreamTrafficSettingExpansion
 }
 
 // upstreamTrafficSettings implements UpstreamTrafficSettingInterface
 type upstreamTrafficSettings struct {
-	*gentype.ClientWithList[*v1alpha1.UpstreamTrafficSetting, *v1alpha1.UpstreamTrafficSettingList]
+	*gentype.ClientWithList[*policyv1alpha1.UpstreamTrafficSetting, *policyv1alpha1.UpstreamTrafficSettingList]
 }
 
 // newUpstreamTrafficSettings returns a UpstreamTrafficSettings
 func newUpstreamTrafficSettings(c *PolicyV1alpha1Client, namespace string) *upstreamTrafficSettings {
 	return &upstreamTrafficSettings{
-		gentype.NewClientWithList[*v1alpha1.UpstreamTrafficSetting, *v1alpha1.UpstreamTrafficSettingList](
+		gentype.NewClientWithList[*policyv1alpha1.UpstreamTrafficSetting, *policyv1alpha1.UpstreamTrafficSettingList](
 			"upstreamtrafficsettings",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.UpstreamTrafficSetting { return &v1alpha1.UpstreamTrafficSetting{} },
-			func() *v1alpha1.UpstreamTrafficSettingList { return &v1alpha1.UpstreamTrafficSettingList{} }),
+			func() *policyv1alpha1.UpstreamTrafficSetting { return &policyv1alpha1.UpstreamTrafficSetting{} },
+			func() *policyv1alpha1.UpstreamTrafficSettingList { return &policyv1alpha1.UpstreamTrafficSettingList{} },
+		),
 	}
 }

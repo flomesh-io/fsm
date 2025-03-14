@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha2
 
 import (
-	"context"
+	context "context"
 
-	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+	policyattachmentv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,38 @@ type RouteRuleFilterPoliciesGetter interface {
 
 // RouteRuleFilterPolicyInterface has methods to work with RouteRuleFilterPolicy resources.
 type RouteRuleFilterPolicyInterface interface {
-	Create(ctx context.Context, routeRuleFilterPolicy *v1alpha2.RouteRuleFilterPolicy, opts v1.CreateOptions) (*v1alpha2.RouteRuleFilterPolicy, error)
-	Update(ctx context.Context, routeRuleFilterPolicy *v1alpha2.RouteRuleFilterPolicy, opts v1.UpdateOptions) (*v1alpha2.RouteRuleFilterPolicy, error)
+	Create(ctx context.Context, routeRuleFilterPolicy *policyattachmentv1alpha2.RouteRuleFilterPolicy, opts v1.CreateOptions) (*policyattachmentv1alpha2.RouteRuleFilterPolicy, error)
+	Update(ctx context.Context, routeRuleFilterPolicy *policyattachmentv1alpha2.RouteRuleFilterPolicy, opts v1.UpdateOptions) (*policyattachmentv1alpha2.RouteRuleFilterPolicy, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, routeRuleFilterPolicy *v1alpha2.RouteRuleFilterPolicy, opts v1.UpdateOptions) (*v1alpha2.RouteRuleFilterPolicy, error)
+	UpdateStatus(ctx context.Context, routeRuleFilterPolicy *policyattachmentv1alpha2.RouteRuleFilterPolicy, opts v1.UpdateOptions) (*policyattachmentv1alpha2.RouteRuleFilterPolicy, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha2.RouteRuleFilterPolicy, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha2.RouteRuleFilterPolicyList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*policyattachmentv1alpha2.RouteRuleFilterPolicy, error)
+	List(ctx context.Context, opts v1.ListOptions) (*policyattachmentv1alpha2.RouteRuleFilterPolicyList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha2.RouteRuleFilterPolicy, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *policyattachmentv1alpha2.RouteRuleFilterPolicy, err error)
 	RouteRuleFilterPolicyExpansion
 }
 
 // routeRuleFilterPolicies implements RouteRuleFilterPolicyInterface
 type routeRuleFilterPolicies struct {
-	*gentype.ClientWithList[*v1alpha2.RouteRuleFilterPolicy, *v1alpha2.RouteRuleFilterPolicyList]
+	*gentype.ClientWithList[*policyattachmentv1alpha2.RouteRuleFilterPolicy, *policyattachmentv1alpha2.RouteRuleFilterPolicyList]
 }
 
 // newRouteRuleFilterPolicies returns a RouteRuleFilterPolicies
 func newRouteRuleFilterPolicies(c *GatewayV1alpha2Client, namespace string) *routeRuleFilterPolicies {
 	return &routeRuleFilterPolicies{
-		gentype.NewClientWithList[*v1alpha2.RouteRuleFilterPolicy, *v1alpha2.RouteRuleFilterPolicyList](
+		gentype.NewClientWithList[*policyattachmentv1alpha2.RouteRuleFilterPolicy, *policyattachmentv1alpha2.RouteRuleFilterPolicyList](
 			"routerulefilterpolicies",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha2.RouteRuleFilterPolicy { return &v1alpha2.RouteRuleFilterPolicy{} },
-			func() *v1alpha2.RouteRuleFilterPolicyList { return &v1alpha2.RouteRuleFilterPolicyList{} }),
+			func() *policyattachmentv1alpha2.RouteRuleFilterPolicy {
+				return &policyattachmentv1alpha2.RouteRuleFilterPolicy{}
+			},
+			func() *policyattachmentv1alpha2.RouteRuleFilterPolicyList {
+				return &policyattachmentv1alpha2.RouteRuleFilterPolicyList{}
+			},
+		),
 	}
 }

@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type ZipkinsGetter interface {
 
 // ZipkinInterface has methods to work with Zipkin resources.
 type ZipkinInterface interface {
-	Create(ctx context.Context, zipkin *v1alpha1.Zipkin, opts v1.CreateOptions) (*v1alpha1.Zipkin, error)
-	Update(ctx context.Context, zipkin *v1alpha1.Zipkin, opts v1.UpdateOptions) (*v1alpha1.Zipkin, error)
+	Create(ctx context.Context, zipkin *extensionv1alpha1.Zipkin, opts v1.CreateOptions) (*extensionv1alpha1.Zipkin, error)
+	Update(ctx context.Context, zipkin *extensionv1alpha1.Zipkin, opts v1.UpdateOptions) (*extensionv1alpha1.Zipkin, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, zipkin *v1alpha1.Zipkin, opts v1.UpdateOptions) (*v1alpha1.Zipkin, error)
+	UpdateStatus(ctx context.Context, zipkin *extensionv1alpha1.Zipkin, opts v1.UpdateOptions) (*extensionv1alpha1.Zipkin, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.Zipkin, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.ZipkinList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*extensionv1alpha1.Zipkin, error)
+	List(ctx context.Context, opts v1.ListOptions) (*extensionv1alpha1.ZipkinList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Zipkin, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *extensionv1alpha1.Zipkin, err error)
 	ZipkinExpansion
 }
 
 // zipkins implements ZipkinInterface
 type zipkins struct {
-	*gentype.ClientWithList[*v1alpha1.Zipkin, *v1alpha1.ZipkinList]
+	*gentype.ClientWithList[*extensionv1alpha1.Zipkin, *extensionv1alpha1.ZipkinList]
 }
 
 // newZipkins returns a Zipkins
 func newZipkins(c *ExtensionV1alpha1Client, namespace string) *zipkins {
 	return &zipkins{
-		gentype.NewClientWithList[*v1alpha1.Zipkin, *v1alpha1.ZipkinList](
+		gentype.NewClientWithList[*extensionv1alpha1.Zipkin, *extensionv1alpha1.ZipkinList](
 			"zipkins",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.Zipkin { return &v1alpha1.Zipkin{} },
-			func() *v1alpha1.ZipkinList { return &v1alpha1.ZipkinList{} }),
+			func() *extensionv1alpha1.Zipkin { return &extensionv1alpha1.Zipkin{} },
+			func() *extensionv1alpha1.ZipkinList { return &extensionv1alpha1.ZipkinList{} },
+		),
 	}
 }

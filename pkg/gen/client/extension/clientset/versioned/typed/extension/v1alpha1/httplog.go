@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type HTTPLogsGetter interface {
 
 // HTTPLogInterface has methods to work with HTTPLog resources.
 type HTTPLogInterface interface {
-	Create(ctx context.Context, hTTPLog *v1alpha1.HTTPLog, opts v1.CreateOptions) (*v1alpha1.HTTPLog, error)
-	Update(ctx context.Context, hTTPLog *v1alpha1.HTTPLog, opts v1.UpdateOptions) (*v1alpha1.HTTPLog, error)
+	Create(ctx context.Context, hTTPLog *extensionv1alpha1.HTTPLog, opts v1.CreateOptions) (*extensionv1alpha1.HTTPLog, error)
+	Update(ctx context.Context, hTTPLog *extensionv1alpha1.HTTPLog, opts v1.UpdateOptions) (*extensionv1alpha1.HTTPLog, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, hTTPLog *v1alpha1.HTTPLog, opts v1.UpdateOptions) (*v1alpha1.HTTPLog, error)
+	UpdateStatus(ctx context.Context, hTTPLog *extensionv1alpha1.HTTPLog, opts v1.UpdateOptions) (*extensionv1alpha1.HTTPLog, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.HTTPLog, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.HTTPLogList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*extensionv1alpha1.HTTPLog, error)
+	List(ctx context.Context, opts v1.ListOptions) (*extensionv1alpha1.HTTPLogList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.HTTPLog, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *extensionv1alpha1.HTTPLog, err error)
 	HTTPLogExpansion
 }
 
 // hTTPLogs implements HTTPLogInterface
 type hTTPLogs struct {
-	*gentype.ClientWithList[*v1alpha1.HTTPLog, *v1alpha1.HTTPLogList]
+	*gentype.ClientWithList[*extensionv1alpha1.HTTPLog, *extensionv1alpha1.HTTPLogList]
 }
 
 // newHTTPLogs returns a HTTPLogs
 func newHTTPLogs(c *ExtensionV1alpha1Client, namespace string) *hTTPLogs {
 	return &hTTPLogs{
-		gentype.NewClientWithList[*v1alpha1.HTTPLog, *v1alpha1.HTTPLogList](
+		gentype.NewClientWithList[*extensionv1alpha1.HTTPLog, *extensionv1alpha1.HTTPLogList](
 			"httplogs",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.HTTPLog { return &v1alpha1.HTTPLog{} },
-			func() *v1alpha1.HTTPLogList { return &v1alpha1.HTTPLogList{} }),
+			func() *extensionv1alpha1.HTTPLog { return &extensionv1alpha1.HTTPLog{} },
+			func() *extensionv1alpha1.HTTPLogList { return &extensionv1alpha1.HTTPLogList{} },
+		),
 	}
 }

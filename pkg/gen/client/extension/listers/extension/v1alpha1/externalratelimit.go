@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // ExternalRateLimitLister helps list ExternalRateLimits.
@@ -27,7 +27,7 @@ import (
 type ExternalRateLimitLister interface {
 	// List lists all ExternalRateLimits in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ExternalRateLimit, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.ExternalRateLimit, err error)
 	// ExternalRateLimits returns an object that can list and get ExternalRateLimits.
 	ExternalRateLimits(namespace string) ExternalRateLimitNamespaceLister
 	ExternalRateLimitListerExpansion
@@ -35,17 +35,17 @@ type ExternalRateLimitLister interface {
 
 // externalRateLimitLister implements the ExternalRateLimitLister interface.
 type externalRateLimitLister struct {
-	listers.ResourceIndexer[*v1alpha1.ExternalRateLimit]
+	listers.ResourceIndexer[*extensionv1alpha1.ExternalRateLimit]
 }
 
 // NewExternalRateLimitLister returns a new ExternalRateLimitLister.
 func NewExternalRateLimitLister(indexer cache.Indexer) ExternalRateLimitLister {
-	return &externalRateLimitLister{listers.New[*v1alpha1.ExternalRateLimit](indexer, v1alpha1.Resource("externalratelimit"))}
+	return &externalRateLimitLister{listers.New[*extensionv1alpha1.ExternalRateLimit](indexer, extensionv1alpha1.Resource("externalratelimit"))}
 }
 
 // ExternalRateLimits returns an object that can list and get ExternalRateLimits.
 func (s *externalRateLimitLister) ExternalRateLimits(namespace string) ExternalRateLimitNamespaceLister {
-	return externalRateLimitNamespaceLister{listers.NewNamespaced[*v1alpha1.ExternalRateLimit](s.ResourceIndexer, namespace)}
+	return externalRateLimitNamespaceLister{listers.NewNamespaced[*extensionv1alpha1.ExternalRateLimit](s.ResourceIndexer, namespace)}
 }
 
 // ExternalRateLimitNamespaceLister helps list and get ExternalRateLimits.
@@ -53,15 +53,15 @@ func (s *externalRateLimitLister) ExternalRateLimits(namespace string) ExternalR
 type ExternalRateLimitNamespaceLister interface {
 	// List lists all ExternalRateLimits in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ExternalRateLimit, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.ExternalRateLimit, err error)
 	// Get retrieves the ExternalRateLimit from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.ExternalRateLimit, error)
+	Get(name string) (*extensionv1alpha1.ExternalRateLimit, error)
 	ExternalRateLimitNamespaceListerExpansion
 }
 
 // externalRateLimitNamespaceLister implements the ExternalRateLimitNamespaceLister
 // interface.
 type externalRateLimitNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.ExternalRateLimit]
+	listers.ResourceIndexer[*extensionv1alpha1.ExternalRateLimit]
 }

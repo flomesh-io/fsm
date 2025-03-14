@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // CircuitBreakerLister helps list CircuitBreakers.
@@ -27,7 +27,7 @@ import (
 type CircuitBreakerLister interface {
 	// List lists all CircuitBreakers in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.CircuitBreaker, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.CircuitBreaker, err error)
 	// CircuitBreakers returns an object that can list and get CircuitBreakers.
 	CircuitBreakers(namespace string) CircuitBreakerNamespaceLister
 	CircuitBreakerListerExpansion
@@ -35,17 +35,17 @@ type CircuitBreakerLister interface {
 
 // circuitBreakerLister implements the CircuitBreakerLister interface.
 type circuitBreakerLister struct {
-	listers.ResourceIndexer[*v1alpha1.CircuitBreaker]
+	listers.ResourceIndexer[*extensionv1alpha1.CircuitBreaker]
 }
 
 // NewCircuitBreakerLister returns a new CircuitBreakerLister.
 func NewCircuitBreakerLister(indexer cache.Indexer) CircuitBreakerLister {
-	return &circuitBreakerLister{listers.New[*v1alpha1.CircuitBreaker](indexer, v1alpha1.Resource("circuitbreaker"))}
+	return &circuitBreakerLister{listers.New[*extensionv1alpha1.CircuitBreaker](indexer, extensionv1alpha1.Resource("circuitbreaker"))}
 }
 
 // CircuitBreakers returns an object that can list and get CircuitBreakers.
 func (s *circuitBreakerLister) CircuitBreakers(namespace string) CircuitBreakerNamespaceLister {
-	return circuitBreakerNamespaceLister{listers.NewNamespaced[*v1alpha1.CircuitBreaker](s.ResourceIndexer, namespace)}
+	return circuitBreakerNamespaceLister{listers.NewNamespaced[*extensionv1alpha1.CircuitBreaker](s.ResourceIndexer, namespace)}
 }
 
 // CircuitBreakerNamespaceLister helps list and get CircuitBreakers.
@@ -53,15 +53,15 @@ func (s *circuitBreakerLister) CircuitBreakers(namespace string) CircuitBreakerN
 type CircuitBreakerNamespaceLister interface {
 	// List lists all CircuitBreakers in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.CircuitBreaker, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.CircuitBreaker, err error)
 	// Get retrieves the CircuitBreaker from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.CircuitBreaker, error)
+	Get(name string) (*extensionv1alpha1.CircuitBreaker, error)
 	CircuitBreakerNamespaceListerExpansion
 }
 
 // circuitBreakerNamespaceLister implements the CircuitBreakerNamespaceLister
 // interface.
 type circuitBreakerNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.CircuitBreaker]
+	listers.ResourceIndexer[*extensionv1alpha1.CircuitBreaker]
 }

@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	trafficv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/traffic/v1alpha1"
+	apistrafficv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/traffic/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/traffic/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/traffic/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/traffic/listers/traffic/v1alpha1"
+	trafficv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/traffic/listers/traffic/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // HTTPTrafficRules.
 type HTTPTrafficRuleInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.HTTPTrafficRuleLister
+	Lister() trafficv1alpha1.HTTPTrafficRuleLister
 }
 
 type hTTPTrafficRuleInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredHTTPTrafficRuleInformer(client versioned.Interface, namespace st
 				return client.TrafficV1alpha1().HTTPTrafficRules(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&trafficv1alpha1.HTTPTrafficRule{},
+		&apistrafficv1alpha1.HTTPTrafficRule{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *hTTPTrafficRuleInformer) defaultInformer(client versioned.Interface, re
 }
 
 func (f *hTTPTrafficRuleInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&trafficv1alpha1.HTTPTrafficRule{}, f.defaultInformer)
+	return f.factory.InformerFor(&apistrafficv1alpha1.HTTPTrafficRule{}, f.defaultInformer)
 }
 
-func (f *hTTPTrafficRuleInformer) Lister() v1alpha1.HTTPTrafficRuleLister {
-	return v1alpha1.NewHTTPTrafficRuleLister(f.Informer().GetIndexer())
+func (f *hTTPTrafficRuleInformer) Lister() trafficv1alpha1.HTTPTrafficRuleLister {
+	return trafficv1alpha1.NewHTTPTrafficRuleLister(f.Informer().GetIndexer())
 }

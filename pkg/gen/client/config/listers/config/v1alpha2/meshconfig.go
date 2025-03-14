@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha2
 
 import (
-	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // MeshConfigLister helps list MeshConfigs.
@@ -27,7 +27,7 @@ import (
 type MeshConfigLister interface {
 	// List lists all MeshConfigs in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha2.MeshConfig, err error)
+	List(selector labels.Selector) (ret []*configv1alpha2.MeshConfig, err error)
 	// MeshConfigs returns an object that can list and get MeshConfigs.
 	MeshConfigs(namespace string) MeshConfigNamespaceLister
 	MeshConfigListerExpansion
@@ -35,17 +35,17 @@ type MeshConfigLister interface {
 
 // meshConfigLister implements the MeshConfigLister interface.
 type meshConfigLister struct {
-	listers.ResourceIndexer[*v1alpha2.MeshConfig]
+	listers.ResourceIndexer[*configv1alpha2.MeshConfig]
 }
 
 // NewMeshConfigLister returns a new MeshConfigLister.
 func NewMeshConfigLister(indexer cache.Indexer) MeshConfigLister {
-	return &meshConfigLister{listers.New[*v1alpha2.MeshConfig](indexer, v1alpha2.Resource("meshconfig"))}
+	return &meshConfigLister{listers.New[*configv1alpha2.MeshConfig](indexer, configv1alpha2.Resource("meshconfig"))}
 }
 
 // MeshConfigs returns an object that can list and get MeshConfigs.
 func (s *meshConfigLister) MeshConfigs(namespace string) MeshConfigNamespaceLister {
-	return meshConfigNamespaceLister{listers.NewNamespaced[*v1alpha2.MeshConfig](s.ResourceIndexer, namespace)}
+	return meshConfigNamespaceLister{listers.NewNamespaced[*configv1alpha2.MeshConfig](s.ResourceIndexer, namespace)}
 }
 
 // MeshConfigNamespaceLister helps list and get MeshConfigs.
@@ -53,15 +53,15 @@ func (s *meshConfigLister) MeshConfigs(namespace string) MeshConfigNamespaceList
 type MeshConfigNamespaceLister interface {
 	// List lists all MeshConfigs in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha2.MeshConfig, err error)
+	List(selector labels.Selector) (ret []*configv1alpha2.MeshConfig, err error)
 	// Get retrieves the MeshConfig from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha2.MeshConfig, error)
+	Get(name string) (*configv1alpha2.MeshConfig, error)
 	MeshConfigNamespaceListerExpansion
 }
 
 // meshConfigNamespaceLister implements the MeshConfigNamespaceLister
 // interface.
 type meshConfigNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha2.MeshConfig]
+	listers.ResourceIndexer[*configv1alpha2.MeshConfig]
 }

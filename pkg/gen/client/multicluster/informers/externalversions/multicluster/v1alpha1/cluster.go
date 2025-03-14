@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	apismulticlusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/listers/multicluster/v1alpha1"
+	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/listers/multicluster/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // Clusters.
 type ClusterInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.ClusterLister
+	Lister() multiclusterv1alpha1.ClusterLister
 }
 
 type clusterInformer struct {
@@ -67,7 +67,7 @@ func NewFilteredClusterInformer(client versioned.Interface, resyncPeriod time.Du
 				return client.MulticlusterV1alpha1().Clusters().Watch(context.TODO(), options)
 			},
 		},
-		&multiclusterv1alpha1.Cluster{},
+		&apismulticlusterv1alpha1.Cluster{},
 		resyncPeriod,
 		indexers,
 	)
@@ -78,9 +78,9 @@ func (f *clusterInformer) defaultInformer(client versioned.Interface, resyncPeri
 }
 
 func (f *clusterInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&multiclusterv1alpha1.Cluster{}, f.defaultInformer)
+	return f.factory.InformerFor(&apismulticlusterv1alpha1.Cluster{}, f.defaultInformer)
 }
 
-func (f *clusterInformer) Lister() v1alpha1.ClusterLister {
-	return v1alpha1.NewClusterLister(f.Informer().GetIndexer())
+func (f *clusterInformer) Lister() multiclusterv1alpha1.ClusterLister {
+	return multiclusterv1alpha1.NewClusterLister(f.Informer().GetIndexer())
 }

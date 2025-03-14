@@ -122,7 +122,7 @@ func (r *tlsRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&gwv1alpha2.TLSRoute{}).
 		WithDefaulter(r.webhook).
 		WithValidator(r.webhook).
-		RecoverPanic().
+		RecoverPanic(true).
 		Complete(); err != nil {
 		return err
 	}

@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	apisconnectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/connector/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/connector/listers/connector/v1alpha1"
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/connector/listers/connector/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // ZookeeperConnectors.
 type ZookeeperConnectorInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.ZookeeperConnectorLister
+	Lister() connectorv1alpha1.ZookeeperConnectorLister
 }
 
 type zookeeperConnectorInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredZookeeperConnectorInformer(client versioned.Interface, namespace
 				return client.ConnectorV1alpha1().ZookeeperConnectors(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&connectorv1alpha1.ZookeeperConnector{},
+		&apisconnectorv1alpha1.ZookeeperConnector{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *zookeeperConnectorInformer) defaultInformer(client versioned.Interface,
 }
 
 func (f *zookeeperConnectorInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&connectorv1alpha1.ZookeeperConnector{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisconnectorv1alpha1.ZookeeperConnector{}, f.defaultInformer)
 }
 
-func (f *zookeeperConnectorInformer) Lister() v1alpha1.ZookeeperConnectorLister {
-	return v1alpha1.NewZookeeperConnectorLister(f.Informer().GetIndexer())
+func (f *zookeeperConnectorInformer) Lister() connectorv1alpha1.ZookeeperConnectorLister {
+	return connectorv1alpha1.NewZookeeperConnectorLister(f.Informer().GetIndexer())
 }

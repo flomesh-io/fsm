@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	apisconnectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/connector/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/connector/listers/connector/v1alpha1"
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/connector/listers/connector/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // GatewayConnectors.
 type GatewayConnectorInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.GatewayConnectorLister
+	Lister() connectorv1alpha1.GatewayConnectorLister
 }
 
 type gatewayConnectorInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredGatewayConnectorInformer(client versioned.Interface, namespace s
 				return client.ConnectorV1alpha1().GatewayConnectors(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&connectorv1alpha1.GatewayConnector{},
+		&apisconnectorv1alpha1.GatewayConnector{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *gatewayConnectorInformer) defaultInformer(client versioned.Interface, r
 }
 
 func (f *gatewayConnectorInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&connectorv1alpha1.GatewayConnector{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisconnectorv1alpha1.GatewayConnector{}, f.defaultInformer)
 }
 
-func (f *gatewayConnectorInformer) Lister() v1alpha1.GatewayConnectorLister {
-	return v1alpha1.NewGatewayConnectorLister(f.Informer().GetIndexer())
+func (f *gatewayConnectorInformer) Lister() connectorv1alpha1.GatewayConnectorLister {
+	return connectorv1alpha1.NewGatewayConnectorLister(f.Informer().GetIndexer())
 }

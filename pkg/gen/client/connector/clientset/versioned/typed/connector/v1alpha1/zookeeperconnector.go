@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type ZookeeperConnectorsGetter interface {
 
 // ZookeeperConnectorInterface has methods to work with ZookeeperConnector resources.
 type ZookeeperConnectorInterface interface {
-	Create(ctx context.Context, zookeeperConnector *v1alpha1.ZookeeperConnector, opts v1.CreateOptions) (*v1alpha1.ZookeeperConnector, error)
-	Update(ctx context.Context, zookeeperConnector *v1alpha1.ZookeeperConnector, opts v1.UpdateOptions) (*v1alpha1.ZookeeperConnector, error)
+	Create(ctx context.Context, zookeeperConnector *connectorv1alpha1.ZookeeperConnector, opts v1.CreateOptions) (*connectorv1alpha1.ZookeeperConnector, error)
+	Update(ctx context.Context, zookeeperConnector *connectorv1alpha1.ZookeeperConnector, opts v1.UpdateOptions) (*connectorv1alpha1.ZookeeperConnector, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, zookeeperConnector *v1alpha1.ZookeeperConnector, opts v1.UpdateOptions) (*v1alpha1.ZookeeperConnector, error)
+	UpdateStatus(ctx context.Context, zookeeperConnector *connectorv1alpha1.ZookeeperConnector, opts v1.UpdateOptions) (*connectorv1alpha1.ZookeeperConnector, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.ZookeeperConnector, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.ZookeeperConnectorList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*connectorv1alpha1.ZookeeperConnector, error)
+	List(ctx context.Context, opts v1.ListOptions) (*connectorv1alpha1.ZookeeperConnectorList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ZookeeperConnector, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *connectorv1alpha1.ZookeeperConnector, err error)
 	ZookeeperConnectorExpansion
 }
 
 // zookeeperConnectors implements ZookeeperConnectorInterface
 type zookeeperConnectors struct {
-	*gentype.ClientWithList[*v1alpha1.ZookeeperConnector, *v1alpha1.ZookeeperConnectorList]
+	*gentype.ClientWithList[*connectorv1alpha1.ZookeeperConnector, *connectorv1alpha1.ZookeeperConnectorList]
 }
 
 // newZookeeperConnectors returns a ZookeeperConnectors
 func newZookeeperConnectors(c *ConnectorV1alpha1Client, namespace string) *zookeeperConnectors {
 	return &zookeeperConnectors{
-		gentype.NewClientWithList[*v1alpha1.ZookeeperConnector, *v1alpha1.ZookeeperConnectorList](
+		gentype.NewClientWithList[*connectorv1alpha1.ZookeeperConnector, *connectorv1alpha1.ZookeeperConnectorList](
 			"zookeeperconnectors",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.ZookeeperConnector { return &v1alpha1.ZookeeperConnector{} },
-			func() *v1alpha1.ZookeeperConnectorList { return &v1alpha1.ZookeeperConnectorList{} }),
+			func() *connectorv1alpha1.ZookeeperConnector { return &connectorv1alpha1.ZookeeperConnector{} },
+			func() *connectorv1alpha1.ZookeeperConnectorList { return &connectorv1alpha1.ZookeeperConnectorList{} },
+		),
 	}
 }

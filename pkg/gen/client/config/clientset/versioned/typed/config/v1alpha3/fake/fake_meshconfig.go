@@ -16,116 +16,32 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned/typed/config/v1alpha3"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeMeshConfigs implements MeshConfigInterface
-type FakeMeshConfigs struct {
+// fakeMeshConfigs implements MeshConfigInterface
+type fakeMeshConfigs struct {
+	*gentype.FakeClientWithList[*v1alpha3.MeshConfig, *v1alpha3.MeshConfigList]
 	Fake *FakeConfigV1alpha3
-	ns   string
 }
 
-var meshconfigsResource = v1alpha3.SchemeGroupVersion.WithResource("meshconfigs")
-
-var meshconfigsKind = v1alpha3.SchemeGroupVersion.WithKind("MeshConfig")
-
-// Get takes name of the meshConfig, and returns the corresponding meshConfig object, and an error if there is any.
-func (c *FakeMeshConfigs) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha3.MeshConfig, err error) {
-	emptyResult := &v1alpha3.MeshConfig{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(meshconfigsResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakeMeshConfigs(fake *FakeConfigV1alpha3, namespace string) configv1alpha3.MeshConfigInterface {
+	return &fakeMeshConfigs{
+		gentype.NewFakeClientWithList[*v1alpha3.MeshConfig, *v1alpha3.MeshConfigList](
+			fake.Fake,
+			namespace,
+			v1alpha3.SchemeGroupVersion.WithResource("meshconfigs"),
+			v1alpha3.SchemeGroupVersion.WithKind("MeshConfig"),
+			func() *v1alpha3.MeshConfig { return &v1alpha3.MeshConfig{} },
+			func() *v1alpha3.MeshConfigList { return &v1alpha3.MeshConfigList{} },
+			func(dst, src *v1alpha3.MeshConfigList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha3.MeshConfigList) []*v1alpha3.MeshConfig { return gentype.ToPointerSlice(list.Items) },
+			func(list *v1alpha3.MeshConfigList, items []*v1alpha3.MeshConfig) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha3.MeshConfig), err
-}
-
-// List takes label and field selectors, and returns the list of MeshConfigs that match those selectors.
-func (c *FakeMeshConfigs) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha3.MeshConfigList, err error) {
-	emptyResult := &v1alpha3.MeshConfigList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(meshconfigsResource, meshconfigsKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha3.MeshConfigList{ListMeta: obj.(*v1alpha3.MeshConfigList).ListMeta}
-	for _, item := range obj.(*v1alpha3.MeshConfigList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested meshConfigs.
-func (c *FakeMeshConfigs) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(meshconfigsResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a meshConfig and creates it.  Returns the server's representation of the meshConfig, and an error, if there is any.
-func (c *FakeMeshConfigs) Create(ctx context.Context, meshConfig *v1alpha3.MeshConfig, opts v1.CreateOptions) (result *v1alpha3.MeshConfig, err error) {
-	emptyResult := &v1alpha3.MeshConfig{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(meshconfigsResource, c.ns, meshConfig, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha3.MeshConfig), err
-}
-
-// Update takes the representation of a meshConfig and updates it. Returns the server's representation of the meshConfig, and an error, if there is any.
-func (c *FakeMeshConfigs) Update(ctx context.Context, meshConfig *v1alpha3.MeshConfig, opts v1.UpdateOptions) (result *v1alpha3.MeshConfig, err error) {
-	emptyResult := &v1alpha3.MeshConfig{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(meshconfigsResource, c.ns, meshConfig, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha3.MeshConfig), err
-}
-
-// Delete takes name of the meshConfig and deletes it. Returns an error if one occurs.
-func (c *FakeMeshConfigs) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(meshconfigsResource, c.ns, name, opts), &v1alpha3.MeshConfig{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeMeshConfigs) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(meshconfigsResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha3.MeshConfigList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched meshConfig.
-func (c *FakeMeshConfigs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha3.MeshConfig, err error) {
-	emptyResult := &v1alpha3.MeshConfig{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(meshconfigsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha3.MeshConfig), err
 }

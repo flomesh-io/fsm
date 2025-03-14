@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type IPRestrictionsGetter interface {
 
 // IPRestrictionInterface has methods to work with IPRestriction resources.
 type IPRestrictionInterface interface {
-	Create(ctx context.Context, iPRestriction *v1alpha1.IPRestriction, opts v1.CreateOptions) (*v1alpha1.IPRestriction, error)
-	Update(ctx context.Context, iPRestriction *v1alpha1.IPRestriction, opts v1.UpdateOptions) (*v1alpha1.IPRestriction, error)
+	Create(ctx context.Context, iPRestriction *extensionv1alpha1.IPRestriction, opts v1.CreateOptions) (*extensionv1alpha1.IPRestriction, error)
+	Update(ctx context.Context, iPRestriction *extensionv1alpha1.IPRestriction, opts v1.UpdateOptions) (*extensionv1alpha1.IPRestriction, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, iPRestriction *v1alpha1.IPRestriction, opts v1.UpdateOptions) (*v1alpha1.IPRestriction, error)
+	UpdateStatus(ctx context.Context, iPRestriction *extensionv1alpha1.IPRestriction, opts v1.UpdateOptions) (*extensionv1alpha1.IPRestriction, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.IPRestriction, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.IPRestrictionList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*extensionv1alpha1.IPRestriction, error)
+	List(ctx context.Context, opts v1.ListOptions) (*extensionv1alpha1.IPRestrictionList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.IPRestriction, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *extensionv1alpha1.IPRestriction, err error)
 	IPRestrictionExpansion
 }
 
 // iPRestrictions implements IPRestrictionInterface
 type iPRestrictions struct {
-	*gentype.ClientWithList[*v1alpha1.IPRestriction, *v1alpha1.IPRestrictionList]
+	*gentype.ClientWithList[*extensionv1alpha1.IPRestriction, *extensionv1alpha1.IPRestrictionList]
 }
 
 // newIPRestrictions returns a IPRestrictions
 func newIPRestrictions(c *ExtensionV1alpha1Client, namespace string) *iPRestrictions {
 	return &iPRestrictions{
-		gentype.NewClientWithList[*v1alpha1.IPRestriction, *v1alpha1.IPRestrictionList](
+		gentype.NewClientWithList[*extensionv1alpha1.IPRestriction, *extensionv1alpha1.IPRestrictionList](
 			"iprestrictions",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.IPRestriction { return &v1alpha1.IPRestriction{} },
-			func() *v1alpha1.IPRestrictionList { return &v1alpha1.IPRestrictionList{} }),
+			func() *extensionv1alpha1.IPRestriction { return &extensionv1alpha1.IPRestriction{} },
+			func() *extensionv1alpha1.IPRestrictionList { return &extensionv1alpha1.IPRestrictionList{} },
+		),
 	}
 }

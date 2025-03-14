@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type ListenerFiltersGetter interface {
 
 // ListenerFilterInterface has methods to work with ListenerFilter resources.
 type ListenerFilterInterface interface {
-	Create(ctx context.Context, listenerFilter *v1alpha1.ListenerFilter, opts v1.CreateOptions) (*v1alpha1.ListenerFilter, error)
-	Update(ctx context.Context, listenerFilter *v1alpha1.ListenerFilter, opts v1.UpdateOptions) (*v1alpha1.ListenerFilter, error)
+	Create(ctx context.Context, listenerFilter *extensionv1alpha1.ListenerFilter, opts v1.CreateOptions) (*extensionv1alpha1.ListenerFilter, error)
+	Update(ctx context.Context, listenerFilter *extensionv1alpha1.ListenerFilter, opts v1.UpdateOptions) (*extensionv1alpha1.ListenerFilter, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, listenerFilter *v1alpha1.ListenerFilter, opts v1.UpdateOptions) (*v1alpha1.ListenerFilter, error)
+	UpdateStatus(ctx context.Context, listenerFilter *extensionv1alpha1.ListenerFilter, opts v1.UpdateOptions) (*extensionv1alpha1.ListenerFilter, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.ListenerFilter, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.ListenerFilterList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*extensionv1alpha1.ListenerFilter, error)
+	List(ctx context.Context, opts v1.ListOptions) (*extensionv1alpha1.ListenerFilterList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ListenerFilter, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *extensionv1alpha1.ListenerFilter, err error)
 	ListenerFilterExpansion
 }
 
 // listenerFilters implements ListenerFilterInterface
 type listenerFilters struct {
-	*gentype.ClientWithList[*v1alpha1.ListenerFilter, *v1alpha1.ListenerFilterList]
+	*gentype.ClientWithList[*extensionv1alpha1.ListenerFilter, *extensionv1alpha1.ListenerFilterList]
 }
 
 // newListenerFilters returns a ListenerFilters
 func newListenerFilters(c *ExtensionV1alpha1Client, namespace string) *listenerFilters {
 	return &listenerFilters{
-		gentype.NewClientWithList[*v1alpha1.ListenerFilter, *v1alpha1.ListenerFilterList](
+		gentype.NewClientWithList[*extensionv1alpha1.ListenerFilter, *extensionv1alpha1.ListenerFilterList](
 			"listenerfilters",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.ListenerFilter { return &v1alpha1.ListenerFilter{} },
-			func() *v1alpha1.ListenerFilterList { return &v1alpha1.ListenerFilterList{} }),
+			func() *extensionv1alpha1.ListenerFilter { return &extensionv1alpha1.ListenerFilter{} },
+			func() *extensionv1alpha1.ListenerFilterList { return &extensionv1alpha1.ListenerFilterList{} },
+		),
 	}
 }

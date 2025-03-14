@@ -26,7 +26,7 @@ type FakeNetworkingV1alpha1 struct {
 }
 
 func (c *FakeNetworkingV1alpha1) NamespacedIngresses(namespace string) v1alpha1.NamespacedIngressInterface {
-	return &FakeNamespacedIngresses{c, namespace}
+	return newFakeNamespacedIngresses(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

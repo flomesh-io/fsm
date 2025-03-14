@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type ExternalRateLimitsGetter interface {
 
 // ExternalRateLimitInterface has methods to work with ExternalRateLimit resources.
 type ExternalRateLimitInterface interface {
-	Create(ctx context.Context, externalRateLimit *v1alpha1.ExternalRateLimit, opts v1.CreateOptions) (*v1alpha1.ExternalRateLimit, error)
-	Update(ctx context.Context, externalRateLimit *v1alpha1.ExternalRateLimit, opts v1.UpdateOptions) (*v1alpha1.ExternalRateLimit, error)
+	Create(ctx context.Context, externalRateLimit *extensionv1alpha1.ExternalRateLimit, opts v1.CreateOptions) (*extensionv1alpha1.ExternalRateLimit, error)
+	Update(ctx context.Context, externalRateLimit *extensionv1alpha1.ExternalRateLimit, opts v1.UpdateOptions) (*extensionv1alpha1.ExternalRateLimit, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, externalRateLimit *v1alpha1.ExternalRateLimit, opts v1.UpdateOptions) (*v1alpha1.ExternalRateLimit, error)
+	UpdateStatus(ctx context.Context, externalRateLimit *extensionv1alpha1.ExternalRateLimit, opts v1.UpdateOptions) (*extensionv1alpha1.ExternalRateLimit, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.ExternalRateLimit, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.ExternalRateLimitList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*extensionv1alpha1.ExternalRateLimit, error)
+	List(ctx context.Context, opts v1.ListOptions) (*extensionv1alpha1.ExternalRateLimitList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ExternalRateLimit, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *extensionv1alpha1.ExternalRateLimit, err error)
 	ExternalRateLimitExpansion
 }
 
 // externalRateLimits implements ExternalRateLimitInterface
 type externalRateLimits struct {
-	*gentype.ClientWithList[*v1alpha1.ExternalRateLimit, *v1alpha1.ExternalRateLimitList]
+	*gentype.ClientWithList[*extensionv1alpha1.ExternalRateLimit, *extensionv1alpha1.ExternalRateLimitList]
 }
 
 // newExternalRateLimits returns a ExternalRateLimits
 func newExternalRateLimits(c *ExtensionV1alpha1Client, namespace string) *externalRateLimits {
 	return &externalRateLimits{
-		gentype.NewClientWithList[*v1alpha1.ExternalRateLimit, *v1alpha1.ExternalRateLimitList](
+		gentype.NewClientWithList[*extensionv1alpha1.ExternalRateLimit, *extensionv1alpha1.ExternalRateLimitList](
 			"externalratelimits",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.ExternalRateLimit { return &v1alpha1.ExternalRateLimit{} },
-			func() *v1alpha1.ExternalRateLimitList { return &v1alpha1.ExternalRateLimitList{} }),
+			func() *extensionv1alpha1.ExternalRateLimit { return &extensionv1alpha1.ExternalRateLimit{} },
+			func() *extensionv1alpha1.ExternalRateLimitList { return &extensionv1alpha1.ExternalRateLimitList{} },
+		),
 	}
 }

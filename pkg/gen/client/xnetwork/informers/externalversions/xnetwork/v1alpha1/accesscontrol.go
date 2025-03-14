@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	xnetworkv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/xnetwork/v1alpha1"
+	apisxnetworkv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/xnetwork/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/xnetwork/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/xnetwork/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/xnetwork/listers/xnetwork/v1alpha1"
+	xnetworkv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/xnetwork/listers/xnetwork/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // AccessControls.
 type AccessControlInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.AccessControlLister
+	Lister() xnetworkv1alpha1.AccessControlLister
 }
 
 type accessControlInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredAccessControlInformer(client versioned.Interface, namespace stri
 				return client.XnetworkV1alpha1().AccessControls(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&xnetworkv1alpha1.AccessControl{},
+		&apisxnetworkv1alpha1.AccessControl{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *accessControlInformer) defaultInformer(client versioned.Interface, resy
 }
 
 func (f *accessControlInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&xnetworkv1alpha1.AccessControl{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisxnetworkv1alpha1.AccessControl{}, f.defaultInformer)
 }
 
-func (f *accessControlInformer) Lister() v1alpha1.AccessControlLister {
-	return v1alpha1.NewAccessControlLister(f.Informer().GetIndexer())
+func (f *accessControlInformer) Lister() xnetworkv1alpha1.AccessControlLister {
+	return xnetworkv1alpha1.NewAccessControlLister(f.Informer().GetIndexer())
 }

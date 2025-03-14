@@ -26,67 +26,67 @@ type FakeExtensionV1alpha1 struct {
 }
 
 func (c *FakeExtensionV1alpha1) CircuitBreakers(namespace string) v1alpha1.CircuitBreakerInterface {
-	return &FakeCircuitBreakers{c, namespace}
+	return newFakeCircuitBreakers(c, namespace)
 }
 
 func (c *FakeExtensionV1alpha1) ConcurrencyLimits(namespace string) v1alpha1.ConcurrencyLimitInterface {
-	return &FakeConcurrencyLimits{c, namespace}
+	return newFakeConcurrencyLimits(c, namespace)
 }
 
 func (c *FakeExtensionV1alpha1) DNSModifiers(namespace string) v1alpha1.DNSModifierInterface {
-	return &FakeDNSModifiers{c, namespace}
+	return newFakeDNSModifiers(c, namespace)
 }
 
 func (c *FakeExtensionV1alpha1) ExternalRateLimits(namespace string) v1alpha1.ExternalRateLimitInterface {
-	return &FakeExternalRateLimits{c, namespace}
+	return newFakeExternalRateLimits(c, namespace)
 }
 
 func (c *FakeExtensionV1alpha1) FaultInjections(namespace string) v1alpha1.FaultInjectionInterface {
-	return &FakeFaultInjections{c, namespace}
+	return newFakeFaultInjections(c, namespace)
 }
 
 func (c *FakeExtensionV1alpha1) Filters(namespace string) v1alpha1.FilterInterface {
-	return &FakeFilters{c, namespace}
+	return newFakeFilters(c, namespace)
 }
 
 func (c *FakeExtensionV1alpha1) FilterConfigs(namespace string) v1alpha1.FilterConfigInterface {
-	return &FakeFilterConfigs{c, namespace}
+	return newFakeFilterConfigs(c, namespace)
 }
 
 func (c *FakeExtensionV1alpha1) FilterDefinitions() v1alpha1.FilterDefinitionInterface {
-	return &FakeFilterDefinitions{c}
+	return newFakeFilterDefinitions(c)
 }
 
 func (c *FakeExtensionV1alpha1) HTTPLogs(namespace string) v1alpha1.HTTPLogInterface {
-	return &FakeHTTPLogs{c, namespace}
+	return newFakeHTTPLogs(c, namespace)
 }
 
 func (c *FakeExtensionV1alpha1) IPRestrictions(namespace string) v1alpha1.IPRestrictionInterface {
-	return &FakeIPRestrictions{c, namespace}
+	return newFakeIPRestrictions(c, namespace)
 }
 
 func (c *FakeExtensionV1alpha1) ListenerFilters(namespace string) v1alpha1.ListenerFilterInterface {
-	return &FakeListenerFilters{c, namespace}
+	return newFakeListenerFilters(c, namespace)
 }
 
 func (c *FakeExtensionV1alpha1) Metricses(namespace string) v1alpha1.MetricsInterface {
-	return &FakeMetricses{c, namespace}
+	return newFakeMetricses(c, namespace)
 }
 
 func (c *FakeExtensionV1alpha1) ProxyTags(namespace string) v1alpha1.ProxyTagInterface {
-	return &FakeProxyTags{c, namespace}
+	return newFakeProxyTags(c, namespace)
 }
 
 func (c *FakeExtensionV1alpha1) RateLimits(namespace string) v1alpha1.RateLimitInterface {
-	return &FakeRateLimits{c, namespace}
+	return newFakeRateLimits(c, namespace)
 }
 
 func (c *FakeExtensionV1alpha1) RequestTerminations(namespace string) v1alpha1.RequestTerminationInterface {
-	return &FakeRequestTerminations{c, namespace}
+	return newFakeRequestTerminations(c, namespace)
 }
 
 func (c *FakeExtensionV1alpha1) Zipkins(namespace string) v1alpha1.ZipkinInterface {
-	return &FakeZipkins{c, namespace}
+	return newFakeZipkins(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

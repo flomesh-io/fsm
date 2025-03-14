@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/traffic/v1alpha1"
+	trafficv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/traffic/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/traffic/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type HTTPTrafficRulesGetter interface {
 
 // HTTPTrafficRuleInterface has methods to work with HTTPTrafficRule resources.
 type HTTPTrafficRuleInterface interface {
-	Create(ctx context.Context, hTTPTrafficRule *v1alpha1.HTTPTrafficRule, opts v1.CreateOptions) (*v1alpha1.HTTPTrafficRule, error)
-	Update(ctx context.Context, hTTPTrafficRule *v1alpha1.HTTPTrafficRule, opts v1.UpdateOptions) (*v1alpha1.HTTPTrafficRule, error)
+	Create(ctx context.Context, hTTPTrafficRule *trafficv1alpha1.HTTPTrafficRule, opts v1.CreateOptions) (*trafficv1alpha1.HTTPTrafficRule, error)
+	Update(ctx context.Context, hTTPTrafficRule *trafficv1alpha1.HTTPTrafficRule, opts v1.UpdateOptions) (*trafficv1alpha1.HTTPTrafficRule, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, hTTPTrafficRule *v1alpha1.HTTPTrafficRule, opts v1.UpdateOptions) (*v1alpha1.HTTPTrafficRule, error)
+	UpdateStatus(ctx context.Context, hTTPTrafficRule *trafficv1alpha1.HTTPTrafficRule, opts v1.UpdateOptions) (*trafficv1alpha1.HTTPTrafficRule, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.HTTPTrafficRule, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.HTTPTrafficRuleList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*trafficv1alpha1.HTTPTrafficRule, error)
+	List(ctx context.Context, opts v1.ListOptions) (*trafficv1alpha1.HTTPTrafficRuleList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.HTTPTrafficRule, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *trafficv1alpha1.HTTPTrafficRule, err error)
 	HTTPTrafficRuleExpansion
 }
 
 // hTTPTrafficRules implements HTTPTrafficRuleInterface
 type hTTPTrafficRules struct {
-	*gentype.ClientWithList[*v1alpha1.HTTPTrafficRule, *v1alpha1.HTTPTrafficRuleList]
+	*gentype.ClientWithList[*trafficv1alpha1.HTTPTrafficRule, *trafficv1alpha1.HTTPTrafficRuleList]
 }
 
 // newHTTPTrafficRules returns a HTTPTrafficRules
 func newHTTPTrafficRules(c *TrafficV1alpha1Client, namespace string) *hTTPTrafficRules {
 	return &hTTPTrafficRules{
-		gentype.NewClientWithList[*v1alpha1.HTTPTrafficRule, *v1alpha1.HTTPTrafficRuleList](
+		gentype.NewClientWithList[*trafficv1alpha1.HTTPTrafficRule, *trafficv1alpha1.HTTPTrafficRuleList](
 			"httptrafficrules",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.HTTPTrafficRule { return &v1alpha1.HTTPTrafficRule{} },
-			func() *v1alpha1.HTTPTrafficRuleList { return &v1alpha1.HTTPTrafficRuleList{} }),
+			func() *trafficv1alpha1.HTTPTrafficRule { return &trafficv1alpha1.HTTPTrafficRule{} },
+			func() *trafficv1alpha1.HTTPTrafficRuleList { return &trafficv1alpha1.HTTPTrafficRuleList{} },
+		),
 	}
 }

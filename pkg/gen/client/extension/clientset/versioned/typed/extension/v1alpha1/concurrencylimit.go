@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type ConcurrencyLimitsGetter interface {
 
 // ConcurrencyLimitInterface has methods to work with ConcurrencyLimit resources.
 type ConcurrencyLimitInterface interface {
-	Create(ctx context.Context, concurrencyLimit *v1alpha1.ConcurrencyLimit, opts v1.CreateOptions) (*v1alpha1.ConcurrencyLimit, error)
-	Update(ctx context.Context, concurrencyLimit *v1alpha1.ConcurrencyLimit, opts v1.UpdateOptions) (*v1alpha1.ConcurrencyLimit, error)
+	Create(ctx context.Context, concurrencyLimit *extensionv1alpha1.ConcurrencyLimit, opts v1.CreateOptions) (*extensionv1alpha1.ConcurrencyLimit, error)
+	Update(ctx context.Context, concurrencyLimit *extensionv1alpha1.ConcurrencyLimit, opts v1.UpdateOptions) (*extensionv1alpha1.ConcurrencyLimit, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, concurrencyLimit *v1alpha1.ConcurrencyLimit, opts v1.UpdateOptions) (*v1alpha1.ConcurrencyLimit, error)
+	UpdateStatus(ctx context.Context, concurrencyLimit *extensionv1alpha1.ConcurrencyLimit, opts v1.UpdateOptions) (*extensionv1alpha1.ConcurrencyLimit, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.ConcurrencyLimit, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.ConcurrencyLimitList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*extensionv1alpha1.ConcurrencyLimit, error)
+	List(ctx context.Context, opts v1.ListOptions) (*extensionv1alpha1.ConcurrencyLimitList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ConcurrencyLimit, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *extensionv1alpha1.ConcurrencyLimit, err error)
 	ConcurrencyLimitExpansion
 }
 
 // concurrencyLimits implements ConcurrencyLimitInterface
 type concurrencyLimits struct {
-	*gentype.ClientWithList[*v1alpha1.ConcurrencyLimit, *v1alpha1.ConcurrencyLimitList]
+	*gentype.ClientWithList[*extensionv1alpha1.ConcurrencyLimit, *extensionv1alpha1.ConcurrencyLimitList]
 }
 
 // newConcurrencyLimits returns a ConcurrencyLimits
 func newConcurrencyLimits(c *ExtensionV1alpha1Client, namespace string) *concurrencyLimits {
 	return &concurrencyLimits{
-		gentype.NewClientWithList[*v1alpha1.ConcurrencyLimit, *v1alpha1.ConcurrencyLimitList](
+		gentype.NewClientWithList[*extensionv1alpha1.ConcurrencyLimit, *extensionv1alpha1.ConcurrencyLimitList](
 			"concurrencylimits",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.ConcurrencyLimit { return &v1alpha1.ConcurrencyLimit{} },
-			func() *v1alpha1.ConcurrencyLimitList { return &v1alpha1.ConcurrencyLimitList{} }),
+			func() *extensionv1alpha1.ConcurrencyLimit { return &extensionv1alpha1.ConcurrencyLimit{} },
+			func() *extensionv1alpha1.ConcurrencyLimitList { return &extensionv1alpha1.ConcurrencyLimitList{} },
+		),
 	}
 }

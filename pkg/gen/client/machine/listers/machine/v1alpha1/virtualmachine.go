@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // VirtualMachineLister helps list VirtualMachines.
@@ -27,7 +27,7 @@ import (
 type VirtualMachineLister interface {
 	// List lists all VirtualMachines in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.VirtualMachine, err error)
+	List(selector labels.Selector) (ret []*machinev1alpha1.VirtualMachine, err error)
 	// VirtualMachines returns an object that can list and get VirtualMachines.
 	VirtualMachines(namespace string) VirtualMachineNamespaceLister
 	VirtualMachineListerExpansion
@@ -35,17 +35,17 @@ type VirtualMachineLister interface {
 
 // virtualMachineLister implements the VirtualMachineLister interface.
 type virtualMachineLister struct {
-	listers.ResourceIndexer[*v1alpha1.VirtualMachine]
+	listers.ResourceIndexer[*machinev1alpha1.VirtualMachine]
 }
 
 // NewVirtualMachineLister returns a new VirtualMachineLister.
 func NewVirtualMachineLister(indexer cache.Indexer) VirtualMachineLister {
-	return &virtualMachineLister{listers.New[*v1alpha1.VirtualMachine](indexer, v1alpha1.Resource("virtualmachine"))}
+	return &virtualMachineLister{listers.New[*machinev1alpha1.VirtualMachine](indexer, machinev1alpha1.Resource("virtualmachine"))}
 }
 
 // VirtualMachines returns an object that can list and get VirtualMachines.
 func (s *virtualMachineLister) VirtualMachines(namespace string) VirtualMachineNamespaceLister {
-	return virtualMachineNamespaceLister{listers.NewNamespaced[*v1alpha1.VirtualMachine](s.ResourceIndexer, namespace)}
+	return virtualMachineNamespaceLister{listers.NewNamespaced[*machinev1alpha1.VirtualMachine](s.ResourceIndexer, namespace)}
 }
 
 // VirtualMachineNamespaceLister helps list and get VirtualMachines.
@@ -53,15 +53,15 @@ func (s *virtualMachineLister) VirtualMachines(namespace string) VirtualMachineN
 type VirtualMachineNamespaceLister interface {
 	// List lists all VirtualMachines in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.VirtualMachine, err error)
+	List(selector labels.Selector) (ret []*machinev1alpha1.VirtualMachine, err error)
 	// Get retrieves the VirtualMachine from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.VirtualMachine, error)
+	Get(name string) (*machinev1alpha1.VirtualMachine, error)
 	VirtualMachineNamespaceListerExpansion
 }
 
 // virtualMachineNamespaceLister implements the VirtualMachineNamespaceLister
 // interface.
 type virtualMachineNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.VirtualMachine]
+	listers.ResourceIndexer[*machinev1alpha1.VirtualMachine]
 }

@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha2
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	policyattachmentv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+	apispolicyattachmentv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/informers/externalversions/internalinterfaces"
-	v1alpha2 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/listers/policyattachment/v1alpha2"
+	policyattachmentv1alpha2 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/listers/policyattachment/v1alpha2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // RouteRuleFilterPolicies.
 type RouteRuleFilterPolicyInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha2.RouteRuleFilterPolicyLister
+	Lister() policyattachmentv1alpha2.RouteRuleFilterPolicyLister
 }
 
 type routeRuleFilterPolicyInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredRouteRuleFilterPolicyInformer(client versioned.Interface, namesp
 				return client.GatewayV1alpha2().RouteRuleFilterPolicies(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&policyattachmentv1alpha2.RouteRuleFilterPolicy{},
+		&apispolicyattachmentv1alpha2.RouteRuleFilterPolicy{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *routeRuleFilterPolicyInformer) defaultInformer(client versioned.Interfa
 }
 
 func (f *routeRuleFilterPolicyInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&policyattachmentv1alpha2.RouteRuleFilterPolicy{}, f.defaultInformer)
+	return f.factory.InformerFor(&apispolicyattachmentv1alpha2.RouteRuleFilterPolicy{}, f.defaultInformer)
 }
 
-func (f *routeRuleFilterPolicyInformer) Lister() v1alpha2.RouteRuleFilterPolicyLister {
-	return v1alpha2.NewRouteRuleFilterPolicyLister(f.Informer().GetIndexer())
+func (f *routeRuleFilterPolicyInformer) Lister() policyattachmentv1alpha2.RouteRuleFilterPolicyLister {
+	return policyattachmentv1alpha2.NewRouteRuleFilterPolicyLister(f.Informer().GetIndexer())
 }

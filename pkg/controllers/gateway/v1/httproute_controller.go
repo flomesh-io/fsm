@@ -130,7 +130,7 @@ func (r *httpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&gwv1.HTTPRoute{}).
 		WithDefaulter(r.webhook).
 		WithValidator(r.webhook).
-		RecoverPanic().
+		RecoverPanic(true).
 		Complete(); err != nil {
 		return err
 	}

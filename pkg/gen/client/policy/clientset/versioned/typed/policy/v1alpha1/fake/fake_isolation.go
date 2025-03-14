@@ -16,129 +16,32 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned/typed/policy/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeIsolations implements IsolationInterface
-type FakeIsolations struct {
+// fakeIsolations implements IsolationInterface
+type fakeIsolations struct {
+	*gentype.FakeClientWithList[*v1alpha1.Isolation, *v1alpha1.IsolationList]
 	Fake *FakePolicyV1alpha1
-	ns   string
 }
 
-var isolationsResource = v1alpha1.SchemeGroupVersion.WithResource("isolations")
-
-var isolationsKind = v1alpha1.SchemeGroupVersion.WithKind("Isolation")
-
-// Get takes name of the isolation, and returns the corresponding isolation object, and an error if there is any.
-func (c *FakeIsolations) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Isolation, err error) {
-	emptyResult := &v1alpha1.Isolation{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(isolationsResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakeIsolations(fake *FakePolicyV1alpha1, namespace string) policyv1alpha1.IsolationInterface {
+	return &fakeIsolations{
+		gentype.NewFakeClientWithList[*v1alpha1.Isolation, *v1alpha1.IsolationList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("isolations"),
+			v1alpha1.SchemeGroupVersion.WithKind("Isolation"),
+			func() *v1alpha1.Isolation { return &v1alpha1.Isolation{} },
+			func() *v1alpha1.IsolationList { return &v1alpha1.IsolationList{} },
+			func(dst, src *v1alpha1.IsolationList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.IsolationList) []*v1alpha1.Isolation { return gentype.ToPointerSlice(list.Items) },
+			func(list *v1alpha1.IsolationList, items []*v1alpha1.Isolation) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.Isolation), err
-}
-
-// List takes label and field selectors, and returns the list of Isolations that match those selectors.
-func (c *FakeIsolations) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.IsolationList, err error) {
-	emptyResult := &v1alpha1.IsolationList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(isolationsResource, isolationsKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.IsolationList{ListMeta: obj.(*v1alpha1.IsolationList).ListMeta}
-	for _, item := range obj.(*v1alpha1.IsolationList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested isolations.
-func (c *FakeIsolations) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(isolationsResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a isolation and creates it.  Returns the server's representation of the isolation, and an error, if there is any.
-func (c *FakeIsolations) Create(ctx context.Context, isolation *v1alpha1.Isolation, opts v1.CreateOptions) (result *v1alpha1.Isolation, err error) {
-	emptyResult := &v1alpha1.Isolation{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(isolationsResource, c.ns, isolation, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.Isolation), err
-}
-
-// Update takes the representation of a isolation and updates it. Returns the server's representation of the isolation, and an error, if there is any.
-func (c *FakeIsolations) Update(ctx context.Context, isolation *v1alpha1.Isolation, opts v1.UpdateOptions) (result *v1alpha1.Isolation, err error) {
-	emptyResult := &v1alpha1.Isolation{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(isolationsResource, c.ns, isolation, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.Isolation), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeIsolations) UpdateStatus(ctx context.Context, isolation *v1alpha1.Isolation, opts v1.UpdateOptions) (result *v1alpha1.Isolation, err error) {
-	emptyResult := &v1alpha1.Isolation{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceActionWithOptions(isolationsResource, "status", c.ns, isolation, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.Isolation), err
-}
-
-// Delete takes name of the isolation and deletes it. Returns an error if one occurs.
-func (c *FakeIsolations) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(isolationsResource, c.ns, name, opts), &v1alpha1.Isolation{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeIsolations) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(isolationsResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.IsolationList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched isolation.
-func (c *FakeIsolations) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Isolation, err error) {
-	emptyResult := &v1alpha1.Isolation{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(isolationsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.Isolation), err
 }

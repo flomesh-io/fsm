@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	apisconnectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/connector/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/connector/listers/connector/v1alpha1"
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/connector/listers/connector/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // EurekaConnectors.
 type EurekaConnectorInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.EurekaConnectorLister
+	Lister() connectorv1alpha1.EurekaConnectorLister
 }
 
 type eurekaConnectorInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredEurekaConnectorInformer(client versioned.Interface, namespace st
 				return client.ConnectorV1alpha1().EurekaConnectors(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&connectorv1alpha1.EurekaConnector{},
+		&apisconnectorv1alpha1.EurekaConnector{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *eurekaConnectorInformer) defaultInformer(client versioned.Interface, re
 }
 
 func (f *eurekaConnectorInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&connectorv1alpha1.EurekaConnector{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisconnectorv1alpha1.EurekaConnector{}, f.defaultInformer)
 }
 
-func (f *eurekaConnectorInformer) Lister() v1alpha1.EurekaConnectorLister {
-	return v1alpha1.NewEurekaConnectorLister(f.Informer().GetIndexer())
+func (f *eurekaConnectorInformer) Lister() connectorv1alpha1.EurekaConnectorLister {
+	return connectorv1alpha1.NewEurekaConnectorLister(f.Informer().GetIndexer())
 }

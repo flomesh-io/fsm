@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	apispolicyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/policy/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/listers/policy/v1alpha1"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/listers/policy/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // Retries.
 type RetryInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.RetryLister
+	Lister() policyv1alpha1.RetryLister
 }
 
 type retryInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredRetryInformer(client versioned.Interface, namespace string, resy
 				return client.PolicyV1alpha1().Retries(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&policyv1alpha1.Retry{},
+		&apispolicyv1alpha1.Retry{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *retryInformer) defaultInformer(client versioned.Interface, resyncPeriod
 }
 
 func (f *retryInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&policyv1alpha1.Retry{}, f.defaultInformer)
+	return f.factory.InformerFor(&apispolicyv1alpha1.Retry{}, f.defaultInformer)
 }
 
-func (f *retryInformer) Lister() v1alpha1.RetryLister {
-	return v1alpha1.NewRetryLister(f.Informer().GetIndexer())
+func (f *retryInformer) Lister() policyv1alpha1.RetryLister {
+	return policyv1alpha1.NewRetryLister(f.Informer().GetIndexer())
 }

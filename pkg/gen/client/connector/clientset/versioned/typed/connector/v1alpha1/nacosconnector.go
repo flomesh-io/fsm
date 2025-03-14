@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type NacosConnectorsGetter interface {
 
 // NacosConnectorInterface has methods to work with NacosConnector resources.
 type NacosConnectorInterface interface {
-	Create(ctx context.Context, nacosConnector *v1alpha1.NacosConnector, opts v1.CreateOptions) (*v1alpha1.NacosConnector, error)
-	Update(ctx context.Context, nacosConnector *v1alpha1.NacosConnector, opts v1.UpdateOptions) (*v1alpha1.NacosConnector, error)
+	Create(ctx context.Context, nacosConnector *connectorv1alpha1.NacosConnector, opts v1.CreateOptions) (*connectorv1alpha1.NacosConnector, error)
+	Update(ctx context.Context, nacosConnector *connectorv1alpha1.NacosConnector, opts v1.UpdateOptions) (*connectorv1alpha1.NacosConnector, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, nacosConnector *v1alpha1.NacosConnector, opts v1.UpdateOptions) (*v1alpha1.NacosConnector, error)
+	UpdateStatus(ctx context.Context, nacosConnector *connectorv1alpha1.NacosConnector, opts v1.UpdateOptions) (*connectorv1alpha1.NacosConnector, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.NacosConnector, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.NacosConnectorList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*connectorv1alpha1.NacosConnector, error)
+	List(ctx context.Context, opts v1.ListOptions) (*connectorv1alpha1.NacosConnectorList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.NacosConnector, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *connectorv1alpha1.NacosConnector, err error)
 	NacosConnectorExpansion
 }
 
 // nacosConnectors implements NacosConnectorInterface
 type nacosConnectors struct {
-	*gentype.ClientWithList[*v1alpha1.NacosConnector, *v1alpha1.NacosConnectorList]
+	*gentype.ClientWithList[*connectorv1alpha1.NacosConnector, *connectorv1alpha1.NacosConnectorList]
 }
 
 // newNacosConnectors returns a NacosConnectors
 func newNacosConnectors(c *ConnectorV1alpha1Client, namespace string) *nacosConnectors {
 	return &nacosConnectors{
-		gentype.NewClientWithList[*v1alpha1.NacosConnector, *v1alpha1.NacosConnectorList](
+		gentype.NewClientWithList[*connectorv1alpha1.NacosConnector, *connectorv1alpha1.NacosConnectorList](
 			"nacosconnectors",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.NacosConnector { return &v1alpha1.NacosConnector{} },
-			func() *v1alpha1.NacosConnectorList { return &v1alpha1.NacosConnectorList{} }),
+			func() *connectorv1alpha1.NacosConnector { return &connectorv1alpha1.NacosConnector{} },
+			func() *connectorv1alpha1.NacosConnectorList { return &connectorv1alpha1.NacosConnectorList{} },
+		),
 	}
 }

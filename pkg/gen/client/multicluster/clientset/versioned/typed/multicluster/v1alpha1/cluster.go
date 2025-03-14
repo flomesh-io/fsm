@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type ClustersGetter interface {
 
 // ClusterInterface has methods to work with Cluster resources.
 type ClusterInterface interface {
-	Create(ctx context.Context, cluster *v1alpha1.Cluster, opts v1.CreateOptions) (*v1alpha1.Cluster, error)
-	Update(ctx context.Context, cluster *v1alpha1.Cluster, opts v1.UpdateOptions) (*v1alpha1.Cluster, error)
+	Create(ctx context.Context, cluster *multiclusterv1alpha1.Cluster, opts v1.CreateOptions) (*multiclusterv1alpha1.Cluster, error)
+	Update(ctx context.Context, cluster *multiclusterv1alpha1.Cluster, opts v1.UpdateOptions) (*multiclusterv1alpha1.Cluster, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, cluster *v1alpha1.Cluster, opts v1.UpdateOptions) (*v1alpha1.Cluster, error)
+	UpdateStatus(ctx context.Context, cluster *multiclusterv1alpha1.Cluster, opts v1.UpdateOptions) (*multiclusterv1alpha1.Cluster, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.Cluster, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.ClusterList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*multiclusterv1alpha1.Cluster, error)
+	List(ctx context.Context, opts v1.ListOptions) (*multiclusterv1alpha1.ClusterList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Cluster, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *multiclusterv1alpha1.Cluster, err error)
 	ClusterExpansion
 }
 
 // clusters implements ClusterInterface
 type clusters struct {
-	*gentype.ClientWithList[*v1alpha1.Cluster, *v1alpha1.ClusterList]
+	*gentype.ClientWithList[*multiclusterv1alpha1.Cluster, *multiclusterv1alpha1.ClusterList]
 }
 
 // newClusters returns a Clusters
 func newClusters(c *MulticlusterV1alpha1Client) *clusters {
 	return &clusters{
-		gentype.NewClientWithList[*v1alpha1.Cluster, *v1alpha1.ClusterList](
+		gentype.NewClientWithList[*multiclusterv1alpha1.Cluster, *multiclusterv1alpha1.ClusterList](
 			"clusters",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			"",
-			func() *v1alpha1.Cluster { return &v1alpha1.Cluster{} },
-			func() *v1alpha1.ClusterList { return &v1alpha1.ClusterList{} }),
+			func() *multiclusterv1alpha1.Cluster { return &multiclusterv1alpha1.Cluster{} },
+			func() *multiclusterv1alpha1.ClusterList { return &multiclusterv1alpha1.ClusterList{} },
+		),
 	}
 }

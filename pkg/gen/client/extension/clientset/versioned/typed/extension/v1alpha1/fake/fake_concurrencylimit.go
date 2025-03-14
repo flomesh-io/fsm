@@ -16,129 +16,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/typed/extension/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeConcurrencyLimits implements ConcurrencyLimitInterface
-type FakeConcurrencyLimits struct {
+// fakeConcurrencyLimits implements ConcurrencyLimitInterface
+type fakeConcurrencyLimits struct {
+	*gentype.FakeClientWithList[*v1alpha1.ConcurrencyLimit, *v1alpha1.ConcurrencyLimitList]
 	Fake *FakeExtensionV1alpha1
-	ns   string
 }
 
-var concurrencylimitsResource = v1alpha1.SchemeGroupVersion.WithResource("concurrencylimits")
-
-var concurrencylimitsKind = v1alpha1.SchemeGroupVersion.WithKind("ConcurrencyLimit")
-
-// Get takes name of the concurrencyLimit, and returns the corresponding concurrencyLimit object, and an error if there is any.
-func (c *FakeConcurrencyLimits) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.ConcurrencyLimit, err error) {
-	emptyResult := &v1alpha1.ConcurrencyLimit{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(concurrencylimitsResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakeConcurrencyLimits(fake *FakeExtensionV1alpha1, namespace string) extensionv1alpha1.ConcurrencyLimitInterface {
+	return &fakeConcurrencyLimits{
+		gentype.NewFakeClientWithList[*v1alpha1.ConcurrencyLimit, *v1alpha1.ConcurrencyLimitList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("concurrencylimits"),
+			v1alpha1.SchemeGroupVersion.WithKind("ConcurrencyLimit"),
+			func() *v1alpha1.ConcurrencyLimit { return &v1alpha1.ConcurrencyLimit{} },
+			func() *v1alpha1.ConcurrencyLimitList { return &v1alpha1.ConcurrencyLimitList{} },
+			func(dst, src *v1alpha1.ConcurrencyLimitList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.ConcurrencyLimitList) []*v1alpha1.ConcurrencyLimit {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.ConcurrencyLimitList, items []*v1alpha1.ConcurrencyLimit) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.ConcurrencyLimit), err
-}
-
-// List takes label and field selectors, and returns the list of ConcurrencyLimits that match those selectors.
-func (c *FakeConcurrencyLimits) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.ConcurrencyLimitList, err error) {
-	emptyResult := &v1alpha1.ConcurrencyLimitList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(concurrencylimitsResource, concurrencylimitsKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.ConcurrencyLimitList{ListMeta: obj.(*v1alpha1.ConcurrencyLimitList).ListMeta}
-	for _, item := range obj.(*v1alpha1.ConcurrencyLimitList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested concurrencyLimits.
-func (c *FakeConcurrencyLimits) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(concurrencylimitsResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a concurrencyLimit and creates it.  Returns the server's representation of the concurrencyLimit, and an error, if there is any.
-func (c *FakeConcurrencyLimits) Create(ctx context.Context, concurrencyLimit *v1alpha1.ConcurrencyLimit, opts v1.CreateOptions) (result *v1alpha1.ConcurrencyLimit, err error) {
-	emptyResult := &v1alpha1.ConcurrencyLimit{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(concurrencylimitsResource, c.ns, concurrencyLimit, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.ConcurrencyLimit), err
-}
-
-// Update takes the representation of a concurrencyLimit and updates it. Returns the server's representation of the concurrencyLimit, and an error, if there is any.
-func (c *FakeConcurrencyLimits) Update(ctx context.Context, concurrencyLimit *v1alpha1.ConcurrencyLimit, opts v1.UpdateOptions) (result *v1alpha1.ConcurrencyLimit, err error) {
-	emptyResult := &v1alpha1.ConcurrencyLimit{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(concurrencylimitsResource, c.ns, concurrencyLimit, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.ConcurrencyLimit), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeConcurrencyLimits) UpdateStatus(ctx context.Context, concurrencyLimit *v1alpha1.ConcurrencyLimit, opts v1.UpdateOptions) (result *v1alpha1.ConcurrencyLimit, err error) {
-	emptyResult := &v1alpha1.ConcurrencyLimit{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceActionWithOptions(concurrencylimitsResource, "status", c.ns, concurrencyLimit, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.ConcurrencyLimit), err
-}
-
-// Delete takes name of the concurrencyLimit and deletes it. Returns an error if one occurs.
-func (c *FakeConcurrencyLimits) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(concurrencylimitsResource, c.ns, name, opts), &v1alpha1.ConcurrencyLimit{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeConcurrencyLimits) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(concurrencylimitsResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.ConcurrencyLimitList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched concurrencyLimit.
-func (c *FakeConcurrencyLimits) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ConcurrencyLimit, err error) {
-	emptyResult := &v1alpha1.ConcurrencyLimit{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(concurrencylimitsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.ConcurrencyLimit), err
 }

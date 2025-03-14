@@ -146,7 +146,7 @@ func (r *gatewayClassReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&gwv1.GatewayClass{}).
 		WithDefaulter(r.webhook).
 		WithValidator(r.webhook).
-		RecoverPanic().
+		RecoverPanic(true).
 		Complete(); err != nil {
 		return err
 	}

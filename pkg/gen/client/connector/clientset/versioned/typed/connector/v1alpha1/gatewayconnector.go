@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type GatewayConnectorsGetter interface {
 
 // GatewayConnectorInterface has methods to work with GatewayConnector resources.
 type GatewayConnectorInterface interface {
-	Create(ctx context.Context, gatewayConnector *v1alpha1.GatewayConnector, opts v1.CreateOptions) (*v1alpha1.GatewayConnector, error)
-	Update(ctx context.Context, gatewayConnector *v1alpha1.GatewayConnector, opts v1.UpdateOptions) (*v1alpha1.GatewayConnector, error)
+	Create(ctx context.Context, gatewayConnector *connectorv1alpha1.GatewayConnector, opts v1.CreateOptions) (*connectorv1alpha1.GatewayConnector, error)
+	Update(ctx context.Context, gatewayConnector *connectorv1alpha1.GatewayConnector, opts v1.UpdateOptions) (*connectorv1alpha1.GatewayConnector, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, gatewayConnector *v1alpha1.GatewayConnector, opts v1.UpdateOptions) (*v1alpha1.GatewayConnector, error)
+	UpdateStatus(ctx context.Context, gatewayConnector *connectorv1alpha1.GatewayConnector, opts v1.UpdateOptions) (*connectorv1alpha1.GatewayConnector, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.GatewayConnector, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.GatewayConnectorList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*connectorv1alpha1.GatewayConnector, error)
+	List(ctx context.Context, opts v1.ListOptions) (*connectorv1alpha1.GatewayConnectorList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.GatewayConnector, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *connectorv1alpha1.GatewayConnector, err error)
 	GatewayConnectorExpansion
 }
 
 // gatewayConnectors implements GatewayConnectorInterface
 type gatewayConnectors struct {
-	*gentype.ClientWithList[*v1alpha1.GatewayConnector, *v1alpha1.GatewayConnectorList]
+	*gentype.ClientWithList[*connectorv1alpha1.GatewayConnector, *connectorv1alpha1.GatewayConnectorList]
 }
 
 // newGatewayConnectors returns a GatewayConnectors
 func newGatewayConnectors(c *ConnectorV1alpha1Client, namespace string) *gatewayConnectors {
 	return &gatewayConnectors{
-		gentype.NewClientWithList[*v1alpha1.GatewayConnector, *v1alpha1.GatewayConnectorList](
+		gentype.NewClientWithList[*connectorv1alpha1.GatewayConnector, *connectorv1alpha1.GatewayConnectorList](
 			"gatewayconnectors",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.GatewayConnector { return &v1alpha1.GatewayConnector{} },
-			func() *v1alpha1.GatewayConnectorList { return &v1alpha1.GatewayConnectorList{} }),
+			func() *connectorv1alpha1.GatewayConnector { return &connectorv1alpha1.GatewayConnector{} },
+			func() *connectorv1alpha1.GatewayConnectorList { return &connectorv1alpha1.GatewayConnectorList{} },
+		),
 	}
 }

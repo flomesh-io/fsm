@@ -16,120 +16,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/typed/extension/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeFilterDefinitions implements FilterDefinitionInterface
-type FakeFilterDefinitions struct {
+// fakeFilterDefinitions implements FilterDefinitionInterface
+type fakeFilterDefinitions struct {
+	*gentype.FakeClientWithList[*v1alpha1.FilterDefinition, *v1alpha1.FilterDefinitionList]
 	Fake *FakeExtensionV1alpha1
 }
 
-var filterdefinitionsResource = v1alpha1.SchemeGroupVersion.WithResource("filterdefinitions")
-
-var filterdefinitionsKind = v1alpha1.SchemeGroupVersion.WithKind("FilterDefinition")
-
-// Get takes name of the filterDefinition, and returns the corresponding filterDefinition object, and an error if there is any.
-func (c *FakeFilterDefinitions) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.FilterDefinition, err error) {
-	emptyResult := &v1alpha1.FilterDefinition{}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootGetActionWithOptions(filterdefinitionsResource, name, options), emptyResult)
-	if obj == nil {
-		return emptyResult, err
+func newFakeFilterDefinitions(fake *FakeExtensionV1alpha1) extensionv1alpha1.FilterDefinitionInterface {
+	return &fakeFilterDefinitions{
+		gentype.NewFakeClientWithList[*v1alpha1.FilterDefinition, *v1alpha1.FilterDefinitionList](
+			fake.Fake,
+			"",
+			v1alpha1.SchemeGroupVersion.WithResource("filterdefinitions"),
+			v1alpha1.SchemeGroupVersion.WithKind("FilterDefinition"),
+			func() *v1alpha1.FilterDefinition { return &v1alpha1.FilterDefinition{} },
+			func() *v1alpha1.FilterDefinitionList { return &v1alpha1.FilterDefinitionList{} },
+			func(dst, src *v1alpha1.FilterDefinitionList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.FilterDefinitionList) []*v1alpha1.FilterDefinition {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.FilterDefinitionList, items []*v1alpha1.FilterDefinition) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.FilterDefinition), err
-}
-
-// List takes label and field selectors, and returns the list of FilterDefinitions that match those selectors.
-func (c *FakeFilterDefinitions) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.FilterDefinitionList, err error) {
-	emptyResult := &v1alpha1.FilterDefinitionList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootListActionWithOptions(filterdefinitionsResource, filterdefinitionsKind, opts), emptyResult)
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.FilterDefinitionList{ListMeta: obj.(*v1alpha1.FilterDefinitionList).ListMeta}
-	for _, item := range obj.(*v1alpha1.FilterDefinitionList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested filterDefinitions.
-func (c *FakeFilterDefinitions) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewRootWatchActionWithOptions(filterdefinitionsResource, opts))
-}
-
-// Create takes the representation of a filterDefinition and creates it.  Returns the server's representation of the filterDefinition, and an error, if there is any.
-func (c *FakeFilterDefinitions) Create(ctx context.Context, filterDefinition *v1alpha1.FilterDefinition, opts v1.CreateOptions) (result *v1alpha1.FilterDefinition, err error) {
-	emptyResult := &v1alpha1.FilterDefinition{}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootCreateActionWithOptions(filterdefinitionsResource, filterDefinition, opts), emptyResult)
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.FilterDefinition), err
-}
-
-// Update takes the representation of a filterDefinition and updates it. Returns the server's representation of the filterDefinition, and an error, if there is any.
-func (c *FakeFilterDefinitions) Update(ctx context.Context, filterDefinition *v1alpha1.FilterDefinition, opts v1.UpdateOptions) (result *v1alpha1.FilterDefinition, err error) {
-	emptyResult := &v1alpha1.FilterDefinition{}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateActionWithOptions(filterdefinitionsResource, filterDefinition, opts), emptyResult)
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.FilterDefinition), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeFilterDefinitions) UpdateStatus(ctx context.Context, filterDefinition *v1alpha1.FilterDefinition, opts v1.UpdateOptions) (result *v1alpha1.FilterDefinition, err error) {
-	emptyResult := &v1alpha1.FilterDefinition{}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateSubresourceActionWithOptions(filterdefinitionsResource, "status", filterDefinition, opts), emptyResult)
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.FilterDefinition), err
-}
-
-// Delete takes name of the filterDefinition and deletes it. Returns an error if one occurs.
-func (c *FakeFilterDefinitions) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteActionWithOptions(filterdefinitionsResource, name, opts), &v1alpha1.FilterDefinition{})
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeFilterDefinitions) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionActionWithOptions(filterdefinitionsResource, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.FilterDefinitionList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched filterDefinition.
-func (c *FakeFilterDefinitions) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.FilterDefinition, err error) {
-	emptyResult := &v1alpha1.FilterDefinition{}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceActionWithOptions(filterdefinitionsResource, name, pt, data, opts, subresources...), emptyResult)
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.FilterDefinition), err
 }

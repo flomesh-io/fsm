@@ -16,129 +16,34 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned/typed/connector/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeMachineConnectors implements MachineConnectorInterface
-type FakeMachineConnectors struct {
+// fakeMachineConnectors implements MachineConnectorInterface
+type fakeMachineConnectors struct {
+	*gentype.FakeClientWithList[*v1alpha1.MachineConnector, *v1alpha1.MachineConnectorList]
 	Fake *FakeConnectorV1alpha1
-	ns   string
 }
 
-var machineconnectorsResource = v1alpha1.SchemeGroupVersion.WithResource("machineconnectors")
-
-var machineconnectorsKind = v1alpha1.SchemeGroupVersion.WithKind("MachineConnector")
-
-// Get takes name of the machineConnector, and returns the corresponding machineConnector object, and an error if there is any.
-func (c *FakeMachineConnectors) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.MachineConnector, err error) {
-	emptyResult := &v1alpha1.MachineConnector{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(machineconnectorsResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakeMachineConnectors(fake *FakeConnectorV1alpha1, namespace string) connectorv1alpha1.MachineConnectorInterface {
+	return &fakeMachineConnectors{
+		gentype.NewFakeClientWithList[*v1alpha1.MachineConnector, *v1alpha1.MachineConnectorList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("machineconnectors"),
+			v1alpha1.SchemeGroupVersion.WithKind("MachineConnector"),
+			func() *v1alpha1.MachineConnector { return &v1alpha1.MachineConnector{} },
+			func() *v1alpha1.MachineConnectorList { return &v1alpha1.MachineConnectorList{} },
+			func(dst, src *v1alpha1.MachineConnectorList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.MachineConnectorList) []*v1alpha1.MachineConnector {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.MachineConnectorList, items []*v1alpha1.MachineConnector) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.MachineConnector), err
-}
-
-// List takes label and field selectors, and returns the list of MachineConnectors that match those selectors.
-func (c *FakeMachineConnectors) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.MachineConnectorList, err error) {
-	emptyResult := &v1alpha1.MachineConnectorList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(machineconnectorsResource, machineconnectorsKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.MachineConnectorList{ListMeta: obj.(*v1alpha1.MachineConnectorList).ListMeta}
-	for _, item := range obj.(*v1alpha1.MachineConnectorList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested machineConnectors.
-func (c *FakeMachineConnectors) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(machineconnectorsResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a machineConnector and creates it.  Returns the server's representation of the machineConnector, and an error, if there is any.
-func (c *FakeMachineConnectors) Create(ctx context.Context, machineConnector *v1alpha1.MachineConnector, opts v1.CreateOptions) (result *v1alpha1.MachineConnector, err error) {
-	emptyResult := &v1alpha1.MachineConnector{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(machineconnectorsResource, c.ns, machineConnector, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.MachineConnector), err
-}
-
-// Update takes the representation of a machineConnector and updates it. Returns the server's representation of the machineConnector, and an error, if there is any.
-func (c *FakeMachineConnectors) Update(ctx context.Context, machineConnector *v1alpha1.MachineConnector, opts v1.UpdateOptions) (result *v1alpha1.MachineConnector, err error) {
-	emptyResult := &v1alpha1.MachineConnector{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(machineconnectorsResource, c.ns, machineConnector, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.MachineConnector), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeMachineConnectors) UpdateStatus(ctx context.Context, machineConnector *v1alpha1.MachineConnector, opts v1.UpdateOptions) (result *v1alpha1.MachineConnector, err error) {
-	emptyResult := &v1alpha1.MachineConnector{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceActionWithOptions(machineconnectorsResource, "status", c.ns, machineConnector, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.MachineConnector), err
-}
-
-// Delete takes name of the machineConnector and deletes it. Returns an error if one occurs.
-func (c *FakeMachineConnectors) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(machineconnectorsResource, c.ns, name, opts), &v1alpha1.MachineConnector{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeMachineConnectors) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(machineconnectorsResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.MachineConnectorList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched machineConnector.
-func (c *FakeMachineConnectors) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.MachineConnector, err error) {
-	emptyResult := &v1alpha1.MachineConnector{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(machineconnectorsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.MachineConnector), err
 }

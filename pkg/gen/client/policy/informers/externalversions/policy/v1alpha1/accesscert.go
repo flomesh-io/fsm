@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	apispolicyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/policy/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/listers/policy/v1alpha1"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/listers/policy/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // AccessCerts.
 type AccessCertInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.AccessCertLister
+	Lister() policyv1alpha1.AccessCertLister
 }
 
 type accessCertInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredAccessCertInformer(client versioned.Interface, namespace string,
 				return client.PolicyV1alpha1().AccessCerts(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&policyv1alpha1.AccessCert{},
+		&apispolicyv1alpha1.AccessCert{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *accessCertInformer) defaultInformer(client versioned.Interface, resyncP
 }
 
 func (f *accessCertInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&policyv1alpha1.AccessCert{}, f.defaultInformer)
+	return f.factory.InformerFor(&apispolicyv1alpha1.AccessCert{}, f.defaultInformer)
 }
 
-func (f *accessCertInformer) Lister() v1alpha1.AccessCertLister {
-	return v1alpha1.NewAccessCertLister(f.Informer().GetIndexer())
+func (f *accessCertInformer) Lister() policyv1alpha1.AccessCertLister {
+	return policyv1alpha1.NewAccessCertLister(f.Informer().GetIndexer())
 }

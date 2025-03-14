@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // EurekaConnectorLister helps list EurekaConnectors.
@@ -27,7 +27,7 @@ import (
 type EurekaConnectorLister interface {
 	// List lists all EurekaConnectors in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.EurekaConnector, err error)
+	List(selector labels.Selector) (ret []*connectorv1alpha1.EurekaConnector, err error)
 	// EurekaConnectors returns an object that can list and get EurekaConnectors.
 	EurekaConnectors(namespace string) EurekaConnectorNamespaceLister
 	EurekaConnectorListerExpansion
@@ -35,17 +35,17 @@ type EurekaConnectorLister interface {
 
 // eurekaConnectorLister implements the EurekaConnectorLister interface.
 type eurekaConnectorLister struct {
-	listers.ResourceIndexer[*v1alpha1.EurekaConnector]
+	listers.ResourceIndexer[*connectorv1alpha1.EurekaConnector]
 }
 
 // NewEurekaConnectorLister returns a new EurekaConnectorLister.
 func NewEurekaConnectorLister(indexer cache.Indexer) EurekaConnectorLister {
-	return &eurekaConnectorLister{listers.New[*v1alpha1.EurekaConnector](indexer, v1alpha1.Resource("eurekaconnector"))}
+	return &eurekaConnectorLister{listers.New[*connectorv1alpha1.EurekaConnector](indexer, connectorv1alpha1.Resource("eurekaconnector"))}
 }
 
 // EurekaConnectors returns an object that can list and get EurekaConnectors.
 func (s *eurekaConnectorLister) EurekaConnectors(namespace string) EurekaConnectorNamespaceLister {
-	return eurekaConnectorNamespaceLister{listers.NewNamespaced[*v1alpha1.EurekaConnector](s.ResourceIndexer, namespace)}
+	return eurekaConnectorNamespaceLister{listers.NewNamespaced[*connectorv1alpha1.EurekaConnector](s.ResourceIndexer, namespace)}
 }
 
 // EurekaConnectorNamespaceLister helps list and get EurekaConnectors.
@@ -53,15 +53,15 @@ func (s *eurekaConnectorLister) EurekaConnectors(namespace string) EurekaConnect
 type EurekaConnectorNamespaceLister interface {
 	// List lists all EurekaConnectors in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.EurekaConnector, err error)
+	List(selector labels.Selector) (ret []*connectorv1alpha1.EurekaConnector, err error)
 	// Get retrieves the EurekaConnector from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.EurekaConnector, error)
+	Get(name string) (*connectorv1alpha1.EurekaConnector, error)
 	EurekaConnectorNamespaceListerExpansion
 }
 
 // eurekaConnectorNamespaceLister implements the EurekaConnectorNamespaceLister
 // interface.
 type eurekaConnectorNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.EurekaConnector]
+	listers.ResourceIndexer[*connectorv1alpha1.EurekaConnector]
 }

@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // RequestTerminationLister helps list RequestTerminations.
@@ -27,7 +27,7 @@ import (
 type RequestTerminationLister interface {
 	// List lists all RequestTerminations in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.RequestTermination, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.RequestTermination, err error)
 	// RequestTerminations returns an object that can list and get RequestTerminations.
 	RequestTerminations(namespace string) RequestTerminationNamespaceLister
 	RequestTerminationListerExpansion
@@ -35,17 +35,17 @@ type RequestTerminationLister interface {
 
 // requestTerminationLister implements the RequestTerminationLister interface.
 type requestTerminationLister struct {
-	listers.ResourceIndexer[*v1alpha1.RequestTermination]
+	listers.ResourceIndexer[*extensionv1alpha1.RequestTermination]
 }
 
 // NewRequestTerminationLister returns a new RequestTerminationLister.
 func NewRequestTerminationLister(indexer cache.Indexer) RequestTerminationLister {
-	return &requestTerminationLister{listers.New[*v1alpha1.RequestTermination](indexer, v1alpha1.Resource("requesttermination"))}
+	return &requestTerminationLister{listers.New[*extensionv1alpha1.RequestTermination](indexer, extensionv1alpha1.Resource("requesttermination"))}
 }
 
 // RequestTerminations returns an object that can list and get RequestTerminations.
 func (s *requestTerminationLister) RequestTerminations(namespace string) RequestTerminationNamespaceLister {
-	return requestTerminationNamespaceLister{listers.NewNamespaced[*v1alpha1.RequestTermination](s.ResourceIndexer, namespace)}
+	return requestTerminationNamespaceLister{listers.NewNamespaced[*extensionv1alpha1.RequestTermination](s.ResourceIndexer, namespace)}
 }
 
 // RequestTerminationNamespaceLister helps list and get RequestTerminations.
@@ -53,15 +53,15 @@ func (s *requestTerminationLister) RequestTerminations(namespace string) Request
 type RequestTerminationNamespaceLister interface {
 	// List lists all RequestTerminations in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.RequestTermination, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.RequestTermination, err error)
 	// Get retrieves the RequestTermination from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.RequestTermination, error)
+	Get(name string) (*extensionv1alpha1.RequestTermination, error)
 	RequestTerminationNamespaceListerExpansion
 }
 
 // requestTerminationNamespaceLister implements the RequestTerminationNamespaceLister
 // interface.
 type requestTerminationNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.RequestTermination]
+	listers.ResourceIndexer[*extensionv1alpha1.RequestTermination]
 }

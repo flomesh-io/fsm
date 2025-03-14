@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	apisextensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/extension/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // FilterDefinitions.
 type FilterDefinitionInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.FilterDefinitionLister
+	Lister() extensionv1alpha1.FilterDefinitionLister
 }
 
 type filterDefinitionInformer struct {
@@ -67,7 +67,7 @@ func NewFilteredFilterDefinitionInformer(client versioned.Interface, resyncPerio
 				return client.ExtensionV1alpha1().FilterDefinitions().Watch(context.TODO(), options)
 			},
 		},
-		&extensionv1alpha1.FilterDefinition{},
+		&apisextensionv1alpha1.FilterDefinition{},
 		resyncPeriod,
 		indexers,
 	)
@@ -78,9 +78,9 @@ func (f *filterDefinitionInformer) defaultInformer(client versioned.Interface, r
 }
 
 func (f *filterDefinitionInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&extensionv1alpha1.FilterDefinition{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisextensionv1alpha1.FilterDefinition{}, f.defaultInformer)
 }
 
-func (f *filterDefinitionInformer) Lister() v1alpha1.FilterDefinitionLister {
-	return v1alpha1.NewFilterDefinitionLister(f.Informer().GetIndexer())
+func (f *filterDefinitionInformer) Lister() extensionv1alpha1.FilterDefinitionLister {
+	return extensionv1alpha1.NewFilterDefinitionLister(f.Informer().GetIndexer())
 }

@@ -77,7 +77,7 @@ func (r *backendLBPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&gwpav1alpha2.BackendLBPolicy{}).
 		WithDefaulter(r.webhook).
 		WithValidator(r.webhook).
-		RecoverPanic().
+		RecoverPanic(true).
 		Complete(); err != nil {
 		return err
 	}

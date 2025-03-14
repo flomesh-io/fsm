@@ -26,11 +26,11 @@ type FakeXnetworkV1alpha1 struct {
 }
 
 func (c *FakeXnetworkV1alpha1) AccessControls(namespace string) v1alpha1.AccessControlInterface {
-	return &FakeAccessControls{c, namespace}
+	return newFakeAccessControls(c, namespace)
 }
 
 func (c *FakeXnetworkV1alpha1) EIPAdvertisements(namespace string) v1alpha1.EIPAdvertisementInterface {
-	return &FakeEIPAdvertisements{c, namespace}
+	return newFakeEIPAdvertisements(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

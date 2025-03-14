@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/xnetwork/v1alpha1"
+	xnetworkv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/xnetwork/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/xnetwork/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,31 +34,32 @@ type EIPAdvertisementsGetter interface {
 
 // EIPAdvertisementInterface has methods to work with EIPAdvertisement resources.
 type EIPAdvertisementInterface interface {
-	Create(ctx context.Context, eIPAdvertisement *v1alpha1.EIPAdvertisement, opts v1.CreateOptions) (*v1alpha1.EIPAdvertisement, error)
-	Update(ctx context.Context, eIPAdvertisement *v1alpha1.EIPAdvertisement, opts v1.UpdateOptions) (*v1alpha1.EIPAdvertisement, error)
+	Create(ctx context.Context, eIPAdvertisement *xnetworkv1alpha1.EIPAdvertisement, opts v1.CreateOptions) (*xnetworkv1alpha1.EIPAdvertisement, error)
+	Update(ctx context.Context, eIPAdvertisement *xnetworkv1alpha1.EIPAdvertisement, opts v1.UpdateOptions) (*xnetworkv1alpha1.EIPAdvertisement, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.EIPAdvertisement, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.EIPAdvertisementList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*xnetworkv1alpha1.EIPAdvertisement, error)
+	List(ctx context.Context, opts v1.ListOptions) (*xnetworkv1alpha1.EIPAdvertisementList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.EIPAdvertisement, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *xnetworkv1alpha1.EIPAdvertisement, err error)
 	EIPAdvertisementExpansion
 }
 
 // eIPAdvertisements implements EIPAdvertisementInterface
 type eIPAdvertisements struct {
-	*gentype.ClientWithList[*v1alpha1.EIPAdvertisement, *v1alpha1.EIPAdvertisementList]
+	*gentype.ClientWithList[*xnetworkv1alpha1.EIPAdvertisement, *xnetworkv1alpha1.EIPAdvertisementList]
 }
 
 // newEIPAdvertisements returns a EIPAdvertisements
 func newEIPAdvertisements(c *XnetworkV1alpha1Client, namespace string) *eIPAdvertisements {
 	return &eIPAdvertisements{
-		gentype.NewClientWithList[*v1alpha1.EIPAdvertisement, *v1alpha1.EIPAdvertisementList](
+		gentype.NewClientWithList[*xnetworkv1alpha1.EIPAdvertisement, *xnetworkv1alpha1.EIPAdvertisementList](
 			"eipadvertisements",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.EIPAdvertisement { return &v1alpha1.EIPAdvertisement{} },
-			func() *v1alpha1.EIPAdvertisementList { return &v1alpha1.EIPAdvertisementList{} }),
+			func() *xnetworkv1alpha1.EIPAdvertisement { return &xnetworkv1alpha1.EIPAdvertisement{} },
+			func() *xnetworkv1alpha1.EIPAdvertisementList { return &xnetworkv1alpha1.EIPAdvertisementList{} },
+		),
 	}
 }

@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.1
+    controller-gen.kubebuilder.io/version: v0.17.2
   labels:
     app.kubernetes.io/name: flomesh.io
   name: virtualmachines.machine.flomesh.io
@@ -56,7 +56,7 @@ spec:
                   More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
                 properties:
                   exec:
-                    description: Exec specifies the action to take.
+                    description: Exec specifies a command to execute in the container.
                     properties:
                       command:
                         description: |-
@@ -77,7 +77,7 @@ spec:
                     format: int32
                     type: integer
                   grpc:
-                    description: GRPC specifies an action involving a GRPC port.
+                    description: GRPC specifies a GRPC HealthCheckRequest.
                     properties:
                       port:
                         description: Port number of the gRPC service. Number must
@@ -96,7 +96,7 @@ spec:
                     - port
                     type: object
                   httpGet:
-                    description: HTTPGet specifies the http request to perform.
+                    description: HTTPGet specifies an HTTP GET request to perform.
                     properties:
                       host:
                         description: |-
@@ -163,7 +163,7 @@ spec:
                     format: int32
                     type: integer
                   tcpSocket:
-                    description: TCPSocket specifies an action involving a TCP port.
+                    description: TCPSocket specifies a connection to a TCP port.
                     properties:
                       host:
                         description: 'Optional: Host name to connect to, defaults
@@ -214,7 +214,7 @@ spec:
                   More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
                 properties:
                   exec:
-                    description: Exec specifies the action to take.
+                    description: Exec specifies a command to execute in the container.
                     properties:
                       command:
                         description: |-
@@ -235,7 +235,7 @@ spec:
                     format: int32
                     type: integer
                   grpc:
-                    description: GRPC specifies an action involving a GRPC port.
+                    description: GRPC specifies a GRPC HealthCheckRequest.
                     properties:
                       port:
                         description: Port number of the gRPC service. Number must
@@ -254,7 +254,7 @@ spec:
                     - port
                     type: object
                   httpGet:
-                    description: HTTPGet specifies the http request to perform.
+                    description: HTTPGet specifies an HTTP GET request to perform.
                     properties:
                       host:
                         description: |-
@@ -321,7 +321,7 @@ spec:
                     format: int32
                     type: integer
                   tcpSocket:
-                    description: TCPSocket specifies an action involving a TCP port.
+                    description: TCPSocket specifies a connection to a TCP port.
                     properties:
                       host:
                         description: 'Optional: Host name to connect to, defaults
@@ -417,7 +417,7 @@ spec:
                   More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
                 properties:
                   exec:
-                    description: Exec specifies the action to take.
+                    description: Exec specifies a command to execute in the container.
                     properties:
                       command:
                         description: |-
@@ -438,7 +438,7 @@ spec:
                     format: int32
                     type: integer
                   grpc:
-                    description: GRPC specifies an action involving a GRPC port.
+                    description: GRPC specifies a GRPC HealthCheckRequest.
                     properties:
                       port:
                         description: Port number of the gRPC service. Number must
@@ -457,7 +457,7 @@ spec:
                     - port
                     type: object
                   httpGet:
-                    description: HTTPGet specifies the http request to perform.
+                    description: HTTPGet specifies an HTTP GET request to perform.
                     properties:
                       host:
                         description: |-
@@ -524,7 +524,7 @@ spec:
                     format: int32
                     type: integer
                   tcpSocket:
-                    description: TCPSocket specifies an action involving a TCP port.
+                    description: TCPSocket specifies a connection to a TCP port.
                     properties:
                       host:
                         description: 'Optional: Host name to connect to, defaults

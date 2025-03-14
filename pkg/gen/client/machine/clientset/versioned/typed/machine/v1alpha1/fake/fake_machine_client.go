@@ -26,7 +26,7 @@ type FakeMachineV1alpha1 struct {
 }
 
 func (c *FakeMachineV1alpha1) VirtualMachines(namespace string) v1alpha1.VirtualMachineInterface {
-	return &FakeVirtualMachines{c, namespace}
+	return newFakeVirtualMachines(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

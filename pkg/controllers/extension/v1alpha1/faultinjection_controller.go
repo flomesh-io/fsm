@@ -69,7 +69,7 @@ func (r *faultInjectionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&extv1alpha1.FaultInjection{}).
 		WithDefaulter(r.webhook).
 		WithValidator(r.webhook).
-		RecoverPanic().
+		RecoverPanic(true).
 		Complete(); err != nil {
 		return err
 	}

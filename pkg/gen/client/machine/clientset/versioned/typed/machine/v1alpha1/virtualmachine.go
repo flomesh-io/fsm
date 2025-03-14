@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
+	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type VirtualMachinesGetter interface {
 
 // VirtualMachineInterface has methods to work with VirtualMachine resources.
 type VirtualMachineInterface interface {
-	Create(ctx context.Context, virtualMachine *v1alpha1.VirtualMachine, opts v1.CreateOptions) (*v1alpha1.VirtualMachine, error)
-	Update(ctx context.Context, virtualMachine *v1alpha1.VirtualMachine, opts v1.UpdateOptions) (*v1alpha1.VirtualMachine, error)
+	Create(ctx context.Context, virtualMachine *machinev1alpha1.VirtualMachine, opts v1.CreateOptions) (*machinev1alpha1.VirtualMachine, error)
+	Update(ctx context.Context, virtualMachine *machinev1alpha1.VirtualMachine, opts v1.UpdateOptions) (*machinev1alpha1.VirtualMachine, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, virtualMachine *v1alpha1.VirtualMachine, opts v1.UpdateOptions) (*v1alpha1.VirtualMachine, error)
+	UpdateStatus(ctx context.Context, virtualMachine *machinev1alpha1.VirtualMachine, opts v1.UpdateOptions) (*machinev1alpha1.VirtualMachine, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.VirtualMachine, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.VirtualMachineList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*machinev1alpha1.VirtualMachine, error)
+	List(ctx context.Context, opts v1.ListOptions) (*machinev1alpha1.VirtualMachineList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.VirtualMachine, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *machinev1alpha1.VirtualMachine, err error)
 	VirtualMachineExpansion
 }
 
 // virtualMachines implements VirtualMachineInterface
 type virtualMachines struct {
-	*gentype.ClientWithList[*v1alpha1.VirtualMachine, *v1alpha1.VirtualMachineList]
+	*gentype.ClientWithList[*machinev1alpha1.VirtualMachine, *machinev1alpha1.VirtualMachineList]
 }
 
 // newVirtualMachines returns a VirtualMachines
 func newVirtualMachines(c *MachineV1alpha1Client, namespace string) *virtualMachines {
 	return &virtualMachines{
-		gentype.NewClientWithList[*v1alpha1.VirtualMachine, *v1alpha1.VirtualMachineList](
+		gentype.NewClientWithList[*machinev1alpha1.VirtualMachine, *machinev1alpha1.VirtualMachineList](
 			"virtualmachines",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.VirtualMachine { return &v1alpha1.VirtualMachine{} },
-			func() *v1alpha1.VirtualMachineList { return &v1alpha1.VirtualMachineList{} }),
+			func() *machinev1alpha1.VirtualMachine { return &machinev1alpha1.VirtualMachine{} },
+			func() *machinev1alpha1.VirtualMachineList { return &machinev1alpha1.VirtualMachineList{} },
+		),
 	}
 }

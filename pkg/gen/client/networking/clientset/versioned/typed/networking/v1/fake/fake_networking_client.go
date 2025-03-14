@@ -26,7 +26,7 @@ type FakeNetworkingV1 struct {
 }
 
 func (c *FakeNetworkingV1) IngressClasses() v1.IngressClassInterface {
-	return &FakeIngressClasses{c}
+	return newFakeIngressClasses(c)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

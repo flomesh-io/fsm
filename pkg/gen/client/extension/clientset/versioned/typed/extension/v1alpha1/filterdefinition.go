@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,33 +34,34 @@ type FilterDefinitionsGetter interface {
 
 // FilterDefinitionInterface has methods to work with FilterDefinition resources.
 type FilterDefinitionInterface interface {
-	Create(ctx context.Context, filterDefinition *v1alpha1.FilterDefinition, opts v1.CreateOptions) (*v1alpha1.FilterDefinition, error)
-	Update(ctx context.Context, filterDefinition *v1alpha1.FilterDefinition, opts v1.UpdateOptions) (*v1alpha1.FilterDefinition, error)
+	Create(ctx context.Context, filterDefinition *extensionv1alpha1.FilterDefinition, opts v1.CreateOptions) (*extensionv1alpha1.FilterDefinition, error)
+	Update(ctx context.Context, filterDefinition *extensionv1alpha1.FilterDefinition, opts v1.UpdateOptions) (*extensionv1alpha1.FilterDefinition, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, filterDefinition *v1alpha1.FilterDefinition, opts v1.UpdateOptions) (*v1alpha1.FilterDefinition, error)
+	UpdateStatus(ctx context.Context, filterDefinition *extensionv1alpha1.FilterDefinition, opts v1.UpdateOptions) (*extensionv1alpha1.FilterDefinition, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.FilterDefinition, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.FilterDefinitionList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*extensionv1alpha1.FilterDefinition, error)
+	List(ctx context.Context, opts v1.ListOptions) (*extensionv1alpha1.FilterDefinitionList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.FilterDefinition, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *extensionv1alpha1.FilterDefinition, err error)
 	FilterDefinitionExpansion
 }
 
 // filterDefinitions implements FilterDefinitionInterface
 type filterDefinitions struct {
-	*gentype.ClientWithList[*v1alpha1.FilterDefinition, *v1alpha1.FilterDefinitionList]
+	*gentype.ClientWithList[*extensionv1alpha1.FilterDefinition, *extensionv1alpha1.FilterDefinitionList]
 }
 
 // newFilterDefinitions returns a FilterDefinitions
 func newFilterDefinitions(c *ExtensionV1alpha1Client) *filterDefinitions {
 	return &filterDefinitions{
-		gentype.NewClientWithList[*v1alpha1.FilterDefinition, *v1alpha1.FilterDefinitionList](
+		gentype.NewClientWithList[*extensionv1alpha1.FilterDefinition, *extensionv1alpha1.FilterDefinitionList](
 			"filterdefinitions",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			"",
-			func() *v1alpha1.FilterDefinition { return &v1alpha1.FilterDefinition{} },
-			func() *v1alpha1.FilterDefinitionList { return &v1alpha1.FilterDefinitionList{} }),
+			func() *extensionv1alpha1.FilterDefinition { return &extensionv1alpha1.FilterDefinition{} },
+			func() *extensionv1alpha1.FilterDefinitionList { return &extensionv1alpha1.FilterDefinitionList{} },
+		),
 	}
 }

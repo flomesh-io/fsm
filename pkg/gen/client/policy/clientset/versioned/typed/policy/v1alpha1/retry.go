@@ -16,9 +16,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -34,31 +34,32 @@ type RetriesGetter interface {
 
 // RetryInterface has methods to work with Retry resources.
 type RetryInterface interface {
-	Create(ctx context.Context, retry *v1alpha1.Retry, opts v1.CreateOptions) (*v1alpha1.Retry, error)
-	Update(ctx context.Context, retry *v1alpha1.Retry, opts v1.UpdateOptions) (*v1alpha1.Retry, error)
+	Create(ctx context.Context, retry *policyv1alpha1.Retry, opts v1.CreateOptions) (*policyv1alpha1.Retry, error)
+	Update(ctx context.Context, retry *policyv1alpha1.Retry, opts v1.UpdateOptions) (*policyv1alpha1.Retry, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.Retry, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.RetryList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*policyv1alpha1.Retry, error)
+	List(ctx context.Context, opts v1.ListOptions) (*policyv1alpha1.RetryList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Retry, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *policyv1alpha1.Retry, err error)
 	RetryExpansion
 }
 
 // retries implements RetryInterface
 type retries struct {
-	*gentype.ClientWithList[*v1alpha1.Retry, *v1alpha1.RetryList]
+	*gentype.ClientWithList[*policyv1alpha1.Retry, *policyv1alpha1.RetryList]
 }
 
 // newRetries returns a Retries
 func newRetries(c *PolicyV1alpha1Client, namespace string) *retries {
 	return &retries{
-		gentype.NewClientWithList[*v1alpha1.Retry, *v1alpha1.RetryList](
+		gentype.NewClientWithList[*policyv1alpha1.Retry, *policyv1alpha1.RetryList](
 			"retries",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.Retry { return &v1alpha1.Retry{} },
-			func() *v1alpha1.RetryList { return &v1alpha1.RetryList{} }),
+			func() *policyv1alpha1.Retry { return &policyv1alpha1.Retry{} },
+			func() *policyv1alpha1.RetryList { return &policyv1alpha1.RetryList{} },
+		),
 	}
 }

@@ -26,27 +26,27 @@ type FakeConnectorV1alpha1 struct {
 }
 
 func (c *FakeConnectorV1alpha1) ConsulConnectors(namespace string) v1alpha1.ConsulConnectorInterface {
-	return &FakeConsulConnectors{c, namespace}
+	return newFakeConsulConnectors(c, namespace)
 }
 
 func (c *FakeConnectorV1alpha1) EurekaConnectors(namespace string) v1alpha1.EurekaConnectorInterface {
-	return &FakeEurekaConnectors{c, namespace}
+	return newFakeEurekaConnectors(c, namespace)
 }
 
 func (c *FakeConnectorV1alpha1) GatewayConnectors(namespace string) v1alpha1.GatewayConnectorInterface {
-	return &FakeGatewayConnectors{c, namespace}
+	return newFakeGatewayConnectors(c, namespace)
 }
 
 func (c *FakeConnectorV1alpha1) MachineConnectors(namespace string) v1alpha1.MachineConnectorInterface {
-	return &FakeMachineConnectors{c, namespace}
+	return newFakeMachineConnectors(c, namespace)
 }
 
 func (c *FakeConnectorV1alpha1) NacosConnectors(namespace string) v1alpha1.NacosConnectorInterface {
-	return &FakeNacosConnectors{c, namespace}
+	return newFakeNacosConnectors(c, namespace)
 }
 
 func (c *FakeConnectorV1alpha1) ZookeeperConnectors(namespace string) v1alpha1.ZookeeperConnectorInterface {
-	return &FakeZookeeperConnectors{c, namespace}
+	return newFakeZookeeperConnectors(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

@@ -16,13 +16,13 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	apisextensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	versioned "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned"
 	internalinterfaces "github.com/flomesh-io/fsm/pkg/gen/client/extension/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/extension/listers/extension/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +33,7 @@ import (
 // IPRestrictions.
 type IPRestrictionInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.IPRestrictionLister
+	Lister() extensionv1alpha1.IPRestrictionLister
 }
 
 type iPRestrictionInformer struct {
@@ -68,7 +68,7 @@ func NewFilteredIPRestrictionInformer(client versioned.Interface, namespace stri
 				return client.ExtensionV1alpha1().IPRestrictions(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&extensionv1alpha1.IPRestriction{},
+		&apisextensionv1alpha1.IPRestriction{},
 		resyncPeriod,
 		indexers,
 	)
@@ -79,9 +79,9 @@ func (f *iPRestrictionInformer) defaultInformer(client versioned.Interface, resy
 }
 
 func (f *iPRestrictionInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&extensionv1alpha1.IPRestriction{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisextensionv1alpha1.IPRestriction{}, f.defaultInformer)
 }
 
-func (f *iPRestrictionInformer) Lister() v1alpha1.IPRestrictionLister {
-	return v1alpha1.NewIPRestrictionLister(f.Informer().GetIndexer())
+func (f *iPRestrictionInformer) Lister() extensionv1alpha1.IPRestrictionLister {
+	return extensionv1alpha1.NewIPRestrictionLister(f.Informer().GetIndexer())
 }

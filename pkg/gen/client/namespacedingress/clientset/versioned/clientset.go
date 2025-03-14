@@ -16,8 +16,8 @@ limitations under the License.
 package versioned
 
 import (
-	"fmt"
-	"net/http"
+	fmt "fmt"
+	http "net/http"
 
 	networkingv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned/typed/namespacedingress/v1alpha1"
 	discovery "k8s.io/client-go/discovery"

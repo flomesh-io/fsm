@@ -16,10 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // MetricsLister helps list Metricses.
@@ -27,7 +27,7 @@ import (
 type MetricsLister interface {
 	// List lists all Metricses in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.Metrics, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.Metrics, err error)
 	// Metricses returns an object that can list and get Metricses.
 	Metricses(namespace string) MetricsNamespaceLister
 	MetricsListerExpansion
@@ -35,17 +35,17 @@ type MetricsLister interface {
 
 // metricsLister implements the MetricsLister interface.
 type metricsLister struct {
-	listers.ResourceIndexer[*v1alpha1.Metrics]
+	listers.ResourceIndexer[*extensionv1alpha1.Metrics]
 }
 
 // NewMetricsLister returns a new MetricsLister.
 func NewMetricsLister(indexer cache.Indexer) MetricsLister {
-	return &metricsLister{listers.New[*v1alpha1.Metrics](indexer, v1alpha1.Resource("metrics"))}
+	return &metricsLister{listers.New[*extensionv1alpha1.Metrics](indexer, extensionv1alpha1.Resource("metrics"))}
 }
 
 // Metricses returns an object that can list and get Metricses.
 func (s *metricsLister) Metricses(namespace string) MetricsNamespaceLister {
-	return metricsNamespaceLister{listers.NewNamespaced[*v1alpha1.Metrics](s.ResourceIndexer, namespace)}
+	return metricsNamespaceLister{listers.NewNamespaced[*extensionv1alpha1.Metrics](s.ResourceIndexer, namespace)}
 }
 
 // MetricsNamespaceLister helps list and get Metricses.
@@ -53,15 +53,15 @@ func (s *metricsLister) Metricses(namespace string) MetricsNamespaceLister {
 type MetricsNamespaceLister interface {
 	// List lists all Metricses in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.Metrics, err error)
+	List(selector labels.Selector) (ret []*extensionv1alpha1.Metrics, err error)
 	// Get retrieves the Metrics from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.Metrics, error)
+	Get(name string) (*extensionv1alpha1.Metrics, error)
 	MetricsNamespaceListerExpansion
 }
 
 // metricsNamespaceLister implements the MetricsNamespaceLister
 // interface.
 type metricsNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.Metrics]
+	listers.ResourceIndexer[*extensionv1alpha1.Metrics]
 }
