@@ -102,6 +102,18 @@ type Limiter struct {
 	Burst uint32 `json:"burst"`
 }
 
+type MetadataStrategy struct {
+	// +kubebuilder:default=false
+	// +optional
+	Enable bool `json:"enable,omitempty"`
+
+	// +optional
+	LabelConversions map[string]string `json:"labelConversions,omitempty"`
+
+	// +optional
+	AnnotationConversions map[string]string `json:"annotationConversions,omitempty"`
+}
+
 type NamespacedServiceSlice []NamespacedService
 
 func (x NamespacedServiceSlice) Len() int      { return len(x) }
@@ -127,9 +139,6 @@ type ServiceConversion struct {
 	Service string `json:"service"`
 
 	ConvertName string `json:"convertName"`
-
-	// +optional
-	ExternalName string `json:"externalName,omitempty"`
 }
 
 type ConversionStrategy struct {

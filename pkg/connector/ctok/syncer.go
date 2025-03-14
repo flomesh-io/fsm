@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"sort"
 	"strings"
 	"sync"
@@ -58,6 +59,7 @@ type CtoKSyncer struct {
 	microAggregator Aggregator
 
 	fillEndpoints bool
+	keepServices  map[string]string
 
 	// ctx is used to cancel the CtoKSyncer.
 	ctx context.Context
@@ -104,18 +106,13 @@ func (s *CtoKSyncer) SetServices(svcs map[connector.KubeSvcName]connector.Servic
 
 	sourceServices := make(map[connector.KubeSvcName]connector.CloudSvcName, len(svcs))
 	nativeServices := make(map[connector.KubeSvcName]connector.CloudSvcName, len(svcs))
-	externalServices := make(map[connector.CloudSvcName]connector.ExternalName, len(svcs))
 	for kubeSvcName, serviceConversion := range svcs {
 		sourceServices[kubeSvcName] = serviceConversion.Service
 		nativeServices[kubeSvcName] = serviceConversion.Service
-		if len(serviceConversion.ExternalName) > 0 {
-			externalServices[serviceConversion.Service] = serviceConversion.ExternalName
-		}
 	}
 
 	s.controller.GetC2KContext().SourceServices = sourceServices
 	s.controller.GetC2KContext().NativeServices = nativeServices
-	s.controller.GetC2KContext().ExternalServices = externalServices
 
 	hash := uint64(0)
 	if len(catalogServices) > 0 {
@@ -252,10 +249,16 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 	s.lock.Unlock()
 
 	if deriveNamespace, err := s.kubeClient.CoreV1().Namespaces().Get(s.ctx, s.namespace(), metav1.GetOptions{}); err == nil {
-		if IsSyncCloudNamespace(deriveNamespace) {
-			s.fillEndpoints = false
-		} else {
-			s.fillEndpoints = true
+		s.fillEndpoints = !IsSyncCloudNamespace(deriveNamespace)
+	}
+
+	s.keepServices = make(map[string]string)
+	if s.controller.EnableC2KConversions() {
+		serviceConversions := s.controller.GetC2KServiceConversions()
+		if len(serviceConversions) > 0 {
+			for _, serviceConversion := range serviceConversions {
+				s.keepServices[serviceConversion.ConvertName] = serviceConversion.Service
+			}
 		}
 	}
 
@@ -296,11 +299,14 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 					SyncJob: &SyncJob{
 						done: make(chan struct{}),
 					},
-					ctx:         s.ctx,
-					wg:          &wg,
-					syncer:      s,
-					svcClient:   svcClient,
-					serviceName: string(serviceName),
+					ctx:           s.ctx,
+					wg:            &wg,
+					syncer:        s,
+					svcClient:     svcClient,
+					eptClient:     eptClient,
+					serviceName:   string(serviceName),
+					fillEndpoints: s.fillEndpoints,
+					keepServices:  s.keepServices,
 				}
 				s.syncWorkQueues.AddJob(syncJob)
 			}
@@ -315,12 +321,13 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 					SyncJob: &SyncJob{
 						done: make(chan struct{}),
 					},
-					ctx:       s.ctx,
-					wg:        &wg,
-					syncer:    s,
-					svcClient: svcClient,
-					eptClient: eptClient,
-					create:    create,
+					ctx:           s.ctx,
+					wg:            &wg,
+					syncer:        s,
+					svcClient:     svcClient,
+					eptClient:     eptClient,
+					create:        create,
+					fillEndpoints: s.fillEndpoints,
 				}
 				s.syncWorkQueues.AddJob(syncJob)
 			}
@@ -338,7 +345,12 @@ func (s *CtoKSyncer) crudList() (createSvcs []*syncCreate, deleteSvcs []connecto
 	ipFamilyPolicy := corev1.IPFamilyPolicySingleStack
 	// Determine what needs to be created or updated
 	for kubeSvcName, cloudSvcName := range s.controller.GetC2KContext().SourceServices {
-		svcMetaMap := s.microAggregator.Aggregate(s.ctx, kubeSvcName)
+		svcMetaMap, labels, annotations, err := s.microAggregator.Aggregate(s.ctx, kubeSvcName)
+		if err != nil {
+			log.Warn().Err(err).Msg("fail to get service instances")
+			continue
+		}
+
 		if len(svcMetaMap) == 0 {
 			if service, exists := s.controller.GetC2KContext().KubeServiceCache[connector.KubeSvcKey(fmt.Sprintf("%s/%s", s.controller.GetDeriveNamespace(), kubeSvcName))]; exists {
 				if s.hasOwnership(service) {
@@ -348,26 +360,19 @@ func (s *CtoKSyncer) crudList() (createSvcs []*syncCreate, deleteSvcs []connecto
 			continue
 		}
 
-		fillEndpoints := s.fillEndpoints
-
-		var serviceSpec *corev1.ServiceSpec
-		if externalName := s.controller.GetC2KContext().ExternalServices[cloudSvcName]; len(externalName) > 0 {
-			serviceSpec = &corev1.ServiceSpec{
-				Type:            corev1.ServiceTypeExternalName,
-				ExternalName:    string(externalName),
-				SessionAffinity: corev1.ServiceAffinityNone,
-			}
-			fillEndpoints = false
-		} else {
-			serviceSpec = &corev1.ServiceSpec{
-				Type:            corev1.ServiceTypeClusterIP,
-				ClusterIP:       corev1.ClusterIPNone,
-				ClusterIPs:      []string{corev1.ClusterIPNone},
-				IPFamilies:      []corev1.IPFamily{corev1.IPv4Protocol},
-				IPFamilyPolicy:  &ipFamilyPolicy,
-				SessionAffinity: corev1.ServiceAffinityNone,
-			}
+		serviceSpec := &corev1.ServiceSpec{
+			Type:            corev1.ServiceTypeClusterIP,
+			ClusterIP:       corev1.ClusterIPNone,
+			ClusterIPs:      []string{corev1.ClusterIPNone},
+			IPFamilies:      []corev1.IPFamily{corev1.IPv4Protocol},
+			IPFamilyPolicy:  &ipFamilyPolicy,
+			SessionAffinity: corev1.ServiceAffinityNone,
 		}
+
+		labels[constants.CloudSourcedServiceLabel] = True
+		annotations[connector.AnnotationMeshServiceSync] = string(s.discClient.MicroServiceProvider())
+		annotations[connector.AnnotationMeshServiceSyncManagedBy] = s.controller.GetConnectorUID()
+		annotations[connector.AnnotationCloudServiceInheritedFrom] = string(cloudSvcName)
 
 		for k8sSvcName, svcMeta := range svcMetaMap {
 			if service, exists := s.controller.GetC2KContext().KubeServiceCache[connector.KubeSvcKey(fmt.Sprintf("%s/%s", s.controller.GetDeriveNamespace(), k8sSvcName))]; exists {
@@ -394,16 +399,12 @@ func (s *CtoKSyncer) crudList() (createSvcs []*syncCreate, deleteSvcs []connecto
 			if svc, ok := s.controller.GetC2KContext().SyncedKubeServiceCache[k8sSvcName]; ok {
 				updateSvc := *svc
 				updateSvc.Spec = *serviceSpec
-				updateSvc.ObjectMeta.Annotations = map[string]string{
-					// Ensure we don't sync the service back to cloud
-					connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
-					connector.AnnotationMeshServiceSyncManagedBy:  s.controller.GetConnectorUID(),
-					connector.AnnotationCloudServiceInheritedFrom: string(cloudSvcName),
-				}
+				updateSvc.Labels = maps.Clone(labels)
+				updateSvc.Annotations = maps.Clone(annotations)
 				if svcMeta.HealthCheck {
-					updateSvc.ObjectMeta.Annotations[connector.AnnotationCloudHealthCheckService] = True
-					updateSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
-					updateSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
+					updateSvc.Annotations[connector.AnnotationCloudHealthCheckService] = True
+					updateSvc.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
+					updateSvc.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
 				}
 				s.fillService(svcMeta, &updateSvc, false)
 				preHv := s.controller.GetC2KContext().SyncedKubeServiceHash[k8sSvcName]
@@ -417,23 +418,18 @@ func (s *CtoKSyncer) crudList() (createSvcs []*syncCreate, deleteSvcs []connecto
 			// Register!
 			createSvc := &corev1.Service{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:   string(k8sSvcName),
-					Labels: map[string]string{constants.CloudSourcedServiceLabel: True},
-					Annotations: map[string]string{
-						// Ensure we don't sync the service back to Cloud
-						connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
-						connector.AnnotationMeshServiceSyncManagedBy:  s.controller.GetConnectorUID(),
-						connector.AnnotationCloudServiceInheritedFrom: string(cloudSvcName),
-					},
+					Name:        string(k8sSvcName),
+					Labels:      maps.Clone(labels),
+					Annotations: maps.Clone(annotations),
 				},
 				Spec: *serviceSpec,
 			}
 			if svcMeta.HealthCheck {
-				createSvc.ObjectMeta.Annotations[connector.AnnotationCloudHealthCheckService] = True
-				createSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
-				createSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
+				createSvc.Annotations[connector.AnnotationCloudHealthCheckService] = True
+				createSvc.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
+				createSvc.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
 			}
-			endpoints := s.fillService(svcMeta, createSvc, fillEndpoints)
+			endpoints := s.fillService(svcMeta, createSvc, s.fillEndpoints)
 			syncCreate := &syncCreate{
 				service:   createSvc,
 				endpoints: endpoints,
