@@ -310,13 +310,22 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 	ipFamilyPolicy := apiv1.IPFamilyPolicySingleStack
 	// Determine what needs to be created or updated
 	for k8sSvcName, cloudSvcName := range s.controller.GetC2KContext().SourceServices {
-		svcMetaMap := s.microAggregator.Aggregate(s.ctx, connector.MicroSvcName(k8sSvcName))
+		svcMetaMap, labels, annotations, err := s.microAggregator.Aggregate(s.ctx, connector.MicroSvcName(k8sSvcName))
+		if err != nil {
+			log.Warn().Err(err).Msg("fail to get service instances")
+			continue
+		}
 		if len(svcMetaMap) == 0 {
 			if _, exists := s.controller.GetC2KContext().ServiceKeyToName[fmt.Sprintf("%s/%s", s.controller.GetDeriveNamespace(), k8sSvcName)]; exists {
 				deleteSvcs = append(deleteSvcs, k8sSvcName)
 			}
 			continue
 		}
+
+		labels[constants.CloudSourcedServiceLabel] = True
+		annotations[connector.AnnotationMeshServiceSync] = string(s.discClient.MicroServiceProvider())
+		annotations[connector.AnnotationCloudServiceInheritedFrom] = cloudSvcName
+
 		for microSvcName, svcMeta := range svcMetaMap {
 			if len(svcMeta.Endpoints) == 0 {
 				deleteSvcs = append(deleteSvcs, string(microSvcName))
@@ -342,20 +351,12 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 
 			// If this is an already registered service, then update it
 			if svc, ok := s.controller.GetC2KContext().ServiceMapCache[string(microSvcName)]; ok {
-				if svc.Spec.ExternalName == cloudSvcName {
-					// Matching service, no update required.
-					continue
-				}
-
-				svc.ObjectMeta.Annotations = map[string]string{
-					// Ensure we don't sync the service back to cloud
-					connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
-					connector.AnnotationCloudServiceInheritedFrom: cloudSvcName,
-				}
+				svc.ObjectMeta.Labels = maps.Clone(labels)
+				svc.ObjectMeta.Annotations = maps.Clone(annotations)
 				if svcMeta.HealthCheck {
-					svc.ObjectMeta.Annotations[connector.AnnotationCloudHealthCheckService] = True
-					svc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
-					svc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
+					svc.Annotations[connector.AnnotationCloudHealthCheckService] = True
+					svc.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
+					svc.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
 				}
 				s.fillService(svcMeta, svc)
 				preHv := s.controller.GetC2KContext().ServiceHashMap[string(microSvcName)]
@@ -370,13 +371,9 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 			// Register!
 			createSvc := &apiv1.Service{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:   string(microSvcName),
-					Labels: map[string]string{constants.CloudSourcedServiceLabel: True},
-					Annotations: map[string]string{
-						// Ensure we don't sync the service back to Cloud
-						connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
-						connector.AnnotationCloudServiceInheritedFrom: cloudSvcName,
-					},
+					Name:        string(microSvcName),
+					Labels:      maps.Clone(labels),
+					Annotations: maps.Clone(annotations),
 				},
 
 				Spec: apiv1.ServiceSpec{
@@ -390,9 +387,9 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 				},
 			}
 			if svcMeta.HealthCheck {
-				createSvc.ObjectMeta.Annotations[connector.AnnotationCloudHealthCheckService] = True
-				createSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
-				createSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
+				createSvc.Annotations[connector.AnnotationCloudHealthCheckService] = True
+				createSvc.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
+				createSvc.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
 			}
 			s.fillService(svcMeta, createSvc)
 			preHv := s.controller.GetC2KContext().ServiceHashMap[string(microSvcName)]

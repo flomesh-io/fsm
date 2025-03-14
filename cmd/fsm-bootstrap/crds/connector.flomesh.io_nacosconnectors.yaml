@@ -353,6 +353,20 @@ spec:
                       type: string
                     minItems: 1
                     type: array
+                  metadataStrategy:
+                    properties:
+                      annotationConversions:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      enable:
+                        default: false
+                        type: boolean
+                      labelConversions:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
                   passingOnly:
                     default: true
                     type: boolean

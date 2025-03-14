@@ -16,5 +16,5 @@ const (
 // Aggregator aggregates micro services
 type Aggregator interface {
 	// Aggregate micro services
-	Aggregate(context.Context, connector.MicroSvcName) map[connector.MicroSvcName]*connector.MicroSvcMeta
+	Aggregate(context.Context, connector.MicroSvcName) (svcMetaMap map[connector.MicroSvcName]*connector.MicroSvcMeta, labels, annotations map[string]string, err error)
 }

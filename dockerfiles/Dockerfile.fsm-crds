@@ -1,3 +1,4 @@
+# syntax = docker/dockerfile:1.4
 FROM --platform=$BUILDPLATFORM busybox:1.36 AS builder
 ARG TARGETPLATFORM
 # Talking to the internet in an arm64 container doesn't seem to work from a
