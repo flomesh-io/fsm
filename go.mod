@@ -2,8 +2,6 @@ module github.com/flomesh-io/fsm
 
 go 1.24
 
-toolchain go1.24.0
-
 require (
 	github.com/AlekSi/gocov-xml v1.1.0
 	github.com/Azure/go-autorest/autorest/to v0.4.1
@@ -15,7 +13,7 @@ require (
 	github.com/cilium/ebpf v0.17.3
 	github.com/cskr/pubsub v1.0.2
 	github.com/deckarep/golang-set v1.8.0
-	github.com/deckarep/golang-set/v2 v2.7.0
+	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/docker/docker v27.5.0+incompatible
 	github.com/docker/go-connections v0.5.0
