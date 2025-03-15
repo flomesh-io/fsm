@@ -26,7 +26,7 @@ on:
       free_disk_space:
         required: false
         type: boolean
-        default: false
+        default: ${{ vars.FREE_DISK_SPACE == 'true' }}
 
 env:
   FSM_HUMAN_DEBUG_LOG: ${{ vars.FSM_HUMAN_DEBUG_LOG || 'false' }}
@@ -45,7 +45,7 @@ jobs:
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
-        if: inputs.free_disk_space == true && startsWith(matrix.os, 'ubuntu')
+        if: inputs.free_disk_space && startsWith(inputs.os, 'ubuntu')
         with:
           tool-cache: false
           android: true
@@ -62,14 +62,14 @@ jobs:
           go-version-file: go.mod
           cache: false
       - name: Add hosts to /etc/hosts
-        if: inputs.add_hosts == true
+        if: inputs.add_hosts
         run: |
           sudo echo "127.0.0.1 httptest.localhost" | sudo tee -a /etc/hosts
           sudo echo "127.0.0.1 grpctest.localhost" | sudo tee -a /etc/hosts
           sudo echo "127.0.0.1 tcptest.localhost" | sudo tee -a /etc/hosts
           sudo echo "127.0.0.1 udptest.localhost" | sudo tee -a /etc/hosts
       - name: Install gRPCurl
-        if: inputs.install_grpcurl == true
+        if: inputs.install_grpcurl
         run: |
           go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
       - name: Download docker image artifacts

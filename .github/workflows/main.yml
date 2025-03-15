@@ -336,16 +336,17 @@ jobs:
     runs-on: ubuntu-24.04
     needs: fsm-artifacts
     steps:
-#      - name: Free Disk Space (Ubuntu)
-#        uses: jlumbroso/free-disk-space@main
-#        with:
-#          tool-cache: false
-#          android: true
-#          dotnet: true
-#          haskell: true
-#          large-packages: true
-#          docker-images: false
-#          swap-storage: true
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        if: vars.FREE_DISK_SPACE == 'true'
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+          swap-storage: true
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
