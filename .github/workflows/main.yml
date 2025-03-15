@@ -32,8 +32,10 @@ env:
   FSM_HUMAN_DEBUG_LOG: ${{ vars.FSM_HUMAN_DEBUG_LOG || 'false' }}
   CLUSTER_INSTALL_TYPE: ${{ vars.CLUSTER_INSTALL_TYPE || 'K3dCluster' }}
   K3D_NODE_LOGS: ${{ vars.K3D_NODE_LOGS || 'false' }}
-  DOCKER_IMAGES_DOWNLOAD_PATH: ${{ vars.DOCKER_IMAGES_DOWNLOAD_PATH || '/tmp/fsm-docker-images' }}
-  DOCKER_IMAGE_ARTIFACTS_NAME: ${{ vars.DOCKER_IMAGE_ARTIFACTS_NAME || 'docker-images' }}
+  FSM_IMAGES_DOWNLOAD_PATH: ${{ vars.FSM_IMAGES_DOWNLOAD_PATH || '/tmp/fsm-images' }}
+  FSM_IMAGE_ARTIFACTS_NAME: ${{ vars.FSM_IMAGE_ARTIFACTS_NAME || 'fsm-images' }}
+  FSM_DEMO_IMAGES_DOWNLOAD_PATH: ${{ vars.FSM_DEMO_IMAGES_DOWNLOAD_PATH || '/tmp/fsm-demo-images' }}
+  FSM_DEMO_IMAGE_ARTIFACTS_NAME: ${{ vars.FSM_DEMO_IMAGE_ARTIFACTS_NAME || 'fsm-demo-images' }}
   FSM_CLI_ARTIFACTS_NAME: ${{ vars.FSM_CLI_ARTIFACTS_NAME || 'fsm-cli' }}
 
 jobs:
@@ -163,7 +165,8 @@ jobs:
       CTR_REGISTRY: ${{ vars.CI_CTR_REGISTRY || 'localhost:5000' }}
       CTR_TAG: ${{ github.sha }}
       DOCKER_BUILDX_OUTPUT: type=docker
-      DOCKER_TAR_PATH: /tmp/docker-images/${{ github.sha }}
+      FSM_TAR_PATH: /tmp/fsm-images/${{ github.sha }}
+      FSM_DEMO_TAR_PATH: /tmp/fsm-demo-images/${{ github.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -173,15 +176,30 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-      - name: Build images with SHA tag
-        run: make docker-build-fsm docker-build-demo
-      - name: Save docker images
-        run: make docker-save-fsm docker-save-demo
-      - name: Upload docker images
+      - name: Build fsm images
+        run: make docker-build-fsm
+      - name: Save fsm images
+        run: make docker-save-fsm
+        env:
+          DOCKER_TAR_PATH: ${{ env.FSM_TAR_PATH }}
+      - name: Upload fsm images
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.DOCKER_IMAGE_ARTIFACTS_NAME }}
-          path: ${{ env.DOCKER_TAR_PATH }}
+          name: ${{ env.FSM_IMAGE_ARTIFACTS_NAME }}
+          path: ${{ env.FSM_TAR_PATH }}
+          retention-days: 1
+          overwrite: true
+      - name: Build fsm demo images
+        run: make docker-build-demo
+      - name: Save fsm demo images
+        run: make docker-save-demo
+        env:
+          DOCKER_TAR_PATH: ${{ env.FSM_DEMO_TAR_PATH }}
+      - name: Upload fsm demo images
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.FSM_DEMO_IMAGE_ARTIFACTS_NAME }}
+          path: ${{ env.FSM_DEMO_TAR_PATH }}
           retention-days: 1
           overwrite: true
       - name: Build fsm CLI
@@ -207,11 +225,11 @@ jobs:
       - name: Download docker image artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.DOCKER_IMAGE_ARTIFACTS_NAME }}
-          path: ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}
+          name: ${{ env.FSM_IMAGE_ARTIFACTS_NAME }}
+          path: ${{ env.FSM_IMAGES_DOWNLOAD_PATH }}
       - name: Load images
         run: |
-          ls -1 ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
+          ls -1 ${{ env.FSM_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
           docker image ls -a
       - name: Setup Trivy
         run: make trivy-ci-setup
@@ -358,14 +376,23 @@ jobs:
         run: |
           curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
           k3d version
-      - name: Download docker image artifacts
+      - name: Download fsm image artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.DOCKER_IMAGE_ARTIFACTS_NAME }}
-          path: ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}
-      - name: Load images
+          name: ${{ env.FSM_IMAGE_ARTIFACTS_NAME }}
+          path: ${{ env.FSM_IMAGES_DOWNLOAD_PATH }}
+      - name: Load fsm images
         run: |
-          ls -1 ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
+          ls -1 ${{ env.FSM_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
+          docker image ls -a
+      - name: Download fsm demo image artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.FSM_DEMO_IMAGE_ARTIFACTS_NAME }}
+          path: ${{ env.FSM_DEMO_IMAGES_DOWNLOAD_PATH }}
+      - name: Load fsm demo images
+        run: |
+          ls -1 ${{ env.FSM_DEMO_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
           docker image ls -a
       - name: Download fsm CLI
         uses: actions/download-artifact@v4
