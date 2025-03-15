@@ -856,7 +856,7 @@ type ImageSpec struct {
 
 // MiscSpec is the type to represent misc configs.
 type MiscSpec struct {
-	// +kubebuilder:default="flomesh/pipy-repo:1.5.9"
+	// +kubebuilder:default="flomesh/pipy-repo:1.5.10"
 	// RepoServerImage defines the image of repo server.
 	RepoServerImage string `json:"repoServerImage"`
 }
