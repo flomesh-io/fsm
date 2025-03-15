@@ -32,8 +32,8 @@ env:
   FSM_HUMAN_DEBUG_LOG: ${{ vars.FSM_HUMAN_DEBUG_LOG || 'false' }}
   CLUSTER_INSTALL_TYPE: ${{ vars.CLUSTER_INSTALL_TYPE || 'K3dCluster' }}
   K3D_NODE_LOGS: ${{ vars.K3D_NODE_LOGS || 'false' }}
-  DOCKER_IMAGES_DOWNLOAD_PATH: ${{ vars.DOCKER_IMAGES_DOWNLOAD_PATH || '/tmp/fsm-docker-images' }}
-  DOCKER_IMAGE_ARTIFACTS_NAME: ${{ vars.DOCKER_IMAGE_ARTIFACTS_NAME || 'docker-images' }}
+  FSM_IMAGES_DOWNLOAD_PATH: ${{ vars.FSM_IMAGES_DOWNLOAD_PATH || '/tmp/fsm-images' }}
+  FSM_IMAGE_ARTIFACTS_NAME: ${{ vars.FSM_IMAGE_ARTIFACTS_NAME || 'fsm-images' }}
   FSM_CLI_ARTIFACTS_NAME: ${{ vars.FSM_CLI_ARTIFACTS_NAME || 'fsm-cli' }}
   CTR_REGISTRY: ${{ vars.CI_CTR_REGISTRY || 'localhost:5000' }}
   CTR_TAG: ${{ github.sha }}
@@ -72,14 +72,14 @@ jobs:
         if: inputs.install_grpcurl
         run: |
           go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
-      - name: Download docker image artifacts
+      - name: Download fsm image artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.DOCKER_IMAGE_ARTIFACTS_NAME }}
-          path: ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}
-      - name: Load images
+          name: ${{ env.FSM_IMAGE_ARTIFACTS_NAME }}
+          path: ${{ env.FSM_IMAGES_DOWNLOAD_PATH }}
+      - name: Load fsm images
         run: |
-          ls -1 ${{ env.DOCKER_IMAGES_DOWNLOAD_PATH }}/*.tar | grep -v "fsm-demo-" | xargs --no-run-if-empty -L 1 docker load -i
+          ls -1 ${{ env.FSM_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
           docker image ls -a
       - name: Download fsm CLI
         uses: actions/download-artifact@v4
