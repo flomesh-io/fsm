@@ -80,7 +80,7 @@ fsm:
       # -- Sidecar image name
       name: pipy
       # -- Sidecar image tag
-      tag: 1.5.9
+      tag: 1.5.10
     # -- Sidecar runs without mTLS
     sidecarDisabledMTLS: false
     # -- Sidecar compresses config.json
@@ -102,7 +102,7 @@ fsm:
       # -- Repo server image name
       name: pipy-repo
       # -- Repo server image tag
-      tag: 1.5.9
+      tag: 1.5.10
     # -- if false , Pipy RepoServer is installed within fsmController pod.
     standalone: false
     # -- ipaddr of host/service where Pipy RepoServer is installed
