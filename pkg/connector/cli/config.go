@@ -1060,8 +1060,8 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 			}
 		}
 	} else {
-		c.config.c2kCfg.enableConversions = false
-		c.config.c2kCfg.serviceConversions = nil
+		c.c2kCfg.enableConversions = false
+		c.c2kCfg.serviceConversions = nil
 	}
 
 	c.k2cCfg.enable = spec.SyncFromK8S.Enable
