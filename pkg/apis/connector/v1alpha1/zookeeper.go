@@ -89,6 +89,12 @@ type ZookeeperSyncToK8SSpec struct {
 	WithGateway C2KGateway `json:"withGateway,omitempty"`
 
 	// +optional
+	AppendLabels map[string]string `json:"appendLabels,omitempty"`
+
+	// +optional
+	AppendAnnotations map[string]string `json:"appendAnnotations,omitempty"`
+
+	// +optional
 	MetadataStrategy *MetadataStrategy `json:"metadataStrategy,omitempty"`
 
 	// +optional
@@ -123,17 +129,6 @@ type ZookeeperSyncFromK8SSpec struct {
 	// +optional
 	SyncIngressLoadBalancerIPs bool `json:"syncIngressLoadBalancerIPs,omitempty"`
 
-	// +kubebuilder:default=""
-	// +optional
-	AddServicePrefix string `json:"addServicePrefix,omitempty"`
-
-	// +kubebuilder:default=false
-	// +optional
-	AddK8SNamespaceAsServiceSuffix bool `json:"addK8SNamespaceAsServiceSuffix,omitempty"`
-
-	// +optional
-	AppendMetadatas []Metadata `json:"appendMetadatas,omitempty"`
-
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:default={"*"}
 	// +optional
@@ -154,6 +149,20 @@ type ZookeeperSyncFromK8SSpec struct {
 	// +kubebuilder:default={enable: false, gatewayMode: forward}
 	// +optional
 	WithGateway K2CGateway `json:"withGateway,omitempty"`
+
+	// +kubebuilder:default=""
+	// +optional
+	AddServicePrefix string `json:"addServicePrefix,omitempty"`
+
+	// +kubebuilder:default=false
+	// +optional
+	AddK8SNamespaceAsServiceSuffix bool `json:"addK8SNamespaceAsServiceSuffix,omitempty"`
+
+	// +optional
+	AppendMetadatas []Metadata `json:"appendMetadatas,omitempty"`
+
+	// +optional
+	MetadataStrategy *MetadataStrategy `json:"metadataStrategy,omitempty"`
 }
 
 // ZookeeperSpec is the type used to represent the Zookeeper Connector specification.

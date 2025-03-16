@@ -64,6 +64,13 @@ func (r *connectorReconciler) NeedLeaderElection() bool {
 	return true
 }
 
+func (r *connectorReconciler) removeDeployment(connector ctv1.Connector) {
+	key := fmt.Sprintf("fsc-%s-%s-%s", connector.GetProvider(), connector.GetNamespace(), connector.GetName())
+	if err := r.fctx.KubeClient.AppsV1().Deployments(r.fctx.FsmNamespace).Delete(r.fctx.Context, key, metav1.DeleteOptions{}); err != nil {
+		log.Warn().Err(err).Msgf("fail to remove connector deployment")
+	}
+}
+
 func (r *connectorReconciler) deployConnector(connector ctv1.Connector, mc configurator.Configurator) (ctrl.Result, error) {
 	actionConfig := helm.ActionConfig(connector.GetNamespace(), log.Debug().Msgf)
 

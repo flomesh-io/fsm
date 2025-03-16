@@ -248,6 +248,7 @@ func inbound(cataloger catalog.MeshCataloger, s *Server, pipyConf *PipyConf, pro
 	// Build inbound mesh route configurations. These route configurations allow
 	// the services associated with this proxy to accept traffic from downstream
 	// clients on allowed routes.
+	retry := false
 	inboundTrafficPolicy := cataloger.GetInboundMeshTrafficPolicy(proxy.Identity, proxyServices)
 	generatePipyInboundTrafficPolicy(cataloger, pipyConf, inboundTrafficPolicy, s.certManager.GetTrustDomain(), proxy)
 	if len(proxyServices) > 0 {
@@ -258,6 +259,7 @@ func inbound(cataloger catalog.MeshCataloger, s *Server, pipyConf *PipyConf, pro
 				}
 			} else {
 				log.Error().Err(ingressErr).Msg(ingressErr.Error())
+				retry = true
 			}
 			if aclTrafficPolicy, aclErr := cataloger.GetAccessControlTrafficPolicy(svc); aclErr == nil {
 				if aclTrafficPolicy != nil {
@@ -265,6 +267,7 @@ func inbound(cataloger catalog.MeshCataloger, s *Server, pipyConf *PipyConf, pro
 				}
 			} else {
 				log.Error().Err(aclErr).Msg(aclErr.Error())
+				retry = true
 			}
 			if expTrafficPolicy, expErr := cataloger.GetExportTrafficPolicy(svc); expErr == nil {
 				if expTrafficPolicy != nil {
@@ -272,8 +275,13 @@ func inbound(cataloger catalog.MeshCataloger, s *Server, pipyConf *PipyConf, pro
 				}
 			} else {
 				log.Error().Err(expErr).Msg(expErr.Error())
+				retry = true
 			}
 		}
+	}
+
+	if retry && s.retryProxiesJob != nil {
+		s.retryProxiesJob()
 	}
 }
 
