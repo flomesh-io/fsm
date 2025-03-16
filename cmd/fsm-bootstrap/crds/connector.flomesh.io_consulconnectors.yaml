@@ -266,6 +266,20 @@ spec:
                     items:
                       type: string
                     type: array
+                  metadataStrategy:
+                    properties:
+                      annotationConversions:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      enable:
+                        default: false
+                        type: boolean
+                      labelConversions:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
                   nodePortSyncType:
                     default: ExternalOnly
                     enum:
@@ -285,6 +299,20 @@ spec:
                   syncLoadBalancerEndpoints:
                     default: false
                     type: boolean
+                  tagStrategy:
+                    properties:
+                      annotationConversions:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      enable:
+                        default: false
+                        type: boolean
+                      labelConversions:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
                   withGateway:
                     default:
                       enable: false
@@ -311,6 +339,14 @@ spec:
                 description: ConsulSyncToK8SSpec is the type used to represent the
                   sync from Consul to K8S specification.
                 properties:
+                  appendAnnotations:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  appendLabels:
+                    additionalProperties:
+                      type: string
+                    type: object
                   clusterId:
                     default: ""
                     type: string
@@ -359,6 +395,20 @@ spec:
                   generateInternalServiceHealthCheck:
                     default: true
                     type: boolean
+                  metadataStrategy:
+                    properties:
+                      annotationConversions:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      enable:
+                        default: false
+                        type: boolean
+                      labelConversions:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
                   passingOnly:
                     default: true
                     type: boolean

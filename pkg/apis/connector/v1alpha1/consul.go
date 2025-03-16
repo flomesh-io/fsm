@@ -110,7 +110,16 @@ type ConsulSyncToK8SSpec struct {
 	GenerateInternalServiceHealthCheck bool `json:"generateInternalServiceHealthCheck,omitempty"`
 
 	// +optional
-	MetadataStrategy *MetadataStrategy `json:"tagStrategy,omitempty"`
+	AppendLabels map[string]string `json:"appendLabels,omitempty"`
+
+	// +optional
+	AppendAnnotations map[string]string `json:"appendAnnotations,omitempty"`
+
+	// +optional
+	TagStrategy *MetadataStrategy `json:"tagStrategy,omitempty"`
+
+	// +optional
+	MetadataStrategy *MetadataStrategy `json:"metadataStrategy,omitempty"`
 }
 
 // ConsulSyncFromK8SSpec is the type used to represent the sync from K8S to Consul specification.
@@ -141,20 +150,6 @@ type ConsulSyncFromK8SSpec struct {
 	// +optional
 	SyncIngressLoadBalancerIPs bool `json:"syncIngressLoadBalancerIPs,omitempty"`
 
-	// +kubebuilder:default=""
-	// +optional
-	AddServicePrefix string `json:"addServicePrefix,omitempty"`
-
-	// +kubebuilder:default=false
-	// +optional
-	AddK8SNamespaceAsServiceSuffix bool `json:"addK8SNamespaceAsServiceSuffix,omitempty"`
-
-	// +optional
-	AppendTags []string `json:"appendTags,omitempty"`
-
-	// +optional
-	AppendMetadatas []Metadata `json:"appendMetadatas,omitempty"`
-
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:default={"*"}
 	// +optional
@@ -175,6 +170,26 @@ type ConsulSyncFromK8SSpec struct {
 	// +kubebuilder:default={enable: false, gatewayMode: forward}
 	// +optional
 	WithGateway K2CGateway `json:"withGateway,omitempty"`
+
+	// +kubebuilder:default=""
+	// +optional
+	AddServicePrefix string `json:"addServicePrefix,omitempty"`
+
+	// +kubebuilder:default=false
+	// +optional
+	AddK8SNamespaceAsServiceSuffix bool `json:"addK8SNamespaceAsServiceSuffix,omitempty"`
+
+	// +optional
+	AppendTags []string `json:"appendTags,omitempty"`
+
+	// +optional
+	TagStrategy *MetadataStrategy `json:"tagStrategy,omitempty"`
+
+	// +optional
+	AppendMetadatas []Metadata `json:"appendMetadatas,omitempty"`
+
+	// +optional
+	MetadataStrategy *MetadataStrategy `json:"metadataStrategy,omitempty"`
 
 	// +optional
 	ConsulNodeName string `json:"consulNodeName,omitempty"`

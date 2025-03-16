@@ -50,8 +50,9 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INa
 		conn.clientCfg = constant.ClientConfig{
 			TimeoutMs:            60000,
 			NotLoadCacheAtStart:  true,
+			AsyncUpdateService:   true,
 			UpdateCacheWhenEmpty: true,
-			DisableUseSnapShot:   false,
+			DisableUseSnapShot:   true,
 			LogDir:               "/tmp/nacos/log",
 			CacheDir:             "/tmp/nacos/cache",
 			LogLevel:             level,
@@ -152,6 +153,9 @@ func (dc *NacosDiscoveryClient) selectInstances(svc string) ([]model.Instance, e
 			}); err == nil {
 				instances = append(instances, groupInstances...)
 			} else {
+				if strings.EqualFold(err.Error(), `instance list is empty!`) {
+					return nil, nil
+				}
 				return nil, err
 			}
 		}
@@ -412,14 +416,6 @@ func (dc *NacosDiscoveryClient) Register(reg *connector.CatalogRegistration) err
 		k2cClusterId = connector.NACOS_DEFAULT_CLUSTER
 	}
 	ins := reg.ToNacos(k2cClusterId, k2cGroupId, float64(1))
-	appendMetadataSet := dc.connectController.GetAppendMetadataSet().ToSlice()
-	if len(appendMetadataSet) > 0 {
-		rMetadata := ins.Metadata
-		for _, item := range appendMetadataSet {
-			metadata := item.(ctv1.Metadata)
-			rMetadata[metadata.Key] = metadata.Value
-		}
-	}
 	port, _ := strconv.Atoi(fmt.Sprintf("%d", ins.Port))
 	instanceId := dc.getServiceInstanceID(ins.ServiceName, ins.Ip, port, 0)
 	return dc.connectController.CacheRegisterInstance(instanceId, ins, func() error {

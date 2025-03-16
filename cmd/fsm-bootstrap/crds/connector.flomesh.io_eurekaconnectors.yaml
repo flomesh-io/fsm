@@ -234,6 +234,20 @@ spec:
                     default: 3s
                     format: duration
                     type: string
+                  metadataStrategy:
+                    properties:
+                      annotationConversions:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      enable:
+                        default: false
+                        type: boolean
+                      labelConversions:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
                   nodePortSyncType:
                     default: ExternalOnly
                     enum:
@@ -279,6 +293,14 @@ spec:
                 description: EurekaSyncToK8SSpec is the type used to represent the
                   sync from Eureka to K8S specification.
                 properties:
+                  appendAnnotations:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  appendLabels:
+                    additionalProperties:
+                      type: string
+                    type: object
                   clusterId:
                     default: ""
                     type: string

@@ -367,14 +367,6 @@ func (dc *EurekaDiscoveryClient) Deregister(dereg *connector.CatalogDeregistrati
 
 func (dc *EurekaDiscoveryClient) Register(reg *connector.CatalogRegistration) error {
 	ins := reg.ToEureka()
-	metadataSet := dc.connectController.GetAppendMetadataSet().ToSlice()
-	if len(metadataSet) > 0 {
-		rMetadata := ins.Metadata.GetMap()
-		for _, item := range metadataSet {
-			metadata := item.(ctv1.Metadata)
-			rMetadata[metadata.Key] = metadata.Value
-		}
-	}
 	cacheIns := *ins
 	cacheIns.UniqueID = nil
 	return dc.connectController.CacheRegisterInstance(ins.InstanceId, cacheIns, func() error {
