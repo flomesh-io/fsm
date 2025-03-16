@@ -68,7 +68,10 @@ type config struct {
 		fixedHTTPServicePort *uint32
 		fixedGRPCServicePort *uint32
 
-		metadataStrategy *ctv1.MetadataStrategy
+		appendLabels      map[string]string
+		appendAnnotations map[string]string
+		tagStrategy       *ctv1.MetadataStrategy
+		metadataStrategy  *ctv1.MetadataStrategy
 
 		withGateway   bool
 		multiGateways bool
@@ -118,6 +121,9 @@ type config struct {
 
 		appendTagSet      mapset.Set
 		appendMetadataSet mapset.Set
+
+		tagStrategy      *ctv1.MetadataStrategy
+		metadataStrategy *ctv1.MetadataStrategy
 
 		// allowK8sNamespacesSet is a set of k8s namespaces to explicitly allow for
 		// syncing. It supports the special character `*` which indicates that
@@ -326,73 +332,127 @@ func (c *config) GetK2GDenyK8SNamespaceSet() mapset.Set {
 	return c.k2gCfg.denyK8sNamespacesSet
 }
 
-func (c *config) GetDefaultSync() bool {
+func (c *config) GetK2CDefaultSync() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.defaultSync
 }
 
-func (c *config) GetSyncClusterIPServices() bool {
+func (c *config) GetK2CSyncClusterIPServices() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.syncClusterIPServices
 }
 
-func (c *config) GetSyncLoadBalancerEndpoints() bool {
+func (c *config) GetK2CSyncLoadBalancerEndpoints() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.syncLoadBalancerEndpoints
 }
 
-func (c *config) GetNodePortSyncType() ctv1.NodePortSyncType {
+func (c *config) GetK2CNodePortSyncType() ctv1.NodePortSyncType {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.nodePortSyncType
 }
 
-func (c *config) GetSyncIngress() bool {
+func (c *config) GetK2CSyncIngress() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.syncIngress
 }
 
-func (c *config) GetSyncIngressLoadBalancerIPs() bool {
+func (c *config) GetK2CSyncIngressLoadBalancerIPs() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.syncIngressLoadBalancerIPs
 }
 
-func (c *config) GetAddServicePrefix() string {
+func (c *config) GetK2CAddServicePrefix() string {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.addServicePrefix
 }
 
-func (c *config) GetAddK8SNamespaceAsServiceSuffix() bool {
+func (c *config) GetK2CAddK8SNamespaceAsServiceSuffix() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.addK8SNamespaceAsServiceSuffix
 }
 
-func (c *config) GetAppendTagSet() mapset.Set {
+func (c *config) GetK2CAppendTagSet() mapset.Set {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.appendTagSet
 }
 
-func (c *config) GetAppendMetadataSet() mapset.Set {
+func (c *config) GetK2CAppendMetadataSet() mapset.Set {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.appendMetadataSet
 }
 
-func (c *config) GetAllowK8SNamespaceSet() mapset.Set {
+func (c *config) EnableK2CTagStrategy() bool {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	if c.k2cCfg.tagStrategy != nil {
+		return c.k2cCfg.tagStrategy.Enable
+	}
+	return false
+}
+
+func (c *config) GetK2CTagToLabelConversions() map[string]string {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	if c.k2cCfg.tagStrategy != nil {
+		return c.k2cCfg.tagStrategy.LabelConversions
+	}
+	return nil
+}
+
+func (c *config) GetK2CTagToAnnotationConversions() map[string]string {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	if c.k2cCfg.tagStrategy != nil {
+		return c.k2cCfg.tagStrategy.AnnotationConversions
+	}
+	return nil
+}
+
+func (c *config) EnableK2CMetadataStrategy() bool {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	if c.k2cCfg.metadataStrategy != nil {
+		return c.k2cCfg.metadataStrategy.Enable
+	}
+	return false
+}
+
+func (c *config) GetK2CMetadataToLabelConversions() map[string]string {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	if c.k2cCfg.metadataStrategy != nil {
+		return c.k2cCfg.metadataStrategy.LabelConversions
+	}
+	return nil
+}
+
+func (c *config) GetK2CMetadataToAnnotationConversions() map[string]string {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	if c.k2cCfg.metadataStrategy != nil {
+		return c.k2cCfg.metadataStrategy.AnnotationConversions
+	}
+	return nil
+}
+
+func (c *config) GetK2CAllowK8SNamespaceSet() mapset.Set {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.allowK8sNamespacesSet
 }
 
-func (c *config) GetDenyK8SNamespaceSet() mapset.Set {
+func (c *config) GetK2CDenyK8SNamespaceSet() mapset.Set {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.denyK8sNamespacesSet
@@ -599,19 +659,58 @@ func (c *config) GetSuffixMetadata() string {
 	return c.c2kCfg.suffixMetadata
 }
 
-func (c *config) GetFixedHTTPServicePort() *uint32 {
+func (c *config) GetC2KFixedHTTPServicePort() *uint32 {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.c2kCfg.fixedHTTPServicePort
 }
 
-func (c *config) GetFixedGRPCServicePort() *uint32 {
+func (c *config) GetC2KFixedGRPCServicePort() *uint32 {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.c2kCfg.fixedGRPCServicePort
 }
 
-func (c *config) EnableMetadataStrategy() bool {
+func (c *config) GetC2KAppendLabels() map[string]string {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.c2kCfg.appendLabels
+}
+
+func (c *config) GetC2KAppendAnnotations() map[string]string {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.c2kCfg.appendAnnotations
+}
+
+func (c *config) EnableC2KTagStrategy() bool {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	if c.c2kCfg.tagStrategy != nil {
+		return c.c2kCfg.tagStrategy.Enable
+	}
+	return false
+}
+
+func (c *config) GetC2KTagToLabelConversions() map[string]string {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	if c.c2kCfg.tagStrategy != nil {
+		return c.c2kCfg.tagStrategy.LabelConversions
+	}
+	return nil
+}
+
+func (c *config) GetC2KTagToAnnotationConversions() map[string]string {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	if c.c2kCfg.tagStrategy != nil {
+		return c.c2kCfg.tagStrategy.AnnotationConversions
+	}
+	return nil
+}
+
+func (c *config) EnableC2KMetadataStrategy() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	if c.c2kCfg.metadataStrategy != nil {
@@ -620,7 +719,7 @@ func (c *config) EnableMetadataStrategy() bool {
 	return false
 }
 
-func (c *config) GetMetadataToLabelConversions() map[string]string {
+func (c *config) GetC2KMetadataToLabelConversions() map[string]string {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	if c.c2kCfg.metadataStrategy != nil {
@@ -629,7 +728,7 @@ func (c *config) GetMetadataToLabelConversions() map[string]string {
 	return nil
 }
 
-func (c *config) GetMetadataToAnnotationConversions() map[string]string {
+func (c *config) GetC2KMetadataToAnnotationConversions() map[string]string {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	if c.c2kCfg.metadataStrategy != nil {
@@ -785,17 +884,19 @@ func (c *client) initMachineConnectorConfig(spec ctv1.MachineSpec) {
 	c.purge = spec.Purge
 	c.asInternalServices = spec.AsInternalServices
 
-	c.config.c2kCfg.enable = spec.SyncToK8S.Enable
-	c.config.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
-	c.config.c2kCfg.passingOnly = spec.SyncToK8S.PassingOnly
-	c.config.c2kCfg.filterTag = spec.SyncToK8S.FilterLabel
-	c.config.c2kCfg.filterIPRanges = append([]string{}, spec.SyncToK8S.FilterIPRanges...)
-	c.config.c2kCfg.excludeIPRanges = append([]string{}, spec.SyncToK8S.ExcludeIPRanges...)
+	c.c2kCfg.enable = spec.SyncToK8S.Enable
+	c.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
+	c.c2kCfg.passingOnly = spec.SyncToK8S.PassingOnly
+	c.c2kCfg.filterTag = spec.SyncToK8S.FilterLabel
+	c.c2kCfg.filterIPRanges = append([]string{}, spec.SyncToK8S.FilterIPRanges...)
+	c.c2kCfg.excludeIPRanges = append([]string{}, spec.SyncToK8S.ExcludeIPRanges...)
 
-	c.config.c2kCfg.prefixTag = spec.SyncToK8S.PrefixLabel
-	c.config.c2kCfg.suffixTag = spec.SyncToK8S.SuffixLabel
-	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
-	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
+	c.c2kCfg.prefixTag = spec.SyncToK8S.PrefixLabel
+	c.c2kCfg.suffixTag = spec.SyncToK8S.SuffixLabel
+	c.c2kCfg.appendLabels = spec.SyncToK8S.AppendLabels
+	c.c2kCfg.appendAnnotations = spec.SyncToK8S.AppendAnnotations
+	c.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
+	c.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
 }
 
 func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
@@ -817,29 +918,31 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 	c.auth.nacos.secretKey = spec.Auth.SecretKey
 	c.auth.nacos.namespaceId = spec.Auth.NamespaceId
 
-	c.config.c2kCfg.enable = spec.SyncToK8S.Enable
-	c.config.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
-	c.config.c2kCfg.passingOnly = spec.SyncToK8S.PassingOnly
-	c.config.c2kCfg.filterMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.FilterMetadatas...)
-	c.config.c2kCfg.filterIPRanges = append([]string{}, spec.SyncToK8S.FilterIPRanges...)
-	c.config.c2kCfg.excludeMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.ExcludeMetadatas...)
-	c.config.c2kCfg.excludeIPRanges = append([]string{}, spec.SyncToK8S.ExcludeIPRanges...)
-	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
-	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
-	c.config.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
-	c.config.c2kCfg.fixedGRPCServicePort = spec.SyncToK8S.FixedGRPCServicePort
-	c.config.c2kCfg.metadataStrategy = spec.SyncToK8S.MetadataStrategy
-	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
-	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
+	c.c2kCfg.enable = spec.SyncToK8S.Enable
+	c.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
+	c.c2kCfg.passingOnly = spec.SyncToK8S.PassingOnly
+	c.c2kCfg.filterMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.FilterMetadatas...)
+	c.c2kCfg.filterIPRanges = append([]string{}, spec.SyncToK8S.FilterIPRanges...)
+	c.c2kCfg.excludeMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.ExcludeMetadatas...)
+	c.c2kCfg.excludeIPRanges = append([]string{}, spec.SyncToK8S.ExcludeIPRanges...)
+	c.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
+	c.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
+	c.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
+	c.c2kCfg.fixedGRPCServicePort = spec.SyncToK8S.FixedGRPCServicePort
+	c.c2kCfg.appendLabels = spec.SyncToK8S.AppendLabels
+	c.c2kCfg.appendAnnotations = spec.SyncToK8S.AppendAnnotations
+	c.c2kCfg.metadataStrategy = spec.SyncToK8S.MetadataStrategy
+	c.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
+	c.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
 	if len(spec.SyncToK8S.ClusterSet) == 0 {
-		c.config.c2kCfg.nacos2kCfg.clusterSet = []string{connector.NACOS_DEFAULT_CLUSTER}
+		c.c2kCfg.nacos2kCfg.clusterSet = []string{connector.NACOS_DEFAULT_CLUSTER}
 	} else {
-		c.config.c2kCfg.nacos2kCfg.clusterSet = append([]string{}, spec.SyncToK8S.ClusterSet...)
+		c.c2kCfg.nacos2kCfg.clusterSet = append([]string{}, spec.SyncToK8S.ClusterSet...)
 	}
 	if len(spec.SyncToK8S.GroupSet) == 0 {
-		c.config.c2kCfg.nacos2kCfg.groupSet = []string{constant.DEFAULT_GROUP}
+		c.c2kCfg.nacos2kCfg.groupSet = []string{constant.DEFAULT_GROUP}
 	} else {
-		c.config.c2kCfg.nacos2kCfg.groupSet = append([]string{}, spec.SyncToK8S.GroupSet...)
+		c.c2kCfg.nacos2kCfg.groupSet = append([]string{}, spec.SyncToK8S.GroupSet...)
 	}
 
 	c.k2cCfg.enable = spec.SyncFromK8S.Enable
@@ -852,6 +955,7 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 	c.k2cCfg.addServicePrefix = spec.SyncFromK8S.AddServicePrefix
 	c.k2cCfg.addK8SNamespaceAsServiceSuffix = spec.SyncFromK8S.AddK8SNamespaceAsServiceSuffix
 	c.k2cCfg.appendMetadataSet = ToMetaSet(spec.SyncFromK8S.AppendMetadatas)
+	c.k2cCfg.metadataStrategy = spec.SyncFromK8S.MetadataStrategy
 	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
 	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
 	c.k2cCfg.filterIPRanges = append([]string{}, spec.SyncFromK8S.FilterIPRanges...)
@@ -879,19 +983,21 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 		c.syncPeriod = MinSyncPeriod
 	}
 
-	c.config.c2kCfg.enable = spec.SyncToK8S.Enable
-	c.config.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
-	c.config.c2kCfg.filterMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.FilterMetadatas...)
-	c.config.c2kCfg.filterIPRanges = append([]string{}, spec.SyncToK8S.FilterIPRanges...)
-	c.config.c2kCfg.excludeMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.ExcludeMetadatas...)
-	c.config.c2kCfg.excludeIPRanges = append([]string{}, spec.SyncToK8S.ExcludeIPRanges...)
-	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
-	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
-	c.config.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
-	c.config.c2kCfg.fixedGRPCServicePort = spec.SyncToK8S.FixedGRPCServicePort
-	c.config.c2kCfg.metadataStrategy = spec.SyncToK8S.MetadataStrategy
-	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
-	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
+	c.c2kCfg.enable = spec.SyncToK8S.Enable
+	c.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
+	c.c2kCfg.filterMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.FilterMetadatas...)
+	c.c2kCfg.filterIPRanges = append([]string{}, spec.SyncToK8S.FilterIPRanges...)
+	c.c2kCfg.excludeMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.ExcludeMetadatas...)
+	c.c2kCfg.excludeIPRanges = append([]string{}, spec.SyncToK8S.ExcludeIPRanges...)
+	c.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
+	c.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
+	c.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
+	c.c2kCfg.fixedGRPCServicePort = spec.SyncToK8S.FixedGRPCServicePort
+	c.c2kCfg.appendLabels = spec.SyncToK8S.AppendLabels
+	c.c2kCfg.appendAnnotations = spec.SyncToK8S.AppendAnnotations
+	c.c2kCfg.metadataStrategy = spec.SyncToK8S.MetadataStrategy
+	c.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
+	c.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
 
 	c.k2cCfg.enable = spec.SyncFromK8S.Enable
 	c.k2cCfg.defaultSync = spec.SyncFromK8S.DefaultSync
@@ -903,6 +1009,7 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 	c.k2cCfg.addServicePrefix = spec.SyncFromK8S.AddServicePrefix
 	c.k2cCfg.addK8SNamespaceAsServiceSuffix = spec.SyncFromK8S.AddK8SNamespaceAsServiceSuffix
 	c.k2cCfg.appendMetadataSet = ToMetaSet(spec.SyncFromK8S.AppendMetadatas)
+	c.k2cCfg.metadataStrategy = spec.SyncFromK8S.MetadataStrategy
 	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
 	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
 	c.k2cCfg.filterIPRanges = append([]string{}, spec.SyncFromK8S.FilterIPRanges...)
@@ -933,23 +1040,26 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 		c.syncPeriod = MinSyncPeriod
 	}
 
-	c.config.c2kCfg.enable = spec.SyncToK8S.Enable
-	c.config.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
-	c.config.c2kCfg.passingOnly = spec.SyncToK8S.PassingOnly
-	c.config.c2kCfg.filterTag = spec.SyncToK8S.FilterTag
-	c.config.c2kCfg.filterMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.FilterMetadatas...)
-	c.config.c2kCfg.filterIPRanges = append([]string{}, spec.SyncToK8S.FilterIPRanges...)
-	c.config.c2kCfg.excludeMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.ExcludeMetadatas...)
-	c.config.c2kCfg.excludeIPRanges = append([]string{}, spec.SyncToK8S.ExcludeIPRanges...)
-	c.config.c2kCfg.prefixTag = spec.SyncToK8S.PrefixTag
-	c.config.c2kCfg.suffixTag = spec.SyncToK8S.SuffixTag
-	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
-	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
-	c.config.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
-	c.config.c2kCfg.fixedGRPCServicePort = spec.SyncToK8S.FixedGRPCServicePort
-	c.config.c2kCfg.metadataStrategy = spec.SyncToK8S.MetadataStrategy
-	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
-	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
+	c.c2kCfg.enable = spec.SyncToK8S.Enable
+	c.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
+	c.c2kCfg.passingOnly = spec.SyncToK8S.PassingOnly
+	c.c2kCfg.filterTag = spec.SyncToK8S.FilterTag
+	c.c2kCfg.filterMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.FilterMetadatas...)
+	c.c2kCfg.filterIPRanges = append([]string{}, spec.SyncToK8S.FilterIPRanges...)
+	c.c2kCfg.excludeMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.ExcludeMetadatas...)
+	c.c2kCfg.excludeIPRanges = append([]string{}, spec.SyncToK8S.ExcludeIPRanges...)
+	c.c2kCfg.prefixTag = spec.SyncToK8S.PrefixTag
+	c.c2kCfg.suffixTag = spec.SyncToK8S.SuffixTag
+	c.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
+	c.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
+	c.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
+	c.c2kCfg.fixedGRPCServicePort = spec.SyncToK8S.FixedGRPCServicePort
+	c.c2kCfg.appendLabels = spec.SyncToK8S.AppendLabels
+	c.c2kCfg.appendAnnotations = spec.SyncToK8S.AppendAnnotations
+	c.c2kCfg.tagStrategy = spec.SyncToK8S.TagStrategy
+	c.c2kCfg.metadataStrategy = spec.SyncToK8S.MetadataStrategy
+	c.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
+	c.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
 
 	c.k2cCfg.enable = spec.SyncFromK8S.Enable
 	c.k2cCfg.defaultSync = spec.SyncFromK8S.DefaultSync
@@ -962,6 +1072,8 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 	c.k2cCfg.addK8SNamespaceAsServiceSuffix = spec.SyncFromK8S.AddK8SNamespaceAsServiceSuffix
 	c.k2cCfg.appendTagSet = ToSet(spec.SyncFromK8S.AppendTags)
 	c.k2cCfg.appendMetadataSet = ToMetaSet(spec.SyncFromK8S.AppendMetadatas)
+	c.k2cCfg.tagStrategy = spec.SyncFromK8S.TagStrategy
+	c.k2cCfg.metadataStrategy = spec.SyncFromK8S.MetadataStrategy
 	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
 	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
 	c.k2cCfg.filterIPRanges = append([]string{}, spec.SyncFromK8S.FilterIPRanges...)

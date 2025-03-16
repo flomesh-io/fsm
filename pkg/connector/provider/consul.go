@@ -251,20 +251,6 @@ func (dc *ConsulDiscoveryClient) Register(reg *connector.CatalogRegistration) er
 	ins.Service.Tags = append(ins.Service.Tags, dc.GetClusterTag())
 	ins.Service.Tags = append(ins.Service.Tags, dc.GetConnectorUidTag())
 
-	appendTagSet := dc.connectController.GetAppendTagSet().ToSlice()
-	if len(appendTagSet) > 0 {
-		for _, tag := range appendTagSet {
-			ins.Service.Tags = append(ins.Service.Tags, tag.(string))
-		}
-	}
-	appendMetadataSet := dc.connectController.GetAppendMetadataSet().ToSlice()
-	if len(appendMetadataSet) > 0 {
-		rMetadata := ins.Service.Meta
-		for _, item := range appendMetadataSet {
-			metadata := item.(ctv1.Metadata)
-			rMetadata[metadata.Key] = metadata.Value
-		}
-	}
 	ins.Checks = consul.HealthChecks{
 		&consul.HealthCheck{
 			Node:        ins.Node,
