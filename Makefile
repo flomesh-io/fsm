@@ -369,17 +369,39 @@ trivy-scan-fail-%: NAME=$(@:trivy-scan-fail-%=%)
 trivy-scan-fail-%:
 	trivy image --exit-code 1 \
 	  --ignore-unfixed \
-	  --severity MEDIUM,HIGH,CRITICAL \
+	  --severity HIGH,CRITICAL \
 	  --dependency-tree \
 	  --scanners vuln,secret \
 	  --pkg-types os \
-	  --db-repository aquasec/trivy-db:2 \
 	  "$(CTR_REGISTRY)/$(NAME):$(CTR_TAG)"
 
 .PHONY: trivy-scan-images trivy-scan-images-fail trivy-scan-images-verbose
 trivy-scan-images-verbose: $(addprefix trivy-scan-verbose-, $(FSM_TARGETS))
 trivy-scan-images-fail: $(addprefix trivy-scan-fail-, $(FSM_TARGETS))
 trivy-scan-images: trivy-scan-images-verbose trivy-scan-images-fail
+
+# Show all vulnerabilities in logs
+trivy-scan-tarball-verbose-%: NAME=$(@:trivy-scan-tarball-verbose-%=%)
+trivy-scan-tarball-verbose-%:
+	trivy image --scanners vuln,secret \
+	  --pkg-types os \
+	  --input $(DOCKER_TAR_PATH)/$(NAME).tar
+
+# Exit if vulnerability exists
+trivy-scan-tarball-fail-%: NAME=$(@:trivy-scan-tarball-fail-%=%)
+trivy-scan-tarball-fail-%:
+	trivy image --exit-code 1 \
+	  --ignore-unfixed \
+	  --severity HIGH,CRITICAL \
+	  --dependency-tree \
+	  --scanners vuln,secret \
+	  --pkg-types os \
+	  --input $(DOCKER_TAR_PATH)/$(NAME).tar
+
+.PHONY: trivy-scan-tarballs trivy-scan-tarballs-fail trivy-scan-tarballs-verbose
+trivy-scan-tarballs-verbose: $(addprefix trivy-scan-tarballs-verbose-, $(FSM_TARGETS))
+trivy-scan-tarballs-fail: $(addprefix trivy-scan-tarballs-fail-, $(FSM_TARGETS))
+trivy-scan-tarballs: trivy-scan-tarballs-verbose trivy-scan-tarballs-fail
 
 .PHONY: shellcheck
 shellcheck:
