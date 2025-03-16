@@ -153,7 +153,7 @@ func (s *CtoKSource) aggregateMeta(svcMetaMap map[connector.KubeSvcName]*connect
 	svcMeta.Endpoints[*instance.MicroService.EndpointAddress()] = endpointMeta
 }
 
-func (s *CtoKSource) aggregateTag(kubeSvcName connector.KubeSvcName, svc *connector.AgentService, kubeSvcNames []connector.KubeSvcName, enableMetadataStrategy bool, labelConversions, labels, annotationConversions, annotations map[string]string) []connector.KubeSvcName {
+func (s *CtoKSource) aggregateTag(kubeSvcName connector.KubeSvcName, svc *connector.AgentService, kubeSvcNames []connector.KubeSvcName, enableTagStrategy bool, labelConversions, labels, annotationConversions, annotations map[string]string) []connector.KubeSvcName {
 	svcPrefix := ""
 	svcSuffix := ""
 	for _, tag := range svc.Tags {
@@ -171,7 +171,7 @@ func (s *CtoKSource) aggregateTag(kubeSvcName connector.KubeSvcName, svc *connec
 				}
 			}
 		}
-		if enableMetadataStrategy {
+		if enableTagStrategy {
 			if len(labelConversions) > 0 {
 				if segs := strings.Split(tag, "="); len(segs) == 2 {
 					if labelConversion, exists := labelConversions[segs[0]]; exists {
