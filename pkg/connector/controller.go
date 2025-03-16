@@ -30,6 +30,8 @@ type ConnectController interface {
 
 	WaitLimiter()
 
+	GetSyncPeriod() time.Duration
+
 	GetC2KContext() *C2KContext
 	GetK2CContext() *K2CContext
 	GetK2GContext() *K2GContext
@@ -58,6 +60,13 @@ type ConnectController interface {
 
 	GetC2KFixedHTTPServicePort() *uint32
 
+	GetC2KAppendLabels() map[string]string
+	GetC2KAppendAnnotations() map[string]string
+
+	EnableC2KTagStrategy() bool
+	GetC2KTagToLabelConversions() map[string]string
+	GetC2KTagToAnnotationConversions() map[string]string
+
 	EnableC2KMetadataStrategy() bool
 	GetC2KMetadataToLabelConversions() map[string]string
 	GetC2KMetadataToAnnotationConversions() map[string]string
@@ -73,22 +82,30 @@ type ConnectController interface {
 
 	/* config for ktoc source */
 
-	GetSyncPeriod() time.Duration
-	GetDefaultSync() bool
-	GetSyncClusterIPServices() bool
-	GetSyncLoadBalancerEndpoints() bool
-	GetNodePortSyncType() ctv1.NodePortSyncType
+	GetK2CDefaultSync() bool
+	GetK2CSyncClusterIPServices() bool
+	GetK2CSyncLoadBalancerEndpoints() bool
+	GetK2CNodePortSyncType() ctv1.NodePortSyncType
 
-	GetSyncIngress() bool
-	GetSyncIngressLoadBalancerIPs() bool
+	GetK2CSyncIngress() bool
+	GetK2CSyncIngressLoadBalancerIPs() bool
 
-	GetAddServicePrefix() string
-	GetAddK8SNamespaceAsServiceSuffix() bool
+	GetK2CAddServicePrefix() string
+	GetK2CAddK8SNamespaceAsServiceSuffix() bool
 
-	GetAppendTagSet() mapset.Set
-	GetAppendMetadataSet() mapset.Set
-	GetAllowK8SNamespaceSet() mapset.Set
-	GetDenyK8SNamespaceSet() mapset.Set
+	GetK2CAppendTagSet() mapset.Set
+	GetK2CAppendMetadataSet() mapset.Set
+
+	EnableK2CTagStrategy() bool
+	GetK2CTagToLabelConversions() map[string]string
+	GetK2CTagToAnnotationConversions() map[string]string
+
+	EnableK2CMetadataStrategy() bool
+	GetK2CMetadataToLabelConversions() map[string]string
+	GetK2CMetadataToAnnotationConversions() map[string]string
+
+	GetK2CAllowK8SNamespaceSet() mapset.Set
+	GetK2CDenyK8SNamespaceSet() mapset.Set
 
 	GetK2CWithGateway() bool
 	GetK2CWithGatewayMode() ctv1.WithGatewayMode

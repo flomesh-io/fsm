@@ -3,6 +3,7 @@ package ctok
 import (
 	"context"
 	"fmt"
+	"maps"
 	"strings"
 	"time"
 
@@ -12,8 +13,14 @@ import (
 
 // Aggregate micro services
 func (s *CtoKSource) Aggregate(ctx context.Context, kubeSvcName connector.KubeSvcName) (svcMetaMap map[connector.KubeSvcName]*connector.MicroSvcMeta, labels, annotations map[string]string, err error) {
-	labels = make(map[string]string)
-	annotations = make(map[string]string)
+	labels = maps.Clone(s.syncer.controller.GetC2KAppendLabels())
+	annotations = maps.Clone(s.syncer.controller.GetC2KAppendAnnotations())
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
 
 	cloudSvcName, exists := s.syncer.controller.GetC2KContext().NativeServices[kubeSvcName]
 	if !exists {
@@ -38,18 +45,22 @@ func (s *CtoKSource) Aggregate(ctx context.Context, kubeSvcName connector.KubeSv
 
 	svcMetaMap = make(map[connector.KubeSvcName]*connector.MicroSvcMeta)
 
+	enableTagStrategy := s.controller.EnableC2KTagStrategy()
+	tagToLabelConversions := s.controller.GetC2KTagToLabelConversions()
+	tagToAnnotationConversions := s.controller.GetC2KTagToAnnotationConversions()
+
 	enableMetadataStrategy := s.controller.EnableC2KMetadataStrategy()
-	labelConversions := s.controller.GetC2KMetadataToLabelConversions()
-	annotationConversions := s.controller.GetC2KMetadataToAnnotationConversions()
+	metadataToLabelConversions := s.controller.GetC2KMetadataToLabelConversions()
+	metadataToAnnotationConversions := s.controller.GetC2KMetadataToAnnotationConversions()
 
 	for _, instance := range instanceEntries {
 		instance.MicroService.Service = strings.ToLower(instance.MicroService.Service)
 		kubeSvcNames := []connector.KubeSvcName{kubeSvcName}
 		if len(instance.Tags) > 0 {
-			kubeSvcNames = s.aggregateTag(kubeSvcName, instance, kubeSvcNames, enableMetadataStrategy, labelConversions, labels, annotationConversions, annotations)
+			kubeSvcNames = s.aggregateTag(kubeSvcName, instance, kubeSvcNames, enableTagStrategy, tagToLabelConversions, labels, tagToAnnotationConversions, annotations)
 		}
 		if len(instance.Meta) > 0 {
-			kubeSvcNames = s.aggregateMetadata(kubeSvcName, instance, kubeSvcNames, enableMetadataStrategy, labelConversions, labels, annotationConversions, annotations)
+			kubeSvcNames = s.aggregateMetadata(kubeSvcName, instance, kubeSvcNames, enableMetadataStrategy, metadataToLabelConversions, labels, metadataToAnnotationConversions, annotations)
 		}
 		for _, k8sSvcName := range kubeSvcNames {
 			s.aggregateMeta(svcMetaMap, k8sSvcName, instance)
@@ -142,7 +153,7 @@ func (s *CtoKSource) aggregateMeta(svcMetaMap map[connector.KubeSvcName]*connect
 	svcMeta.Endpoints[*instance.MicroService.EndpointAddress()] = endpointMeta
 }
 
-func (s *CtoKSource) aggregateTag(kubeSvcName connector.KubeSvcName, svc *connector.AgentService, kubeSvcNames []connector.KubeSvcName, enableMetadataStrategy bool, labelConversions, labels, annotationConversions, annotations map[string]string) []connector.KubeSvcName {
+func (s *CtoKSource) aggregateTag(kubeSvcName connector.KubeSvcName, svc *connector.AgentService, kubeSvcNames []connector.KubeSvcName, enableTagStrategy bool, labelConversions, labels, annotationConversions, annotations map[string]string) []connector.KubeSvcName {
 	svcPrefix := ""
 	svcSuffix := ""
 	for _, tag := range svc.Tags {
@@ -160,7 +171,7 @@ func (s *CtoKSource) aggregateTag(kubeSvcName connector.KubeSvcName, svc *connec
 				}
 			}
 		}
-		if enableMetadataStrategy {
+		if enableTagStrategy {
 			if len(labelConversions) > 0 {
 				if segs := strings.Split(tag, "="); len(segs) == 2 {
 					if labelConversion, exists := labelConversions[segs[0]]; exists {

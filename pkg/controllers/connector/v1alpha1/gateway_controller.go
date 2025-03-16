@@ -68,6 +68,7 @@ func (r *gatewayConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
+			r.removeDeployment(connector)
 			log.Info().Msgf("GatewayConnector resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
