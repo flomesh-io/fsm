@@ -30,6 +30,8 @@ import (
 	"fmt"
 	"sync"
 
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
+
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
@@ -218,7 +220,17 @@ func (r *gatewayReconciler) compute(gateway *gwv1.Gateway) bool {
 		return true
 	}
 
-	return !cmp.Equal(old.spec, gateway.Spec)
+	if !cmp.Equal(old.spec, gateway.Spec) {
+		return true
+	}
+
+	values, err := r.resolveValues(gateway, r.fctx.Configurator, nil)
+	if err != nil {
+		log.Error().Msgf("Failed to resolve values for Gateway %s/%s: %s", gateway.Namespace, gateway.Name, err)
+		return false
+	}
+
+	return old.valuesHash != utils.SimpleHash(values)
 }
 
 func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *gwv1.Gateway) (ctrl.Result, error) {
@@ -520,39 +532,41 @@ func (r *gatewayReconciler) applyGateway(gateway *gwv1.Gateway, update *gw.Gatew
 
 	mc := r.fctx.Configurator
 
-	result, err := r.deriveCodebases(gateway, mc)
-	if err != nil {
-		return result, err
-	}
-
-	result, err = r.updateConfig(gateway, mc)
-	if err != nil {
-		return result, err
-	}
-
-	result, err = r.deployGateway(gateway, mc, update)
-	if err != nil {
-		return result, err
-	}
-
-	return ctrl.Result{}, nil
-}
-
-func (r *gatewayReconciler) deriveCodebases(gw *gwv1.Gateway, _ configurator.Configurator) (ctrl.Result, error) {
-	//gwPath := utils.GatewayCodebasePath(gw.Namespace, gw.Name)
-	//parentPath := utils.GetDefaultGatewaysPath()
-	//if err := r.fctx.RepoClient.DeriveCodebaseOnly(gwPath, parentPath); err != nil {
-	//	defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Codebase", "Failed to derive codebase of gateway: %s", err)
+	//result, err := r.deriveCodebases(gateway, mc)
+	//if err != nil {
+	//	return result, err
+	//}
 	//
-	//	return ctrl.Result{RequeueAfter: 1 * time.Second}, err
+	//result, err = r.updateConfig(gateway, mc)
+	//if err != nil {
+	//	return result, err
 	//}
 
-	return ctrl.Result{}, nil
+	//result, err = r.deployGateway(gateway, mc, update)
+	//if err != nil {
+	//	return result, err
+	//}
+	//
+	//return ctrl.Result{}, nil
+
+	return r.deployGateway(gateway, mc, update)
 }
 
-func (r *gatewayReconciler) updateConfig(gw *gwv1.Gateway, _ configurator.Configurator) (ctrl.Result, error) {
-	return ctrl.Result{}, nil
-}
+//func (r *gatewayReconciler) deriveCodebases(gw *gwv1.Gateway, _ configurator.Configurator) (ctrl.Result, error) {
+//	//gwPath := utils.GatewayCodebasePath(gw.Namespace, gw.Name)
+//	//parentPath := utils.GetDefaultGatewaysPath()
+//	//if err := r.fctx.RepoClient.DeriveCodebaseOnly(gwPath, parentPath); err != nil {
+//	//	defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Codebase", "Failed to derive codebase of gateway: %s", err)
+//	//
+//	//	return ctrl.Result{RequeueAfter: 1 * time.Second}, err
+//	//}
+//
+//	return ctrl.Result{}, nil
+//}
+//
+//func (r *gatewayReconciler) updateConfig(gw *gwv1.Gateway, _ configurator.Configurator) (ctrl.Result, error) {
+//	return ctrl.Result{}, nil
+//}
 
 func (r *gatewayReconciler) isSameGateway(gateway *gwv1.Gateway, valuesHash string) bool {
 	r.mutex.Lock()
@@ -575,45 +589,47 @@ func (r *gatewayReconciler) isSameGateway(gateway *gwv1.Gateway, valuesHash stri
 	return false
 }
 
-func (r *gatewayReconciler) deployGateway(gw *gwv1.Gateway, mc configurator.Configurator, update *gw.GatewayStatusUpdate) (ctrl.Result, error) {
-	actionConfig := helm.ActionConfig(gw.Namespace, log.Debug().Msgf)
-
-	resolveValues := func(object metav1.Object, mc configurator.Configurator) (map[string]interface{}, error) {
-		gatewayValues, err := r.resolveGatewayValues(object, mc, update)
-		if err != nil {
-			return nil, err
-		}
-
-		parameterValues, err := r.resolveParameterValues(gw, update)
-		if err != nil {
-			log.Error().Msgf("Failed to resolve parameter values from ParametersRef: %s, it doesn't take effect", err)
-			return gatewayValues, nil
-		}
-
-		if parameterValues == nil {
-			return gatewayValues, nil
-		}
-
-		// gateway values take precedence over parameter values, means the values from MeshConfig override the values from ParametersRef
-		// see the overrides variables for a complete list of values
-		return chartutil.CoalesceTables(parameterValues, gatewayValues), nil
+func (r *gatewayReconciler) resolveValues(gw *gwv1.Gateway, mc configurator.Configurator, update *gw.GatewayStatusUpdate) (map[string]interface{}, error) {
+	gatewayValues, err := r.resolveGatewayValues(gw, mc)
+	if err != nil {
+		return nil, err
 	}
 
-	values, _ := resolveValues(gw, mc)
-	valuesHash := utils.SimpleHash(values)
+	parameterValues, err := r.resolveParameterValues(gw, update)
+	if err != nil {
+		log.Error().Msgf("Failed to resolve parameter values from ParametersRef: %s, it doesn't take effect", err)
+		return gatewayValues, nil
+	}
 
+	if parameterValues == nil {
+		return gatewayValues, nil
+	}
+
+	// gateway values take precedence over parameter values, means the values from MeshConfig override the values from ParametersRef
+	// see the overrides variables for a complete list of values
+	return chartutil.MergeTables(gatewayValues, parameterValues), nil
+}
+
+func (r *gatewayReconciler) deployGateway(gw *gwv1.Gateway, mc configurator.Configurator, update *gw.GatewayStatusUpdate) (ctrl.Result, error) {
+	values, err := r.resolveValues(gw, mc, update)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	valuesHash := utils.SimpleHash(values)
 	if r.isSameGateway(gw, valuesHash) {
 		return ctrl.Result{}, nil
 	}
 
 	log.Debug().Msgf("[GW] Deploying gateway %s/%s ...", gw.Namespace, gw.Name)
+	actionConfig := helm.ActionConfig(gw.Namespace, log.Debug().Msgf)
 	templateClient := helm.TemplateClient(
 		actionConfig,
 		fmt.Sprintf("fsm-gateway-%s-%s", gw.Namespace, gw.Name),
 		gw.Namespace,
 		r.kubeVersionForTemplate(),
 	)
-	if ctrlResult, err := helm.RenderChart(templateClient, gw, chartSource, mc, r.fctx.Client, r.fctx.Scheme, resolveValues); err != nil {
+	if ctrlResult, err := helm.RenderChartWithValues(templateClient, gw, chartSource, r.fctx.Client, r.fctx.Scheme, values); err != nil {
 		defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Deploy", "Failed to deploy gateway: %s", err)
 
 		return ctrlResult, err
@@ -637,7 +653,7 @@ func (r *gatewayReconciler) kubeVersionForTemplate() *chartutil.KubeVersion {
 	return constants.KubeVersion119
 }
 
-func (r *gatewayReconciler) resolveGatewayValues(object metav1.Object, mc configurator.Configurator, update *gw.GatewayStatusUpdate) (map[string]interface{}, error) {
+func (r *gatewayReconciler) resolveGatewayValues(object metav1.Object, mc configurator.Configurator) (map[string]interface{}, error) {
 	gateway, ok := object.(*gwv1.Gateway)
 	if !ok {
 		return nil, fmt.Errorf("object %v is not type of *gwv1.Gateway", object)
@@ -654,7 +670,7 @@ func (r *gatewayReconciler) resolveGatewayValues(object metav1.Object, mc config
 				"namespace":      gateway.Namespace,
 				"name":           gateway.Name,
 				"serviceName":    gatewayServiceName(gateway),
-				"listeners":      r.listenersForTemplate(gateway, update),
+				"listeners":      r.listenersForTemplate(gateway),
 				"infrastructure": infraForTemplate(gateway),
 				"logLevel":       mc.GetFSMGatewayLogLevel(),
 			},
@@ -699,18 +715,18 @@ func infraForTemplate(gateway *gwv1.Gateway) map[string]map[gwv1.AnnotationKey]g
 	return infra
 }
 
-func (r *gatewayReconciler) listenersForTemplate(gateway *gwv1.Gateway, update *gw.GatewayStatusUpdate) []listener {
+func (r *gatewayReconciler) listenersForTemplate(gateway *gwv1.Gateway) []listener {
 	listeners := make([]listener, 0)
 	for _, l := range gateway.Spec.Listeners {
-		s := update.GetListenerStatus(string(l.Name))
-
-		if s == nil {
-			continue
-		}
-
-		if !gwutils.IsListenerValid(*s) {
-			continue
-		}
+		//s := gsu.GetListenerStatus(string(l.Name))
+		//
+		//if s == nil {
+		//	continue
+		//}
+		//
+		//if !gwutils.IsListenerValid(*s) {
+		//	continue
+		//}
 
 		listeners = append(listeners, listener{
 			Name:     l.Name,
@@ -747,33 +763,39 @@ func (r *gatewayReconciler) resolveParameterValues(gateway *gwv1.Gateway, update
 	}
 
 	if err := r.fctx.Get(context.TODO(), key, cm); err != nil {
-		update.AddCondition(
-			gwv1.GatewayConditionAccepted,
-			metav1.ConditionFalse,
-			gwv1.GatewayReasonInvalidParameters,
-			fmt.Sprintf("Failed to get ConfigMap %s: %s", key, err),
-		)
+		if update != nil {
+			update.AddCondition(
+				gwv1.GatewayConditionAccepted,
+				metav1.ConditionFalse,
+				gwv1.GatewayReasonInvalidParameters,
+				fmt.Sprintf("Failed to get ConfigMap %s: %s", key, err),
+			)
+		}
 		return nil, fmt.Errorf("failed to get Configmap %s: %s", key, err)
 	}
 
 	if len(cm.Data) == 0 {
-		update.AddCondition(
-			gwv1.GatewayConditionAccepted,
-			metav1.ConditionFalse,
-			gwv1.GatewayReasonInvalidParameters,
-			fmt.Sprintf("Configmap %q has no data", key),
-		)
+		if update != nil {
+			update.AddCondition(
+				gwv1.GatewayConditionAccepted,
+				metav1.ConditionFalse,
+				gwv1.GatewayReasonInvalidParameters,
+				fmt.Sprintf("Configmap %q has no data", key),
+			)
+		}
 		return nil, fmt.Errorf("configmap %q has no data", key)
 	}
 
 	valuesYaml, ok := cm.Data["values.yaml"]
 	if !ok {
-		update.AddCondition(
-			gwv1.GatewayConditionAccepted,
-			metav1.ConditionFalse,
-			gwv1.GatewayReasonInvalidParameters,
-			fmt.Sprintf("Configmap %q doesn't have required values.yaml", key),
-		)
+		if update != nil {
+			update.AddCondition(
+				gwv1.GatewayConditionAccepted,
+				metav1.ConditionFalse,
+				gwv1.GatewayReasonInvalidParameters,
+				fmt.Sprintf("Configmap %q doesn't have required values.yaml", key),
+			)
+		}
 		return nil, fmt.Errorf("configmap %q has no values.yaml", key)
 	}
 
@@ -781,12 +803,14 @@ func (r *gatewayReconciler) resolveParameterValues(gateway *gwv1.Gateway, update
 
 	paramsMap := map[string]interface{}{}
 	if err := yaml.Unmarshal([]byte(valuesYaml), &paramsMap); err != nil {
-		update.AddCondition(
-			gwv1.GatewayConditionAccepted,
-			metav1.ConditionFalse,
-			gwv1.GatewayReasonInvalidParameters,
-			fmt.Sprintf("Failed to unmarshal values.yaml of Configmap %s: %s", key, err),
-		)
+		if update != nil {
+			update.AddCondition(
+				gwv1.GatewayConditionAccepted,
+				metav1.ConditionFalse,
+				gwv1.GatewayReasonInvalidParameters,
+				fmt.Sprintf("Failed to unmarshal values.yaml of Configmap %s: %s", key, err),
+			)
+		}
 		return nil, fmt.Errorf("failed to unmarshal values.yaml of Configmap %s: %s", key, err)
 	}
 
@@ -1009,6 +1033,7 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		).
 		Watches(&gwv1beta1.ReferenceGrant{}, handler.EnqueueRequestsFromMapFunc(r.referenceGrantToGateways)).
 		Watches(&extv1alpha1.ListenerFilter{}, handler.EnqueueRequestsFromMapFunc(r.filterToGateways)).
+		Watches(&configv1alpha3.MeshConfig{}, handler.EnqueueRequestsFromMapFunc(r.listGateways)).
 		Complete(r); err != nil {
 		return err
 	}
@@ -1276,6 +1301,27 @@ func (r *gatewayReconciler) filterToGateways(ctx context.Context, obj client.Obj
 				},
 			})
 		}
+	}
+
+	return requests
+}
+
+func (r *gatewayReconciler) listGateways(ctx context.Context, obj client.Object) []reconcile.Request {
+	requests := make([]reconcile.Request, 0)
+
+	list := &gwv1.GatewayList{}
+	if err := r.fctx.Manager.GetCache().List(ctx, list); err != nil {
+		log.Error().Msgf("Failed to list Gateways: %v", err)
+		return nil
+	}
+
+	for _, gateway := range list.Items {
+		requests = append(requests, reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Namespace: gateway.Namespace,
+				Name:      gateway.Name,
+			},
+		})
 	}
 
 	return requests
