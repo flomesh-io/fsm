@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cenkalti/backoff"
-
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 )
@@ -48,20 +46,11 @@ func (s *CtoKSource) Run(ctx context.Context) {
 		var catalogServices []ctv1.NamespacedService
 
 		if !s.controller.Purge() {
-			err := backoff.Retry(func() error {
-				var err error
-				catalogServices, err = s.discClient.CatalogServices(opts)
-				return err
-			}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
-
-			// If the context is ended, then we end
-			if ctx.Err() != nil {
-				return
-			}
-
+			var err error
+			catalogServices, err = s.discClient.CatalogServices(opts)
 			// If there was an error, handle that
 			if err != nil {
-				log.Warn().Msgf("error querying services, will retry, err:%s", err)
+				log.Warn().Err(err).Msgf("error querying services, will retry")
 				time.Sleep(opts.WaitTime)
 				continue
 			}

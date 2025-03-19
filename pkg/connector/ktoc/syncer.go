@@ -150,10 +150,9 @@ func (s *KtoCSyncer) watchReapableServices(ctx context.Context) {
 		case <-minWaitCh:
 			services, err = s.discClient.RegisteredServices(opts)
 			if err != nil {
-				log.Error().Msgf("error querying services, will retry err:%v", err)
+				log.Error().Err(err).Msgf("error querying services, will retry")
 			} else {
-				log.Debug().Msgf("[watchReapableServices] services returned from catalog services:%v",
-					services)
+				log.Debug().Msgf("[watchReapableServices] services returned from catalog services:%v", services)
 			}
 
 			minWaitCh = time.After(minWait)
@@ -188,10 +187,9 @@ func (s *KtoCSyncer) watchReapableServices(ctx context.Context) {
 			}
 
 			if err = s.scheduleReapServiceLocked(service.Service, svcNs); err != nil {
-				log.Info().Msgf("error querying service for delete service-name:%s service-namespace:%s err:%v",
+				log.Info().Err(err).Msgf("error querying service for delete service-name:%s service-namespace:%s",
 					service.Service,
-					svcNs,
-					err)
+					svcNs)
 			}
 		}
 
@@ -226,10 +224,9 @@ func (s *KtoCSyncer) watchService(ctx context.Context, name, namespace string) {
 
 		instances, err := s.discClient.RegisteredInstances(name, queryOpts)
 		if err != nil {
-			log.Debug().Msgf("error querying service, will retry service-name:%s service-namespace:%s err:%v",
+			log.Debug().Err(err).Msgf("error querying service, will retry service-name:%s service-namespace:%s",
 				name,
-				namespace, // will be "" if namespaces aren't enabled
-				err)
+				namespace)
 			continue
 		}
 
@@ -391,12 +388,10 @@ func (s *KtoCSyncer) syncFull(ctx context.Context) {
 				log.Info().Msgf("deregistering service service-id:%s service-namespace:%s",
 					r.ServiceID,
 					r.Namespace)
-				err := s.discClient.Deregister(r)
-				if err != nil {
-					log.Error().Msgf("error deregistering service service-id:%s service-namespace:%s err:%v",
+				if err := s.discClient.Deregister(r); err != nil {
+					log.Error().Err(err).Msgf("error deregistering service service-id:%s service-namespace:%s",
 						r.ServiceID,
-						r.Namespace,
-						err)
+						r.Namespace)
 					maxRetries--
 					if maxRetries > 0 {
 						time.Sleep(time.Second)
@@ -439,11 +434,9 @@ func (s *KtoCSyncer) syncFull(ctx context.Context) {
 				maxRetries := 1
 				// Register the service.
 				for maxRetries > 0 {
-					err := s.discClient.Register(r)
-					if err != nil {
-						log.Error().Msgf("error registering service service-name:%s err:%v",
-							r.Service.MicroService.Service,
-							err)
+					if err := s.discClient.Register(r); err != nil {
+						log.Error().Err(err).Msgf("error registering service service-name:%s",
+							r.Service.MicroService.Service)
 						maxRetries--
 						if maxRetries > 0 {
 							time.Sleep(time.Second)
