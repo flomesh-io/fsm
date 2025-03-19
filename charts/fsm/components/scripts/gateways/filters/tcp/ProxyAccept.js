@@ -25,7 +25,7 @@ export default function () {
                       $ctx.originalTarget = req.head.path
                       return new Message({ status: 200 })
                     }
-                  ).to($=>$.pipeNext())
+                  ).to($=>$.onStart(new Data).pipeNext())
                 ),
                 'forward': ($=>$
                   .handleMessageStart(
@@ -47,7 +47,7 @@ export default function () {
               $ctx.originalTarget = `${req.domain || req.ip}:${req.port}`
               return true
             }
-          ).to($=>$.pipeNext())
+          ).to($=>$.onStart(new Data).pipeNext())
         )
       }
     )
