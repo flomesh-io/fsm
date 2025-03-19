@@ -84,6 +84,13 @@ func (c *client) shouldObserve(obj interface{}) bool {
 	if !ok {
 		return false
 	}
+	if len(c.observeFilters) > 0 {
+		for _, observeFilter := range c.observeFilters {
+			if observe := observeFilter(obj); observe {
+				return true
+			}
+		}
+	}
 	return c.IsMonitoredNamespace(object.GetNamespace())
 }
 
@@ -132,6 +139,10 @@ func (c *client) initVirtualMachineMonitor() {
 		Delete: announcements.VirtualMachineDeleted,
 	}
 	c.informers.AddEventHandler(fsminformers.InformerKeyVirtualMachine, GetEventHandlerFuncs(c.shouldObserve, podEventTypes, c.msgBroker))
+}
+
+func (c *client) AddObserveFilter(observeFilter func(obj interface{}) bool) {
+	c.observeFilters = append(c.observeFilters, observeFilter)
 }
 
 // IsMonitoredNamespace returns a boolean indicating if the namespace is among the list of monitored namespaces
