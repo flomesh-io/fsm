@@ -40,6 +40,18 @@ func (m *MockController) EXPECT() *MockControllerMockRecorder {
 	return m.recorder
 }
 
+// AddObserveFilter mocks base method.
+func (m *MockController) AddObserveFilter(arg0 func(interface{}) bool) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "AddObserveFilter", arg0)
+}
+
+// AddObserveFilter indicates an expected call of AddObserveFilter.
+func (mr *MockControllerMockRecorder) AddObserveFilter(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddObserveFilter", reflect.TypeOf((*MockController)(nil).AddObserveFilter), arg0)
+}
+
 // GetEndpoints mocks base method.
 func (m *MockController) GetEndpoints(arg0 service.MeshService) (*v1.Endpoints, error) {
 	m.ctrl.T.Helper()

@@ -73,10 +73,11 @@ const (
 
 // client is the type used to represent the k8s client for the native k8s resources
 type client struct {
-	policyClient policyv1alpha1Client.Interface
-	pluginClient pluginv1alpha1Client.Interface
-	informers    *informers.InformerCollection
-	msgBroker    *messaging.Broker
+	policyClient   policyv1alpha1Client.Interface
+	pluginClient   pluginv1alpha1Client.Interface
+	informers      *informers.InformerCollection
+	msgBroker      *messaging.Broker
+	observeFilters []func(obj interface{}) bool
 }
 
 // Controller is the controller interface for K8s services
@@ -90,6 +91,9 @@ type Controller interface {
 
 	// GetService returns a corev1 Service representation if the MeshService exists in cache, otherwise nil
 	GetService(service.MeshService) *corev1.Service
+
+	// AddObserveFilter adds observe filter
+	AddObserveFilter(observeFilter func(obj interface{}) bool)
 
 	// IsMonitoredNamespace returns whether a namespace with the given name is being monitored
 	// by the mesh

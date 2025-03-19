@@ -3,11 +3,32 @@ package v2
 import (
 	"math"
 	"net"
+	"strings"
+
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/maps"
 	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/util"
 )
+
+func (s *Server) xNetDNSProxyUpstreamsObserveFilter(obj interface{}) bool {
+	service, ok := obj.(*corev1.Service)
+	if !ok {
+		return false
+	}
+	upstreams := s.cfg.GetXNetDNSProxyUpstreams()
+	for _, upstream := range upstreams {
+		if strings.EqualFold(upstream.Name, service.Name) {
+			if len(upstream.Namespace) > 0 {
+				return strings.EqualFold(upstream.Namespace, service.Namespace)
+			} else {
+				return strings.EqualFold(s.cfg.GetFSMNamespace(), service.Namespace)
+			}
+		}
+	}
+	return false
+}
 
 func (s *Server) updateDNSNat() {
 	obsoleteNats := make(map[string]*XNat)
@@ -23,6 +44,7 @@ func (s *Server) updateDNSNat() {
 		natKey := new(maps.NatKey)
 		natKey.Dport = util.HostToNetShort(53)
 		natKey.Proto = uint8(maps.IPPROTO_UDP)
+		natKey.TcDir = uint8(maps.TC_DIR_EGR)
 
 		natVal := new(maps.NatVal)
 		upstreams := s.cfg.GetXNetDNSProxyUpstreams()
@@ -101,12 +123,9 @@ func (s *Server) setupDnsNat(natKey *maps.NatKey, natVal *maps.NatVal) error {
 		}
 	}
 
-	for _, tcDir := range []maps.TcDir{maps.TC_DIR_EGR} {
-		natKey.TcDir = uint8(tcDir)
-		if err := maps.AddNatEntry(maps.SysMesh, natKey, natVal); err != nil {
-			log.Fatal().Err(err).Msg(`failed to store dns nat`)
-			return err
-		}
+	if err := maps.AddNatEntry(maps.SysMesh, natKey, natVal); err != nil {
+		log.Fatal().Err(err).Msg(`failed to store dns nat`)
+		return err
 	}
 
 	return nil
