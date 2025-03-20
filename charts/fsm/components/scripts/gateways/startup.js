@@ -54,6 +54,9 @@ function makeListener(gateway, listener) {
     case 'UDP':
       routeModuleName = './modules/router-udp.js'
       break
+    case 'Dubbo':
+      routeModuleName = './modules/router-dubbo.js'
+      break
     default: throw `Listener: unknown protocol '${listener.protocol}'`
   }
 
@@ -119,6 +122,7 @@ function allRouteResources() {
     'TCPRoute',
     'TLSRoute',
     'UDPRoute',
+    'DubboRoute',
   ].flatMap(kind => resources.list(kind))
 }
 
@@ -144,6 +148,9 @@ function findRouteResources(gateway, listener) {
       break
     case 'UDP':
       routeKinds.push('UDPRoute')
+      break
+    case 'Dubbo':
+      routeKinds.push('DubboRoute')
       break
   }
 
