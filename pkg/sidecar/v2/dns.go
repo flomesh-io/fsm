@@ -7,6 +7,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/maps"
 	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/util"
@@ -38,16 +40,28 @@ func (s *Server) updateDNSNat() {
 		}
 	}
 
+	brVal := s.getCniBridge4Info()
+
+	natKey := new(maps.NatKey)
+	natKey.Dport = util.HostToNetShort(53)
+	natKey.Proto = uint8(maps.IPPROTO_UDP)
+	natKey.TcDir = uint8(maps.TC_DIR_EGR)
+	natVal := new(maps.NatVal)
+
+	var upstreams []configv1alpha3.DNSUpstream
+
 	if s.cfg.IsXNetDNSProxyEnabled() {
-		brVal := s.getCniBridge4Info()
+		upstreams = s.cfg.GetXNetDNSProxyUpstreams()
+	}
 
-		natKey := new(maps.NatKey)
-		natKey.Dport = util.HostToNetShort(53)
-		natKey.Proto = uint8(maps.IPPROTO_UDP)
-		natKey.TcDir = uint8(maps.TC_DIR_EGR)
+	if len(upstreams) == 0 && s.cfg.IsLocalDNSProxyEnabled() {
+		upstreams = append(upstreams, configv1alpha3.DNSUpstream{
+			Name:      constants.FSMControllerName,
+			Namespace: s.cfg.GetFSMNamespace(),
+		})
+	}
 
-		natVal := new(maps.NatVal)
-		upstreams := s.cfg.GetXNetDNSProxyUpstreams()
+	if len(upstreams) > 0 {
 		for _, upstream := range upstreams {
 			var rip string
 			if len(upstream.IP) > 0 {
@@ -74,23 +88,23 @@ func (s *Server) updateDNSNat() {
 			}
 			natVal.AddEp(net.ParseIP(rip), rport, brVal.Mac[:], 0, 0, nil, true)
 		}
+	}
 
-		if natVal.EpCnt > 0 {
-			dnsNat := newXNat(maps.SysMesh, natKey, natVal)
-			if existsNat, exists := s.xnatCache[dnsNat.Key()]; !exists {
+	if natVal.EpCnt > 0 {
+		dnsNat := newXNat(maps.SysMesh, natKey, natVal)
+		if existsNat, exists := s.xnatCache[dnsNat.Key()]; !exists {
+			if err := s.setupDnsNat(natKey, natVal); err != nil {
+				log.Error().Err(err).Msg(`failed to store dns nat`)
+			}
+			s.xnatCache[dnsNat.Key()] = dnsNat
+		} else {
+			if existsNat.valHash != dnsNat.valHash {
 				if err := s.setupDnsNat(natKey, natVal); err != nil {
 					log.Error().Err(err).Msg(`failed to store dns nat`)
 				}
 				s.xnatCache[dnsNat.Key()] = dnsNat
-			} else {
-				if existsNat.valHash != dnsNat.valHash {
-					if err := s.setupDnsNat(natKey, natVal); err != nil {
-						log.Error().Err(err).Msg(`failed to store dns nat`)
-					}
-					s.xnatCache[dnsNat.Key()] = dnsNat
-				}
-				delete(obsoleteNats, dnsNat.Key())
 			}
+			delete(obsoleteNats, dnsNat.Key())
 		}
 	}
 
