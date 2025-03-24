@@ -80,7 +80,24 @@ func (s *Server) initDnsNatKeys() map[*maps.NatKey]*NatBrVal {
 	return nats
 }
 
-func (s *Server) initDnsNatEndpoints(upstreams []configv1alpha3.DNSUpstream, nats map[*maps.NatKey]*NatBrVal) {
+func (s *Server) updateDnsNat() {
+	obsoleteNats := make(map[string]*XNat)
+	for natKey, natVal := range s.xnatCache {
+		if natVal.key.Sys == uint32(maps.SysMesh) && natVal.key.TcDir == uint8(maps.TC_DIR_EGR) {
+			obsoleteNats[natKey] = natVal
+		}
+	}
+
+	nats := s.initDnsNatKeys()
+	if len(nats) == 0 {
+		return
+	}
+
+	upstreams := s.initDnsUpstreams()
+	if len(upstreams) == 0 {
+		return
+	}
+
 	for _, upstream := range upstreams {
 		var rips []string
 		if len(upstream.IP) > 0 {
@@ -110,42 +127,19 @@ func (s *Server) initDnsNatEndpoints(upstreams []configv1alpha3.DNSUpstream, nat
 			rPort = uint16(upstream.Port)
 		}
 		for _, rip := range rips {
-			if rAddr := net.ParseIP(rip); rAddr != nil {
-				for natKey, nat := range nats {
-					if rAddr.To4() != nil {
-						if natKey.V6 == 0 {
-							nat.natVal.AddEp(rAddr, rPort, nat.brVal.Mac[:], 0, 0, nil, true)
-						}
-					} else {
-						if natKey.V6 == 1 {
-							nat.natVal.AddEp(rAddr, rPort, nat.brVal.Mac[:], 0, 0, nil, true)
-						}
+			for natKey, nat := range nats {
+				if strings.Contains(rip, ":") {
+					if natKey.V6 == 1 {
+						nat.natVal.AddEp(net.ParseIP(rip), rPort, nat.brVal.Mac[:], 0, 0, nil, true)
+					}
+				} else {
+					if natKey.V6 == 0 {
+						nat.natVal.AddEp(net.ParseIP(rip), rPort, nat.brVal.Mac[:], 0, 0, nil, true)
 					}
 				}
 			}
 		}
 	}
-}
-
-func (s *Server) updateDnsNat() {
-	obsoleteNats := make(map[string]*XNat)
-	for natKey, natVal := range s.xnatCache {
-		if natVal.key.Sys == uint32(maps.SysMesh) && natVal.key.TcDir == uint8(maps.TC_DIR_EGR) {
-			obsoleteNats[natKey] = natVal
-		}
-	}
-
-	nats := s.initDnsNatKeys()
-	if len(nats) == 0 {
-		return
-	}
-
-	upstreams := s.initDnsUpstreams()
-	if len(upstreams) == 0 {
-		return
-	}
-
-	s.initDnsNatEndpoints(upstreams, nats)
 
 	for natKey, nat := range nats {
 		if nat.natVal.EpCnt > 0 {
