@@ -123,5 +123,5 @@ func (s *Server) doConfigAcls() {
 	}
 
 	s.updateAcls(aclAddrs)
-	s.updateDNSNat()
+	s.updateDnsNat()
 }
