@@ -39,7 +39,7 @@ func NewXNetConfigServer(ctx context.Context,
 		cniBridge6:         cniBridge6,
 		xnatCache:          make(map[string]*XNat),
 	}
-	kubeController.AddObserveFilter(server.xNetDNSProxyUpstreamsObserveFilter)
+	kubeController.AddObserveFilter(server.xNetDnsProxyUpstreamsObserveFilter)
 	return server
 }
 
