@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -86,10 +87,29 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INa
 		conn.namingClient = nil
 	}
 
-	address := connectController.GetHTTPAddr()
-	segs := strings.Split(address, ":")
-	ipAddr := segs[0]
-	port, _ := strconv.ParseUint(segs[1], 10, 64)
+	var scheme = "http"
+	var contextPath = "/nacos"
+	var ipAddr string
+	var port uint64
+	var grpcPort uint64
+
+	address := strings.ToLower(connectController.GetHTTPAddr())
+	if nacosAddr, err := url.Parse(address); err == nil {
+		scheme = nacosAddr.Scheme
+		ipAddr = nacosAddr.Hostname()
+		port, _ = strconv.ParseUint(nacosAddr.Port(), 10, 64)
+		contextPath = nacosAddr.Path
+		grpcPort, _ = strconv.ParseUint(nacosAddr.Query().Get("GrpcPort"), 10, 64)
+	} else {
+		segs := strings.Split(address, ":")
+		ipAddr = segs[0]
+		port, _ = strconv.ParseUint(segs[1], 10, 64)
+	}
+
+	if !strings.EqualFold(conn.serverCfg.Scheme, scheme) {
+		conn.serverCfg.Scheme = scheme
+		conn.namingClient = nil
+	}
 
 	if !strings.EqualFold(conn.serverCfg.IpAddr, ipAddr) {
 		conn.serverCfg.IpAddr = ipAddr
@@ -98,6 +118,20 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INa
 
 	if conn.serverCfg.Port != port {
 		conn.serverCfg.Port = port
+		conn.namingClient = nil
+	}
+
+	if grpcPort == 0 {
+		grpcPort = port + 1000
+	}
+
+	if conn.serverCfg.GrpcPort != grpcPort {
+		conn.serverCfg.GrpcPort = grpcPort
+		conn.namingClient = nil
+	}
+
+	if !strings.EqualFold(conn.serverCfg.ContextPath, contextPath) {
+		conn.serverCfg.ContextPath = contextPath
 		conn.namingClient = nil
 	}
 
