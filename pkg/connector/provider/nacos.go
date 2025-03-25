@@ -99,7 +99,7 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INa
 		ipAddr = nacosAddr.Hostname()
 		port, _ = strconv.ParseUint(nacosAddr.Port(), 10, 64)
 		contextPath = nacosAddr.Path
-		grpcPort, _ = strconv.ParseUint(nacosAddr.Query().Get("GrpcPort"), 10, 64)
+		grpcPort, _ = strconv.ParseUint(nacosAddr.Query().Get("grpcport"), 10, 64)
 	} else {
 		segs := strings.Split(address, ":")
 		ipAddr = segs[0]
