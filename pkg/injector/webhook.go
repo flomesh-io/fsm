@@ -226,12 +226,12 @@ func (wh *mutatingWebhook) mustPodInject(pod *corev1.Pod, namespace string) (boo
 	// pods on the host network cannot be injected with the sidecar as the required iptables rules
 	// will result in routing failures on the host's network.
 	if pod.Spec.HostNetwork {
-		log.Debug().Msgf("Pod with UID %s has HostNetwork enabled, cannot inject a sidecar", pod.ObjectMeta.UID)
+		log.Debug().Msgf("Pod with UID %s has HostNetwork enabled, cannot inject a sidecar", pod.UID)
 		return false, nil
 	}
 
 	if !wh.isNamespaceInjectable(namespace) {
-		log.Warn().Msgf("Mutation request is for pod with UID %s; Injection in Namespace %s is not permitted", pod.ObjectMeta.UID, namespace)
+		log.Warn().Msgf("Mutation request is for pod with UID %s; Injection in Namespace %s is not permitted", pod.UID, namespace)
 		return false, nil
 	}
 
@@ -273,7 +273,7 @@ func (wh *mutatingWebhook) mustPodInject(pod *corev1.Pod, namespace string) (boo
 
 func (wh *mutatingWebhook) mustVmInject(vm *machinev1alpha1.VirtualMachine, namespace string) (bool, error) {
 	if !wh.isNamespaceInjectable(namespace) {
-		log.Warn().Msgf("Mutation request is for VM with UID %s; Injection in Namespace %s is not permitted", vm.ObjectMeta.UID, namespace)
+		log.Warn().Msgf("Mutation request is for VM with UID %s; Injection in Namespace %s is not permitted", vm.UID, namespace)
 		return false, nil
 	}
 

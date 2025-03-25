@@ -37,8 +37,8 @@ func (c client) crdEventHandler() cache.ResourceEventHandlerFuncs {
 
 func (c client) reconcileCrd(oldCrd, newCrd *apiv1.CustomResourceDefinition) {
 	newCrd.Spec = oldCrd.Spec
-	newCrd.ObjectMeta.Name = oldCrd.ObjectMeta.Name
-	newCrd.ObjectMeta.Labels = oldCrd.ObjectMeta.Labels
+	newCrd.Name = oldCrd.Name
+	newCrd.Labels = oldCrd.Labels
 	if _, err := c.apiServerClient.ApiextensionsV1().CustomResourceDefinitions().Update(context.Background(), newCrd, metav1.UpdateOptions{}); err != nil {
 		// There might be conflicts when multiple fsm-bootstraps try to update the same resource
 		// One of the bootstrap will successfully update the resource, hence conflicts shoud be ignored and not treated as an error
@@ -63,7 +63,7 @@ func (c client) addCrd(oldCrd *apiv1.CustomResourceDefinition) {
 
 func isCRDUpdated(oldCrd, newCrd *apiv1.CustomResourceDefinition) bool {
 	crdSpecEqual := reflect.DeepEqual(oldCrd.Spec, newCrd.Spec)
-	crdNameChanged := strings.Compare(oldCrd.ObjectMeta.Name, newCrd.ObjectMeta.Name) != 0
+	crdNameChanged := strings.Compare(oldCrd.Name, newCrd.Name) != 0
 	crdUpdated := !crdSpecEqual || crdNameChanged
 	return crdUpdated
 }

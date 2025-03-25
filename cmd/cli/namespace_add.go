@@ -123,7 +123,7 @@ func (a *namespaceAddCmd) run() error {
 		}
 
 		// if ignore label exits don`t add namespace
-		if val, ok := namespace.ObjectMeta.Labels[constants.IgnoreLabel]; ok && val == trueValue {
+		if val, ok := namespace.Labels[constants.IgnoreLabel]; ok && val == trueValue {
 			return fmt.Errorf("Cannot add ignored namespace")
 		}
 

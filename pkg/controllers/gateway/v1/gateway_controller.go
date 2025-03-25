@@ -179,7 +179,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	gatewayClass, err := gwutils.FindGatewayClassByName(r.fctx.Manager.GetCache(), string(gateway.Spec.GatewayClassName))
 	if err != nil {
 		if errors.IsNotFound(err) {
-			log.Warn().Msgf("GatewayClass %s not found, ignore processing Gateway resource %s.", gateway.Spec.GatewayClassName, req.NamespacedName.String())
+			log.Warn().Msgf("GatewayClass %s not found, ignore processing Gateway resource %s.", gateway.Spec.GatewayClassName, req.String())
 			return ctrl.Result{}, nil
 		}
 

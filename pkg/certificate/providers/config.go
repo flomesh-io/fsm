@@ -73,7 +73,7 @@ func NewCertificateManager(ctx context.Context, kubeClient kubernetes.Interface,
 	}
 	// TODO(#4745): Remove after deprecating the fsm.vault.token option.
 	if vaultOption, ok := option.(VaultOptions); ok {
-		mrcClient.MRCProviderGenerator.DefaultVaultToken = vaultOption.VaultToken
+		mrcClient.DefaultVaultToken = vaultOption.VaultToken
 	}
 
 	return certificate.NewManager(ctx, mrcClient, cfg.GetServiceCertValidityPeriod, cfg.GetIngressGatewayCertValidityPeriod, msgBroker, checkInterval)
@@ -97,7 +97,7 @@ func NewCertificateManagerFromMRC(ctx context.Context, kubeClient kubernetes.Int
 	}
 	// TODO(#4745): Remove after deprecating the fsm.vault.token option.
 	if vaultOption, ok := option.(VaultOptions); ok {
-		mrcClient.MRCProviderGenerator.DefaultVaultToken = vaultOption.VaultToken
+		mrcClient.DefaultVaultToken = vaultOption.VaultToken
 	}
 
 	return certificate.NewManager(ctx, mrcClient, cfg.GetServiceCertValidityPeriod, cfg.GetIngressGatewayCertValidityPeriod, msgBroker, checkInterval)

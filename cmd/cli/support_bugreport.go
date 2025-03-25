@@ -130,7 +130,7 @@ func (cmd *bugReportCmd) run() error {
 			fmt.Fprintf(cmd.stderr, "Unable to list mesh namespaces")
 		}
 		for _, namespace := range namespaces.Items {
-			namespaceName := namespace.ObjectMeta.Name
+			namespaceName := namespace.Name
 			cmd.appNamespaces = append(cmd.appNamespaces, namespaceName)
 			pods, err := cmd.kubeClient.CoreV1().Pods(namespaceName).List(ctx, metav1.ListOptions{})
 			if err != nil {

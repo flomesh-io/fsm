@@ -68,7 +68,7 @@ func (r *namespaceRemoveCmd) run() error {
 		return fmt.Errorf("Could not get namespace [%s]: %w", r.namespace, err)
 	}
 
-	val, exists := namespace.ObjectMeta.Labels[constants.FSMKubeResourceMonitorAnnotation]
+	val, exists := namespace.Labels[constants.FSMKubeResourceMonitorAnnotation]
 
 	if exists {
 		if val == r.meshName {

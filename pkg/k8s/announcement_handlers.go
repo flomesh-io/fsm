@@ -62,7 +62,7 @@ func WatchAndUpdateProxyBootstrapSecret(kubeClient kubernetes.Interface, msgBrok
 				continue
 			}
 
-			secret.ObjectMeta.OwnerReferences = append(secret.ObjectMeta.OwnerReferences, metav1.OwnerReference{
+			secret.OwnerReferences = append(secret.OwnerReferences, metav1.OwnerReference{
 				APIVersion: "v1",
 				Kind:       "Pod",
 				Name:       podName,

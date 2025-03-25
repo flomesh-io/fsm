@@ -39,8 +39,8 @@ func (c client) mutatingWebhookEventHandler() cache.ResourceEventHandlerFuncs {
 
 func (c client) reconcileMutatingWebhook(oldMwhc, newMwhc *admissionv1.MutatingWebhookConfiguration) {
 	newMwhc.Webhooks = oldMwhc.Webhooks
-	newMwhc.ObjectMeta.Name = oldMwhc.ObjectMeta.Name
-	newMwhc.ObjectMeta.Labels = oldMwhc.ObjectMeta.Labels
+	newMwhc.Name = oldMwhc.Name
+	newMwhc.Labels = oldMwhc.Labels
 	if _, err := c.kubeClient.AdmissionregistrationV1().MutatingWebhookConfigurations().Update(context.Background(), newMwhc, metav1.UpdateOptions{}); err != nil {
 		// There might be conflicts when multiple injectors try to update the same resource
 		// One of the injectors will successfully update the resource, hence conflicts shoud be ignored and not treated as an error
@@ -65,9 +65,9 @@ func (c client) addMutatingWebhook(oldMwhc *admissionv1.MutatingWebhookConfigura
 
 func (c *client) isMutatingWebhookUpdated(oldMwhc, newMwhc *admissionv1.MutatingWebhookConfiguration) bool {
 	webhookEqual := reflect.DeepEqual(oldMwhc.Webhooks, newMwhc.Webhooks)
-	mwhcNameChanged := strings.Compare(oldMwhc.ObjectMeta.Name, newMwhc.ObjectMeta.Name) != 0
-	mwhcLabelsChanged := isLabelModified(constants.AppLabel, constants.FSMInjectorName, newMwhc.ObjectMeta.Labels) ||
-		isLabelModified(constants.FSMAppVersionLabelKey, c.fsmVersion, newMwhc.ObjectMeta.Labels)
+	mwhcNameChanged := strings.Compare(oldMwhc.Name, newMwhc.Name) != 0
+	mwhcLabelsChanged := isLabelModified(constants.AppLabel, constants.FSMInjectorName, newMwhc.Labels) ||
+		isLabelModified(constants.FSMAppVersionLabelKey, c.fsmVersion, newMwhc.Labels)
 	mwhcUpdated := !webhookEqual || mwhcNameChanged || mwhcLabelsChanged
 	return mwhcUpdated
 }

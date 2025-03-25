@@ -97,12 +97,12 @@ func (c *ConfigGenerator) toV2HTTPRouteRule(httpRoute *gwv1.HTTPRoute, rule *gwv
 func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule *gwv1.HTTPRouteRule, ruleIndex int, holder status.RouteParentStatusObject) []fgwv2.HTTPBackendRef {
 	backendRefs := make([]fgwv2.HTTPBackendRef, 0)
 	for i, bk := range rule.BackendRefs {
-		if svcPort := c.backendRefToServicePortName(httpRoute, bk.BackendRef.BackendObjectReference); svcPort != nil {
+		if svcPort := c.backendRefToServicePortName(httpRoute, bk.BackendObjectReference); svcPort != nil {
 			if c.toFGWBackend(svcPort) == nil && c.cfg.GetFeatureFlags().DropRouteRuleIfNoAvailableBackends {
 				continue
 			}
 
-			b2 := fgwv2.NewHTTPBackendRef(svcPort.String(), bk.BackendRef.Weight)
+			b2 := fgwv2.NewHTTPBackendRef(svcPort.String(), bk.Weight)
 
 			if len(bk.Filters) > 0 {
 				b2.Filters = c.toV2HTTPRouteFilters(httpRoute, fmt.Sprintf("%d-%d", ruleIndex, i), bk.Filters)

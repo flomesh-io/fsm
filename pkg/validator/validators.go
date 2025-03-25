@@ -134,7 +134,7 @@ func (kc *policyValidator) accessControlValidator(req *admissionv1.AdmissionRequ
 				continue
 			}
 			conflicts := policy.DetectAccessControlConflicts(*acl, *matchingPolicy)
-			fmt.Fprintf(&conflictString, "[+] AccessControlBackend %s/%s conflicts with %s/%s:\n", ns, acl.ObjectMeta.GetName(), ns, matchingPolicy.ObjectMeta.GetName())
+			fmt.Fprintf(&conflictString, "[+] AccessControlBackend %s/%s conflicts with %s/%s:\n", ns, acl.GetName(), ns, matchingPolicy.GetName())
 			for _, err := range conflicts {
 				fmt.Fprintf(&conflictString, "%s\n", err)
 			}
@@ -226,7 +226,7 @@ func (kc *policyValidator) ingressBackendValidator(req *admissionv1.AdmissionReq
 				continue
 			}
 			conflicts := policy.DetectIngressBackendConflicts(*ingressBackend, *matchingPolicy)
-			fmt.Fprintf(&conflictString, "[+] IngressBackend %s/%s conflicts with %s/%s:\n", ns, ingressBackend.ObjectMeta.GetName(), ns, matchingPolicy.ObjectMeta.GetName())
+			fmt.Fprintf(&conflictString, "[+] IngressBackend %s/%s conflicts with %s/%s:\n", ns, ingressBackend.GetName(), ns, matchingPolicy.GetName())
 			for _, err := range conflicts {
 				fmt.Fprintf(&conflictString, "%s\n", err)
 			}
@@ -353,7 +353,7 @@ func (kc *policyValidator) upstreamTrafficSettingValidator(req *admissionv1.Admi
 	opt := policy.UpstreamTrafficSettingGetOpt{Host: upstreamTrafficSetting.Spec.Host}
 	if matchingUpstreamTrafficSetting := kc.policyClient.GetUpstreamTrafficSetting(opt); matchingUpstreamTrafficSetting != nil && matchingUpstreamTrafficSetting.Name != upstreamTrafficSetting.Name {
 		// duplicate detected
-		return nil, fmt.Errorf("UpstreamTrafficSetting %s/%s conflicts with %s/%s since they have the same host %s", ns, upstreamTrafficSetting.ObjectMeta.GetName(), ns, matchingUpstreamTrafficSetting.ObjectMeta.GetName(), matchingUpstreamTrafficSetting.Spec.Host)
+		return nil, fmt.Errorf("UpstreamTrafficSetting %s/%s conflicts with %s/%s since they have the same host %s", ns, upstreamTrafficSetting.GetName(), ns, matchingUpstreamTrafficSetting.GetName(), matchingUpstreamTrafficSetting.Spec.Host)
 	}
 
 	// Validate rate limiting config

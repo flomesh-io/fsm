@@ -562,12 +562,12 @@ func (c *client) GetPodForProxy(proxy models.Proxy) (*v1.Pod, error) {
 		pod = &pods[0]
 	}
 
-	log.Trace().Msgf("Found Pod with UID=%s for proxyID %s", pod.ObjectMeta.UID, proxyUUID)
+	log.Trace().Msgf("Found Pod with UID=%s for proxyID %s", pod.UID, proxyUUID)
 
 	if pod.Namespace != svcAccount.Namespace {
 		log.Warn().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingPodFromCert)).
 			Msgf("Pod with UID=%s belongs to Namespace %s. The pod's xDS certificate was issued for Namespace %s",
-				pod.ObjectMeta.UID, pod.Namespace, svcAccount.Namespace)
+				pod.UID, pod.Namespace, svcAccount.Namespace)
 		return nil, errNamespaceDoesNotMatchProxy
 	}
 
@@ -577,7 +577,7 @@ func (c *client) GetPodForProxy(proxy models.Proxy) (*v1.Pod, error) {
 		// Since we search for the pod in the namespace we obtain from the certificate -- these namespaces will always match.
 		log.Warn().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingPodFromCert)).
 			Msgf("Pod with UID=%s belongs to ServiceAccount=%s. The pod's xDS certificate was issued for ServiceAccount=%s",
-				pod.ObjectMeta.UID, pod.Spec.ServiceAccountName, svcAccount)
+				pod.UID, pod.Spec.ServiceAccountName, svcAccount)
 		return nil, errServiceAccountDoesNotMatchProxy
 	}
 
@@ -633,12 +633,12 @@ func (c *client) GetVmForProxy(proxy models.Proxy) (*machinev1alpha1.VirtualMach
 		vm = &vms[0]
 	}
 
-	log.Trace().Msgf("Found VM with UID=%s for proxyID %s", vm.ObjectMeta.UID, proxyUUID)
+	log.Trace().Msgf("Found VM with UID=%s for proxyID %s", vm.UID, proxyUUID)
 
 	if vm.Namespace != svcAccount.Namespace {
 		log.Warn().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingPodFromCert)).
 			Msgf("VM with UID=%s belongs to Namespace %s. The vm's xDS certificate was issued for Namespace %s",
-				vm.ObjectMeta.UID, vm.Namespace, svcAccount.Namespace)
+				vm.UID, vm.Namespace, svcAccount.Namespace)
 		return nil, errNamespaceDoesNotMatchProxy
 	}
 
@@ -648,7 +648,7 @@ func (c *client) GetVmForProxy(proxy models.Proxy) (*machinev1alpha1.VirtualMach
 		// Since we search for the vm in the namespace we obtain from the certificate -- these namespaces will always match.
 		log.Warn().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingPodFromCert)).
 			Msgf("VM with UID=%s belongs to ServiceAccount=%s. The vm's xDS certificate was issued for ServiceAccount=%s",
-				vm.ObjectMeta.UID, vm.Spec.ServiceAccountName, svcAccount)
+				vm.UID, vm.Spec.ServiceAccountName, svcAccount)
 		return nil, errServiceAccountDoesNotMatchProxy
 	}
 

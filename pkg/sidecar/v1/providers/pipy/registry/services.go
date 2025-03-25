@@ -55,7 +55,7 @@ func (k *KubeProxyServiceMapper) ListProxyServices(p *pipy.Proxy) ([]service.Mes
 
 		servicesForPod := strings.Join(listServiceNames(meshServices), ",")
 		log.Trace().Msgf("Services associated with VM with UID=%s Name=%s/%s: %+v",
-			vm.ObjectMeta.UID, vm.Namespace, vm.Name, servicesForPod)
+			vm.UID, vm.Namespace, vm.Name, servicesForPod)
 	} else {
 		pod, err := k.KubeController.GetPodForProxy(p)
 		if err != nil {
@@ -66,7 +66,7 @@ func (k *KubeProxyServiceMapper) ListProxyServices(p *pipy.Proxy) ([]service.Mes
 
 		servicesForPod := strings.Join(listServiceNames(meshServices), ",")
 		log.Trace().Msgf("Services associated with Pod with UID=%s Name=%s/%s: %+v",
-			pod.ObjectMeta.UID, pod.Namespace, pod.Name, servicesForPod)
+			pod.UID, pod.Namespace, pod.Name, servicesForPod)
 	}
 
 	return meshServices, nil

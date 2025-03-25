@@ -96,12 +96,12 @@ func (c *ConfigGenerator) toV2GRPCRouteRule(grpcRoute *gwv1.GRPCRoute, rule *gwv
 func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule *gwv1.GRPCRouteRule, ruleIndex int, holder status.RouteParentStatusObject) []fgwv2.GRPCBackendRef {
 	backendRefs := make([]fgwv2.GRPCBackendRef, 0)
 	for i, bk := range rule.BackendRefs {
-		if svcPort := c.backendRefToServicePortName(grpcRoute, bk.BackendRef.BackendObjectReference); svcPort != nil {
+		if svcPort := c.backendRefToServicePortName(grpcRoute, bk.BackendObjectReference); svcPort != nil {
 			if c.toFGWBackend(svcPort) == nil && c.cfg.GetFeatureFlags().DropRouteRuleIfNoAvailableBackends {
 				continue
 			}
 
-			b2 := fgwv2.NewGRPCBackendRef(svcPort.String(), bk.BackendRef.Weight)
+			b2 := fgwv2.NewGRPCBackendRef(svcPort.String(), bk.Weight)
 
 			if len(bk.Filters) > 0 {
 				b2.Filters = c.toV2GRPCRouteFilters(grpcRoute, fmt.Sprintf("%d-%d", ruleIndex, i), bk.Filters)

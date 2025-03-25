@@ -39,8 +39,8 @@ func (c client) validatingWebhookEventHandler() cache.ResourceEventHandlerFuncs 
 
 func (c client) reconcileValidatingWebhook(oldVwhc, newVwhc *admissionv1.ValidatingWebhookConfiguration) {
 	newVwhc.Webhooks = oldVwhc.Webhooks
-	newVwhc.ObjectMeta.Name = oldVwhc.ObjectMeta.Name
-	newVwhc.ObjectMeta.Labels = oldVwhc.ObjectMeta.Labels
+	newVwhc.Name = oldVwhc.Name
+	newVwhc.Labels = oldVwhc.Labels
 	if _, err := c.kubeClient.AdmissionregistrationV1().ValidatingWebhookConfigurations().Update(context.Background(), newVwhc, metav1.UpdateOptions{}); err != nil {
 		// There might be conflicts when multiple controllers try to update the same resource
 		// One of the controllers will successfully update the resource, hence conflicts shoud be ignored and not treated as an error
@@ -65,9 +65,9 @@ func (c client) addValidatingWebhook(oldVwhc *admissionv1.ValidatingWebhookConfi
 
 func (c *client) isValidatingWebhookUpdated(oldVwhc, newVwhc *admissionv1.ValidatingWebhookConfiguration) bool {
 	webhookEqual := reflect.DeepEqual(oldVwhc.Webhooks, newVwhc.Webhooks)
-	vwhcNameChanged := strings.Compare(oldVwhc.ObjectMeta.Name, newVwhc.ObjectMeta.Name) != 0
-	vwhcLabelsChanged := isLabelModified(constants.AppLabel, constants.FSMControllerName, newVwhc.ObjectMeta.Labels) ||
-		isLabelModified(constants.FSMAppVersionLabelKey, c.fsmVersion, newVwhc.ObjectMeta.Labels)
+	vwhcNameChanged := strings.Compare(oldVwhc.Name, newVwhc.Name) != 0
+	vwhcLabelsChanged := isLabelModified(constants.AppLabel, constants.FSMControllerName, newVwhc.Labels) ||
+		isLabelModified(constants.FSMAppVersionLabelKey, c.fsmVersion, newVwhc.Labels)
 	vwhcUpdated := !webhookEqual || vwhcNameChanged || vwhcLabelsChanged
 	return vwhcUpdated
 }

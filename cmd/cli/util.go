@@ -128,10 +128,10 @@ func getMeshInfoList(restConfig *rest.Config, clientSet kubernetes.Interface) ([
 	}
 
 	for _, fsmControllerDeployment := range fsmControllerDeployments.Items {
-		meshName := fsmControllerDeployment.ObjectMeta.Labels["meshName"]
-		meshNamespace := fsmControllerDeployment.ObjectMeta.Namespace
+		meshName := fsmControllerDeployment.Labels["meshName"]
+		meshNamespace := fsmControllerDeployment.Namespace
 
-		meshVersion := fsmControllerDeployment.ObjectMeta.Labels[constants.FSMAppVersionLabelKey]
+		meshVersion := fsmControllerDeployment.Labels[constants.FSMAppVersionLabelKey]
 		if meshVersion == "" {
 			meshVersion = "Unknown"
 		}
@@ -181,7 +181,7 @@ func getMeshNames(clientSet kubernetes.Interface) mapset.Set {
 
 	deploymentList, _ := getControllerDeployments(clientSet)
 	for _, elem := range deploymentList.Items {
-		meshList.Add(elem.ObjectMeta.Labels["meshName"])
+		meshList.Add(elem.Labels["meshName"])
 	}
 
 	return meshList

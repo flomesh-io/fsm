@@ -142,9 +142,9 @@ func FindBackendTLSPolicy(c cache.Cache, targetRef gwv1alpha2.LocalPolicyTargetR
 				*ref.SectionName == *targetRef.SectionName
 
 			// Compare the LocalPolicyTargetReference
-			if ref.LocalPolicyTargetReference.Group == targetRef.Group &&
-				ref.LocalPolicyTargetReference.Kind == targetRef.Kind &&
-				ref.LocalPolicyTargetReference.Name == targetRef.Name {
+			if ref.Group == targetRef.Group &&
+				ref.Kind == targetRef.Kind &&
+				ref.Name == targetRef.Name {
 				if sectionNameMatches {
 					return policy, true
 				}

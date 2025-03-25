@@ -73,12 +73,12 @@ func splitHostName(c Controller, host string) (svc string, subdomain string) {
 	// Ex. service.namespace, service.namespace.svc.cluster.local
 	// However, if there's a subdomain, we the service name is the second string.
 	// Ex. mysql-0.service.namespace, mysql-0.service.namespace.svc.cluster.local, mysql-0.service.namespace.svc.cluster.local
-	switch l := len(serviceComponents); {
-	case l == 1:
+	switch l := len(serviceComponents); l {
+	case 1:
 		// e.g. service
 		svc = serviceComponents[0]
 		subdomain = ""
-	case l == 2:
+	case 2:
 		// e.g. service.namespace, mysql-0.service
 		p1 := serviceComponents[0] // service name or pod name
 		p2 := serviceComponents[1] // namespace name or service name
@@ -101,7 +101,7 @@ func splitHostName(c Controller, host string) (svc string, subdomain string) {
 		}
 
 		// namespace does exist in the cache, so this is service.namespace
-	case l == 3:
+	case 3:
 		tld := serviceComponents[2]
 
 		if c == nil {
@@ -130,15 +130,15 @@ func splitHostName(c Controller, host string) (svc string, subdomain string) {
 		// tld is a namespace, so this is mysql-0.service.namespace
 		svc = serviceComponents[1]
 		subdomain = serviceComponents[0]
-	case l == 4:
+	case 4:
 		// e.g mysql-0.service.namespace.svc
 		svc = serviceComponents[1]
 		subdomain = serviceComponents[0]
-	case l == 5:
+	case 5:
 		// e.g. service.namespace.svc.cluster.local
 		svc = serviceComponents[0]
 		subdomain = ""
-	case l == 6:
+	case 6:
 		// e.g. mysql-0.service.namespace.svc.cluster.local
 		svc = serviceComponents[1]
 		subdomain = serviceComponents[0]

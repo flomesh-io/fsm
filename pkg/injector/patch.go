@@ -162,7 +162,7 @@ func makePodPatches(req *admissionv1.AdmissionRequest, pod *corev1.Pod) []jsonpa
 	current, err := json.Marshal(pod)
 	if err != nil {
 		log.Error().Err(err).Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrMarshallingKubernetesResource)).
-			Msgf("Error marshaling Pod with UID=%s", pod.ObjectMeta.UID)
+			Msgf("Error marshaling Pod with UID=%s", pod.UID)
 	}
 	admissionResponse := admission.PatchResponseFromRaw(original, current)
 	return admissionResponse.Patches
@@ -200,7 +200,7 @@ func makeVmPatches(req *admissionv1.AdmissionRequest, vm *machinev1alpha1.Virtua
 	current, err := json.Marshal(vm)
 	if err != nil {
 		log.Error().Err(err).Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrMarshallingKubernetesResource)).
-			Msgf("Error marshaling VM with UID=%s", vm.ObjectMeta.UID)
+			Msgf("Error marshaling VM with UID=%s", vm.UID)
 	}
 	admissionResponse := admission.PatchResponseFromRaw(original, current)
 	return admissionResponse.Patches

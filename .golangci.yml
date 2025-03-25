@@ -1,121 +1,88 @@
+version: "2"
 run:
   tests: false
-  timeout: 20m
-
+output:
+  formats:
+    text:
+      path: stdout
+      print-linter-name: true
+      print-issued-lines: true
+  path-prefix: ""
 linters:
-  disable:
-    - errcheck
   enable:
     - goconst
     - gocyclo
-    - gofmt
-    - goimports
     - gosec
-    - govet
     - misspell
     - revive
-    - unused
     - whitespace
-
-linters-settings:
-  goimports:
-    local-prefixes: github.com/flomesh-io/fsm
-  revive:
+  disable:
+    - errcheck
+  settings:
+    gosec:
+      severity: medium
+      confidence: medium
+    revive:
+      rules:
+        - name: unused-parameter
+          disabled: true
+  exclusions:
+    generated: lax
     rules:
-      - name: unused-parameter
-        disabled: true
-  gosec:
-    exclude-generated: true
-    severity: medium
-    confidence: medium
-
+      - linters:
+          - revive
+        text: dot imports
+        source: . "github.com/onsi/(ginkgo|gomega)"
+      - linters:
+          - revive
+        text: dot imports
+        source: . "github.com/flomesh-io/fsm/tests/framework"
+      - linters:
+          - staticcheck
+        text: 'SA1019:'
+      - linters:
+          - gosec
+        text: 'G101:'
+      - linters:
+          - gosec
+        text: 'G115:'
+      - linters:
+          - staticcheck
+        text: 'S1009:'
+      - linters:
+          - govet
+        text: 'printf: non-constant format string in call to'
+    paths:
+      - zz_generated.deepcopy.go$
+      - zz_generated.register.go$
+      - pkg/gen
+      - pkg/bugreport
+      - third_party$
+      - builtin$
+      - examples$
 issues:
-  exclude-dirs:
-    - pkg/gen
-    - pkg/bugreport
-  exclude-files:
-    - "zz_generated.deepcopy.go$"
-    - "zz_generated.register.go$"
-  exclude-rules:
-    # Ignore error for ginkgo and gomega dot imports
-    - linters:
-        - revive
-      source: ". \"github.com/onsi/(ginkgo|gomega)\""
-      text: "dot imports"
-    # Ignore error for test framework imports
-    - linters:
-        - revive
-      source: ". \"github.com/flomesh-io/fsm/tests/framework\""
-      text: "dot imports"
-    # Exclude staticcheck messages for deprecated function, variable or constant
-    # This causes issues with package github.com/golang/protobuf/proto
-    - linters:
-        - staticcheck
-      text: "SA1019:"
-    - linters:
-        - gosec
-      text: "G101:"
-    - linters:
-        - gosec
-      text: "G115:"
-    - linters:
-        - gosimple
-      text: "S1009:"
-    - linters:
-        - govet
-      text: "printf: non-constant format string in call to"
-  exclude-use-default: false
-  # Make issues output unique by line.
-  # Default: true
   uniq-by-line: true
-
-# output configuration options
-output:
-  # Format: colored-line-number|line-number|json|colored-tab|tab|checkstyle|code-climate|junit-xml|github-actions|teamcity
-  #
-  # Multiple can be specified by separating them by comma, output can be provided
-  # for each of them by separating format name and path by colon symbol.
-  # Output path can be either `stdout`, `stderr` or path to the file to write to.
-  # Example: "checkstyle:report.xml,json:stdout,colored-line-number"
-  #
-  # Default: colored-line-number
-  formats:
-    - format: colored-line-number
-  # Print lines of code with issue.
-  # Default: true
-  print-issued-lines: true
-  # Print linter name in the end of issue text.
-  # Default: true
-  print-linter-name: true
-  # Add a prefix to the output file references.
-  # Default is no prefix.
-  path-prefix: ""
-  # Sort results by: filepath, line and column.
-  sort-results: true
-
 severity:
-  # Set the default severity for issues.
-  #
-  # If severity rules are defined and the issues do not match or no severity is provided to the rule
-  # this will be the default severity applied.
-  # Severities should match the supported severity names of the selected out format.
-  # - Code climate: https://docs.codeclimate.com/docs/issues#issue-severity
-  # - Checkstyle: https://checkstyle.sourceforge.io/property_types.html#SeverityLevel
-  # - GitHub: https://help.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-error-message
-  # - TeamCity: https://www.jetbrains.com/help/teamcity/service-messages.html#Inspection+Instance
-  #
-  # Default value is an empty string.
-  default-severity: "error"
-  # If set to true `severity-rules` regular expressions become case-sensitive.
-  # Default: false
-  case-sensitive: true
-  # When a list of severity rules are provided, severity information will be added to lint issues.
-  # Severity rules have the same filtering capability as exclude rules
-  # except you are allowed to specify one matcher per severity rule.
-  # Only affects out formats that support setting severity information.
-  #
-  # Default: []
+  default: error
   rules:
     - linters:
         - dupl
       severity: info
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/flomesh-io/fsm
+  exclusions:
+    generated: lax
+    paths:
+      - zz_generated.deepcopy.go$
+      - zz_generated.register.go$
+      - pkg/gen
+      - pkg/bugreport
+      - third_party$
+      - builtin$
+      - examples$

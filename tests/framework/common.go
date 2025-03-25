@@ -368,9 +368,9 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 			td.T.Fatal("Cluster creation FAILED, all changes have been rolled back!")
 			return err
 		}
-		td.T.Logf("Cluster '%s' created successfully!", clusterConfig.Cluster.Name)
+		td.T.Logf("Cluster '%s' created successfully!", clusterConfig.Name)
 
-		td.T.Logf("Updating default kubeconfig with a new context for cluster %s", clusterConfig.Cluster.Name)
+		td.T.Logf("Updating default kubeconfig with a new context for cluster %s", clusterConfig.Name)
 		if _, err := k3dCluster.KubeconfigGetWrite(context.TODO(), runtimes.SelectedRuntime, &clusterConfig.Cluster, "", &k3dCluster.WriteKubeConfigOptions{UpdateExisting: true, OverwriteExisting: false, UpdateCurrentContext: true}); err != nil {
 			td.T.Logf("Failed to write kubeconfig: %s", err)
 			return err
@@ -634,10 +634,7 @@ func WithLocalProxyMode(mode configv1alpha3.LocalProxyMode) InstallFsmOpt {
 
 // GetFSMInstallOpts initializes install options for FSM
 func (td *FsmTestData) GetFSMInstallOpts(options ...InstallFsmOpt) InstallFSMOpts {
-	enablePrivilegedInitContainer := false
-	if td.DeployOnOpenShift {
-		enablePrivilegedInitContainer = true
-	}
+	enablePrivilegedInitContainer := td.DeployOnOpenShift
 
 	baseOpts := InstallFSMOpts{
 		ControlPlaneNS:          td.FsmNamespace,
@@ -916,7 +913,7 @@ func (td *FsmTestData) InstallFSM(instOpts InstallFSMOpts) error {
 			fmt.Sprintf("fsm.certmanager.issuerGroup=%s", instOpts.CertmanagerIssuerGroup))
 	}
 
-	if !(td.InstType == KindCluster || td.InstType == K3dCluster) {
+	if td.InstType != KindCluster && td.InstType != K3dCluster {
 		// Making sure the image is always pulled in registry-based testing
 		instOpts.SetOverrides = append(instOpts.SetOverrides,
 			"fsm.image.pullPolicy=Always")
@@ -1747,10 +1744,11 @@ func (td *FsmTestData) CreateDockerRegistrySecret(ns string) {
 func (td *FsmTestData) shouldCleanupK8sCluster(ct CleanupType) bool {
 	cleanupK8s := false
 
-	if ct == Test {
+	switch ct {
+	case Test:
 		// If Kind/K3d cluster is going away, no need to trigger and wait for k8s cleanup
 		cleanupK8s = !td.CleanupClusterBetweenTests
-	} else if ct == Suite {
+	case Suite:
 		// If Kind/K3d cluster is going away, no need to trigger and wait for k8s cleanup
 		cleanupK8s = !td.CleanupCluster
 	}
