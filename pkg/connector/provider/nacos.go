@@ -93,7 +93,7 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INa
 	var port uint64
 	var grpcPort uint64
 
-	address := strings.ToLower(connectController.GetHTTPAddr())
+	address := connectController.GetHTTPAddr()
 	if nacosAddr, err := url.Parse(address); err == nil {
 		scheme = nacosAddr.Scheme
 		ipAddr = nacosAddr.Hostname()
