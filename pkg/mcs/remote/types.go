@@ -52,7 +52,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/logger"
 	cctx "github.com/flomesh-io/fsm/pkg/mcs/context"
-	conn "github.com/flomesh-io/fsm/pkg/mcs/context"
 	mcsevent "github.com/flomesh-io/fsm/pkg/mcs/event"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/flomesh-io/fsm/pkg/version"
@@ -80,7 +79,7 @@ var (
 
 // NewConnector creates a new remote connector
 func NewConnector(ctx context.Context, controlPlaneBroker *messaging.Broker) (*Connector, error) {
-	connectorCtx := ctx.(*conn.ConnectorContext)
+	connectorCtx := ctx.(*cctx.ConnectorContext)
 	stop := connectorCtx.StopCh
 	kubeConfig := connectorCtx.KubeConfig
 	clusterKey := connectorCtx.ClusterKey
@@ -222,7 +221,7 @@ func (c *Connector) onAddFunc(eventTypes *k8s.EventTypes) func(obj interface{}) 
 	return func(obj interface{}) {
 		switch obj := obj.(type) {
 		case *mcsv1alpha1.ServiceExport:
-			connectorCtx := c.context.(*conn.ConnectorContext)
+			connectorCtx := c.context.(*cctx.ConnectorContext)
 			connectorConfig := connectorCtx.ConnectorConfig
 
 			log.Debug().Msgf("[%s] ServiceExport %s added", connectorConfig.Key(), client.ObjectKeyFromObject(obj))
@@ -236,7 +235,7 @@ func (c *Connector) onUpdateFunc(_ *k8s.EventTypes) func(oldObj, newObj interfac
 	return func(oldObj, newObj interface{}) {
 		switch obj := newObj.(type) {
 		case *mcsv1alpha1.ServiceExport:
-			connectorCtx := c.context.(*conn.ConnectorContext)
+			connectorCtx := c.context.(*cctx.ConnectorContext)
 			connectorConfig := connectorCtx.ConnectorConfig
 
 			log.Debug().Msgf("[%s] ServiceExport %s updated", connectorConfig.Key(), client.ObjectKeyFromObject(obj))
@@ -269,7 +268,7 @@ func (c *Connector) onDeleteFunc(_ *k8s.EventTypes) func(obj interface{}) {
 	return func(obj interface{}) {
 		switch obj := obj.(type) {
 		case *mcsv1alpha1.ServiceExport:
-			connectorCtx := c.context.(*conn.ConnectorContext)
+			connectorCtx := c.context.(*cctx.ConnectorContext)
 			connectorConfig := connectorCtx.ConnectorConfig
 
 			log.Debug().Msgf("[%s] ServiceExport %s deleted", connectorConfig.Key(), client.ObjectKeyFromObject(obj))
@@ -301,7 +300,7 @@ func (c *Connector) onDeleteFunc(_ *k8s.EventTypes) func(obj interface{}) {
 const externalNameServiceErrorMsg = "[%s] ExternalName service %s/%s cannot be exported"
 
 func (c *Connector) getService(export *mcsv1alpha1.ServiceExport) (*corev1.Service, error) {
-	connectorCtx := c.context.(*conn.ConnectorContext)
+	connectorCtx := c.context.(*cctx.ConnectorContext)
 	connectorConfig := connectorCtx.ConnectorConfig
 	log.Debug().Msgf("[%s] Getting service %s/%s", connectorConfig.Key(), export.Namespace, export.Name)
 

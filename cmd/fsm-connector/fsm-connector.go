@@ -16,7 +16,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
-	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 	gwscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
 
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
@@ -79,7 +78,7 @@ func main() {
 	kubeConfig.Timeout = time.Second * time.Duration(cli.Cfg.Timeout)
 	kubeClient := kubernetes.NewForConfigOrDie(kubeConfig)
 	machineClient := machineClientset.NewForConfigOrDie(kubeConfig)
-	gatewayClient := gwapi.NewForConfigOrDie(kubeConfig)
+	gatewayClient := gatewayApiClientset.NewForConfigOrDie(kubeConfig)
 	connectorClient := connectorClientset.NewForConfigOrDie(kubeConfig)
 	gatewayApiClient := gatewayApiClientset.NewForConfigOrDie(kubeConfig)
 

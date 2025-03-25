@@ -90,15 +90,15 @@ func newSupportBugReportCmd(config *action.Configuration, stdout io.Writer, stde
 		RunE: func(_ *cobra.Command, args []string) error {
 			config, err := settings.RESTClientGetter().ToRESTConfig()
 			if err != nil {
-				return fmt.Errorf("Error fetching kubeconfig: %w", err)
+				return fmt.Errorf("error fetching kubeconfig: %w", err)
 			}
 			bugReportCmd.kubeClient, err = kubernetes.NewForConfig(config)
 			if err != nil {
-				return fmt.Errorf("Could not access Kubernetes cluster, check kubeconfig: %w", err)
+				return fmt.Errorf("could not access Kubernetes cluster, check kubeconfig: %w", err)
 			}
 			bugReportCmd.policyClient, err = policyClientset.NewForConfig(config)
 			if err != nil {
-				return fmt.Errorf("Could not access FSM, check configuration: %w", err)
+				return fmt.Errorf("could not access FSM, check configuration: %w", err)
 			}
 			return bugReportCmd.run()
 		},

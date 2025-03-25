@@ -65,7 +65,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -89,7 +88,6 @@ import (
 	k3dcliutil "github.com/k3d-io/k3d/v5/cmd/util"
 	k3dcliconfig "github.com/k3d-io/k3d/v5/cmd/util/config"
 	k3dClient "github.com/k3d-io/k3d/v5/pkg/client"
-	k3dCluster "github.com/k3d-io/k3d/v5/pkg/client"
 	k3dCfg "github.com/k3d-io/k3d/v5/pkg/config/v1alpha5"
 	k3dLogger "github.com/k3d-io/k3d/v5/pkg/logger"
 	k3d "github.com/k3d-io/k3d/v5/pkg/types"
@@ -354,12 +352,12 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 		}
 
 		// create cluster
-		if err := k3dCluster.ClusterRun(context.TODO(), runtimes.SelectedRuntime, clusterConfig); err != nil {
+		if err := k3dClient.ClusterRun(context.TODO(), runtimes.SelectedRuntime, clusterConfig); err != nil {
 			// rollback if creation failed
 			td.T.Error(err)
 			td.T.Error("Failed to create cluster >>> Rolling Back")
 
-			if err := k3dCluster.ClusterDelete(context.TODO(), runtimes.SelectedRuntime, &clusterConfig.Cluster, k3d.ClusterDeleteOpts{SkipRegistryCheck: true}); err != nil {
+			if err := k3dClient.ClusterDelete(context.TODO(), runtimes.SelectedRuntime, &clusterConfig.Cluster, k3d.ClusterDeleteOpts{SkipRegistryCheck: true}); err != nil {
 				td.T.Error(err)
 				td.T.Fatal("Cluster creation FAILED, also FAILED to rollback changes!")
 				return err
@@ -371,7 +369,7 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 		td.T.Logf("Cluster '%s' created successfully!", clusterConfig.Name)
 
 		td.T.Logf("Updating default kubeconfig with a new context for cluster %s", clusterConfig.Name)
-		if _, err := k3dCluster.KubeconfigGetWrite(context.TODO(), runtimes.SelectedRuntime, &clusterConfig.Cluster, "", &k3dCluster.WriteKubeConfigOptions{UpdateExisting: true, OverwriteExisting: false, UpdateCurrentContext: true}); err != nil {
+		if _, err := k3dClient.KubeconfigGetWrite(context.TODO(), runtimes.SelectedRuntime, &clusterConfig.Cluster, "", &k3dClient.WriteKubeConfigOptions{UpdateExisting: true, OverwriteExisting: false, UpdateCurrentContext: true}); err != nil {
 			td.T.Logf("Failed to write kubeconfig: %s", err)
 			return err
 		}
@@ -459,7 +457,7 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 
 	k8sServerVersion, err := Td.getKubernetesServerVersionNumber()
 	if err != nil {
-		return fmt.Errorf("Error getting k8s server version")
+		return fmt.Errorf("error getting k8s server version")
 	}
 
 	// Logs v<major>.<minor>.<patch>
@@ -998,7 +996,7 @@ func (td *FsmTestData) RestartFSMController(instOpts InstallFSMOpts) error {
 
 // GetMeshConfig is a wrapper to get a MeshConfig by name in a particular namespace
 func (td *FsmTestData) GetMeshConfig(namespace string) (*configv1alpha3.MeshConfig, error) {
-	meshConfig, err := td.ConfigClient.ConfigV1alpha3().MeshConfigs(namespace).Get(context.TODO(), td.FsmMeshConfigName, v1.GetOptions{})
+	meshConfig, err := td.ConfigClient.ConfigV1alpha3().MeshConfigs(namespace).Get(context.TODO(), td.FsmMeshConfigName, metav1.GetOptions{})
 
 	if err != nil {
 		return nil, err
@@ -1767,7 +1765,7 @@ func (td *FsmTestData) RetryFuncOnError(f RetryOnErrorFunc, retryTimes int, slee
 		}
 		time.Sleep(sleepBetweenRetries)
 	}
-	return fmt.Errorf("Error after retrying %d times: %w", retryTimes, err)
+	return fmt.Errorf("error after retrying %d times: %w", retryTimes, err)
 }
 
 // waitForCABundleSecret waits for the CA bundle secret to be created
@@ -1989,7 +1987,7 @@ func (td *FsmTestData) GrabLogs() error {
 // AddOpenShiftSCC adds the specified SecurityContextConstraint to the given service account
 func (td *FsmTestData) AddOpenShiftSCC(scc, serviceAccount, namespace string) error {
 	if !td.DeployOnOpenShift {
-		return fmt.Errorf("Tests are not configured for OpenShift. Try again with -deployOnOpenShift=true")
+		return fmt.Errorf("tests are not configured for OpenShift. Try again with -deployOnOpenShift=true")
 	}
 
 	roleName := serviceAccount + "-scc"
@@ -2004,7 +2002,7 @@ func (td *FsmTestData) AddOpenShiftSCC(scc, serviceAccount, namespace string) er
 
 	_, err := td.createRole(namespace, &roleDefinition)
 	if err != nil {
-		return fmt.Errorf("Failed to create Role %s: %w", roleName, err)
+		return fmt.Errorf("failed to create Role %s: %w", roleName, err)
 	}
 
 	roleBindingName := serviceAccount + "-scc"
@@ -2024,7 +2022,7 @@ func (td *FsmTestData) AddOpenShiftSCC(scc, serviceAccount, namespace string) er
 
 	_, err = td.createRoleBinding(namespace, &roleBindingDefinition)
 	if err != nil {
-		return fmt.Errorf("Failed to create RoleBinding %s: %w", roleBindingName, err)
+		return fmt.Errorf("failed to create RoleBinding %s: %w", roleBindingName, err)
 	}
 
 	return nil

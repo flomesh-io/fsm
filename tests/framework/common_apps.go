@@ -75,7 +75,7 @@ var (
 func (td *FsmTestData) CreateServiceAccount(ns string, svcAccount *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 	svcAc, err := td.Client.CoreV1().ServiceAccounts(ns).Create(context.Background(), svcAccount, metav1.CreateOptions{})
 	if err != nil {
-		err := fmt.Errorf("Could not create Service Account: %w", err)
+		err := fmt.Errorf("could not create Service Account: %w", err)
 		return nil, err
 	}
 	if Td.DeployOnOpenShift {
@@ -89,7 +89,7 @@ func (td *FsmTestData) CreateServiceAccount(ns string, svcAccount *corev1.Servic
 func (td *FsmTestData) createRole(ns string, role *rbacv1.Role) (*rbacv1.Role, error) {
 	r, err := td.Client.RbacV1().Roles(ns).Create(context.Background(), role, metav1.CreateOptions{})
 	if err != nil {
-		err := fmt.Errorf("Could not create Role: %w", err)
+		err := fmt.Errorf("could not create Role: %w", err)
 		return nil, err
 	}
 
@@ -100,7 +100,7 @@ func (td *FsmTestData) createRole(ns string, role *rbacv1.Role) (*rbacv1.Role, e
 func (td *FsmTestData) createRoleBinding(ns string, roleBinding *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 	rb, err := td.Client.RbacV1().RoleBindings(ns).Create(context.Background(), roleBinding, metav1.CreateOptions{})
 	if err != nil {
-		err := fmt.Errorf("Could not create RoleBinding: %w", err)
+		err := fmt.Errorf("could not create RoleBinding: %w", err)
 		return nil, err
 	}
 
@@ -130,7 +130,7 @@ func (td *FsmTestData) CreatePod(ns string, pod corev1.Pod) (*corev1.Pod, error)
 		}
 		return podRet, nil
 	}
-	return nil, fmt.Errorf("Error creating pod in namespace %s after %d attempts", ns, maxRetries)
+	return nil, fmt.Errorf("error creating pod in namespace %s after %d attempts", ns, maxRetries)
 }
 
 // CreateDeployment is a wrapper to create a deployment
@@ -149,14 +149,14 @@ func (td *FsmTestData) CreateDeployment(ns string, deployment appsv1.Deployment)
 		}
 		return deploymentRet, nil
 	}
-	return nil, fmt.Errorf("Error creating Deployment in namespace %s after %d attempts", ns, maxRetries)
+	return nil, fmt.Errorf("error creating Deployment in namespace %s after %d attempts", ns, maxRetries)
 }
 
 // CreateService is a wrapper to create a service
 func (td *FsmTestData) CreateService(ns string, svc corev1.Service) (*corev1.Service, error) {
 	sv, err := td.Client.CoreV1().Services(ns).Create(context.Background(), &svc, metav1.CreateOptions{})
 	if err != nil {
-		err := fmt.Errorf("Could not create Service: %w", err)
+		err := fmt.Errorf("could not create Service: %w", err)
 		return nil, err
 	}
 	return sv, nil
@@ -166,7 +166,7 @@ func (td *FsmTestData) CreateService(ns string, svc corev1.Service) (*corev1.Ser
 func (td *FsmTestData) CreateConfigMap(ns string, cm corev1.ConfigMap) (*corev1.ConfigMap, error) {
 	cmRet, err := td.Client.CoreV1().ConfigMaps(ns).Create(context.Background(), &cm, metav1.CreateOptions{})
 	if err != nil {
-		err := fmt.Errorf("Could not create ConfigMap: %w", err)
+		err := fmt.Errorf("could not create ConfigMap: %w", err)
 		return nil, err
 	}
 	return cmRet, nil
@@ -176,7 +176,7 @@ func (td *FsmTestData) CreateConfigMap(ns string, cm corev1.ConfigMap) (*corev1.
 func (td *FsmTestData) CreateMutatingWebhook(mwhc *admissionregv1.MutatingWebhookConfiguration) (*admissionregv1.MutatingWebhookConfiguration, error) {
 	mw, err := td.Client.AdmissionregistrationV1().MutatingWebhookConfigurations().Create(context.Background(), mwhc, metav1.CreateOptions{})
 	if err != nil {
-		err := fmt.Errorf("Could not create MutatingWebhook: %w", err)
+		err := fmt.Errorf("could not create MutatingWebhook: %w", err)
 		return nil, err
 	}
 	return mw, nil
@@ -186,7 +186,7 @@ func (td *FsmTestData) CreateMutatingWebhook(mwhc *admissionregv1.MutatingWebhoo
 func (td *FsmTestData) GetMutatingWebhook(mwhcName string) (*admissionregv1.MutatingWebhookConfiguration, error) {
 	mwhc, err := td.Client.AdmissionregistrationV1().MutatingWebhookConfigurations().Get(context.Background(), mwhcName, metav1.GetOptions{})
 	if err != nil {
-		err := fmt.Errorf("Could not get MutatingWebhook: %w", err)
+		err := fmt.Errorf("could not get MutatingWebhook: %w", err)
 		return nil, err
 	}
 	return mwhc, nil
@@ -399,12 +399,12 @@ func (td *FsmTestData) simpleRoleBinding(name string, namespace string) rbacv1.R
 func (td *FsmTestData) getKubernetesServerVersionNumber() ([]int, error) {
 	version, err := td.Client.Discovery().ServerVersion()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting K8s server version: %w", err)
+		return nil, fmt.Errorf("error getting K8s server version: %w", err)
 	}
 
 	ver, err := goversion.NewVersion(version.String())
 	if err != nil {
-		return nil, fmt.Errorf("Error parsing k8s server version %s: %w", version, err)
+		return nil, fmt.Errorf("error parsing k8s server version %s: %w", version, err)
 	}
 
 	return ver.Segments(), nil
@@ -620,14 +620,14 @@ func (td *FsmTestData) GetGrafanaPodHandle(ns string, grafanaPodName string, por
 	}
 	portForwarder, err := k8s.NewPortForwarder(dialer, fmt.Sprintf("%d:%d", port, port))
 	if err != nil {
-		return nil, fmt.Errorf("Error setting up port forwarding: %w", err)
+		return nil, fmt.Errorf("error setting up port forwarding: %w", err)
 	}
 
 	err = portForwarder.Start(func(pf *k8s.PortForwarder) error {
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Could not start forwarding: %w", err)
+		return nil, fmt.Errorf("could not start forwarding: %w", err)
 	}
 
 	return &Grafana{
@@ -648,14 +648,14 @@ func (td *FsmTestData) GetPrometheusPodHandle(ns string, prometheusPodName strin
 	}
 	portForwarder, err := k8s.NewPortForwarder(dialer, fmt.Sprintf("%d:%d", port, port))
 	if err != nil {
-		return nil, fmt.Errorf("Error setting up port forwarding: %w", err)
+		return nil, fmt.Errorf("error setting up port forwarding: %w", err)
 	}
 
 	err = portForwarder.Start(func(pf *k8s.PortForwarder) error {
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Could not start forwarding: %w", err)
+		return nil, fmt.Errorf("could not start forwarding: %w", err)
 	}
 
 	client, err := api.NewClient(api.Config{
@@ -727,7 +727,7 @@ func (td *FsmTestData) GetFSMPrometheusHandle() (*Prometheus, error) {
 		},
 	})
 	if err != nil || len(prometheusPod) == 0 {
-		return nil, fmt.Errorf("Error getting Prometheus pods: %w (prom pods len: %d)", err, len(prometheusPod))
+		return nil, fmt.Errorf("error getting Prometheus pods: %w (prom pods len: %d)", err, len(prometheusPod))
 	}
 	pHandle, err := Td.GetPrometheusPodHandle(prometheusPod[0].Namespace, prometheusPod[0].Name, DefaultFsmPrometheusPort)
 	if err != nil {
@@ -746,7 +746,7 @@ func (td *FsmTestData) GetFSMGrafanaHandle() (*Grafana, error) {
 		},
 	})
 	if err != nil || len(grafanaPod) == 0 {
-		return nil, fmt.Errorf("Error getting Grafana pods: %w (graf pods len: %d)", err, len(grafanaPod))
+		return nil, fmt.Errorf("error getting Grafana pods: %w (graf pods len: %d)", err, len(grafanaPod))
 	}
 	gHandle, err := Td.GetGrafanaPodHandle(grafanaPod[0].Namespace, grafanaPod[0].Name, DefaultFsmGrafanaPort)
 	if err != nil {
@@ -761,7 +761,7 @@ func (td *FsmTestData) InstallNginxIngress() (string, error) {
 	// Check the node's provider so this works for preprovisioned kind clusters
 	nodes, err := td.Client.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		return "", fmt.Errorf("Error listing nodes to install nginx ingress: %w", err)
+		return "", fmt.Errorf("error listing nodes to install nginx ingress: %w", err)
 	}
 
 	providerID := nodes.Items[0].Spec.ProviderID
@@ -785,12 +785,12 @@ func (td *FsmTestData) InstallNginxIngress() (string, error) {
 	}
 
 	if err := td.CreateNs(NginxIngressSvc.Namespace, nil); err != nil {
-		return "", fmt.Errorf("Error creating namespace for nginx ingress: %w", err)
+		return "", fmt.Errorf("error creating namespace for nginx ingress: %w", err)
 	}
 
 	helmConfig := &action.Configuration{}
 	if err := helmConfig.Init(Td.Env.RESTClientGetter(), NginxIngressSvc.Namespace, "secret", Td.T.Logf); err != nil {
-		return "", fmt.Errorf("Error initializing Helm config for nginx ingress: %w", err)
+		return "", fmt.Errorf("error initializing Helm config for nginx ingress: %w", err)
 	}
 
 	helmConfig.KubeClient.(*kube.Client).Namespace = NginxIngressSvc.Namespace
@@ -805,23 +805,23 @@ func (td *FsmTestData) InstallNginxIngress() (string, error) {
 
 	chartPath, err := install.LocateChart("ingress-nginx", helmcli.New())
 	if err != nil {
-		return "", fmt.Errorf("Error locating ingress-nginx Helm chart: %w", err)
+		return "", fmt.Errorf("error locating ingress-nginx Helm chart: %w", err)
 	}
 
 	chart, err := loader.Load(chartPath)
 	if err != nil {
-		return "", fmt.Errorf("Error loading ingress-nginx chart %s: %w", chartPath, err)
+		return "", fmt.Errorf("error loading ingress-nginx chart %s: %w", chartPath, err)
 	}
 
 	if _, err = install.Run(chart, vals); err != nil {
-		return "", fmt.Errorf("Error installing ingress-nginx: %w", err)
+		return "", fmt.Errorf("error installing ingress-nginx: %w", err)
 	}
 
 	ingressAddr := "localhost"
 	if !isKind && !isK3d {
 		svc, err := Td.Client.CoreV1().Services(NginxIngressSvc.Namespace).Get(context.Background(), NginxIngressSvc.Name, metav1.GetOptions{})
 		if err != nil {
-			return "", fmt.Errorf("Error getting service: %s/%s: %w", NginxIngressSvc.Namespace, NginxIngressSvc.Name, err)
+			return "", fmt.Errorf("error getting service: %s/%s: %w", NginxIngressSvc.Namespace, NginxIngressSvc.Name, err)
 		}
 
 		ingressAddr = svc.Status.LoadBalancer.Ingress[0].IP

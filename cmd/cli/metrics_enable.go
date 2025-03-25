@@ -41,12 +41,12 @@ func newMetricsEnable(out io.Writer) *cobra.Command {
 		RunE: func(_ *cobra.Command, args []string) error {
 			config, err := settings.RESTClientGetter().ToRESTConfig()
 			if err != nil {
-				return fmt.Errorf("Error fetching kubeconfig: %w", err)
+				return fmt.Errorf("error fetching kubeconfig: %w", err)
 			}
 
 			clientset, err := kubernetes.NewForConfig(config)
 			if err != nil {
-				return fmt.Errorf("Could not access Kubernetes cluster, check kubeconfig: %w", err)
+				return fmt.Errorf("could not access Kubernetes cluster, check kubeconfig: %w", err)
 			}
 			enableCmd.clientSet = clientset
 			return enableCmd.run()
@@ -70,7 +70,7 @@ func (cmd *metricsEnableCmd) run() error {
 
 		namespace, err := cmd.clientSet.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
 		if err != nil {
-			return fmt.Errorf("Failed to retrieve namespace [%s]: %w", ns, err)
+			return fmt.Errorf("failed to retrieve namespace [%s]: %w", ns, err)
 		}
 
 		// Check if the namespace belongs to a mesh, if not return an error
@@ -79,7 +79,7 @@ func (cmd *metricsEnableCmd) run() error {
 			return err
 		}
 		if !monitored {
-			return fmt.Errorf("Namespace [%s] does not belong to a mesh, missing annotation %q",
+			return fmt.Errorf("namespace [%s] does not belong to a mesh, missing annotation %q",
 				ns, constants.FSMKubeResourceMonitorAnnotation)
 		}
 
@@ -96,13 +96,13 @@ func (cmd *metricsEnableCmd) run() error {
 
 		_, err = cmd.clientSet.CoreV1().Namespaces().Patch(ctx, ns, types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{}, "")
 		if err != nil {
-			return fmt.Errorf("Failed to enable metrics in namespace [%s]: %w", ns, err)
+			return fmt.Errorf("failed to enable metrics in namespace [%s]: %w", ns, err)
 		}
 
 		// For existing pods in this namespace that are already part of the mesh, add the prometheus
 		// scraping annotations.
 		if err := cmd.enableMetricsForPods(ns); err != nil {
-			return fmt.Errorf("Failed to enable metrics for existing pod in namespace [%s]: %w", ns, err)
+			return fmt.Errorf("failed to enable metrics for existing pod in namespace [%s]: %w", ns, err)
 		}
 
 		fmt.Fprintf(cmd.out, "Metrics successfully enabled in namespace [%s]\n", ns)

@@ -29,7 +29,7 @@ pull_request_rules:
       - check-success=Go gateway test (7, v1.19.16-k3s1, ubuntu-20.04) / e2e
       - check-success=Go statefulset test (8) / e2e
       - check-success=Go retry test (9) / e2e
-      - check-success=Go ingress test / e2e
+      - check-success=Go ingress test (10) / e2e
       - "#approved-reviews-by >= 1"
       - or:
           - and:

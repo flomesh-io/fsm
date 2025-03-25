@@ -28,7 +28,7 @@ func (c *client) provisionIngressGatewayCert(stop <-chan struct{}) error {
 	if defaultCertSpec != nil {
 		// Issue a certificate for the default certificate spec
 		if err := c.createAndStoreGatewayCert(*defaultCertSpec); err != nil {
-			return fmt.Errorf("Error provisioning default ingress gateway cert: %w", err)
+			return fmt.Errorf("error provisioning default ingress gateway cert: %w", err)
 		}
 	}
 
@@ -42,17 +42,17 @@ func (c *client) provisionIngressGatewayCert(stop <-chan struct{}) error {
 // it in the referenced k8s secret if the spec is valid.
 func (c *client) createAndStoreGatewayCert(spec configv1alpha3.IngressGatewayCertSpec) error {
 	if len(spec.SubjectAltNames) == 0 {
-		return fmt.Errorf("Ingress gateway certificate spec must specify at least 1 SAN")
+		return fmt.Errorf("ingress gateway certificate spec must specify at least 1 SAN")
 	}
 
 	// Validate the validity duration
 	if _, err := time.ParseDuration(spec.ValidityDuration); err != nil {
-		return fmt.Errorf("Invalid cert duration '%s' specified: %w", spec.ValidityDuration, err)
+		return fmt.Errorf("invalid cert duration '%s' specified: %w", spec.ValidityDuration, err)
 	}
 
 	// Validate the secret ref
 	if spec.Secret.Name == "" || spec.Secret.Namespace == "" {
-		return fmt.Errorf("Ingress gateway cert secret's name and namespace cannot be nil, got %s/%s", spec.Secret.Namespace, spec.Secret.Name)
+		return fmt.Errorf("ingress gateway cert secret's name and namespace cannot be nil, got %s/%s", spec.Secret.Namespace, spec.Secret.Name)
 	}
 
 	// Issue a certificate
@@ -63,12 +63,12 @@ func (c *client) createAndStoreGatewayCert(spec configv1alpha3.IngressGatewayCer
 	c.certProvider.ReleaseCertificate(certCN)
 	issuedCert, err := c.certProvider.IssueCertificate(certCN, certificate.IngressGateway, certificate.FullCNProvided())
 	if err != nil {
-		return fmt.Errorf("Error issuing a certificate for ingress gateway: %w", err)
+		return fmt.Errorf("error issuing a certificate for ingress gateway: %w", err)
 	}
 
 	// Store the certificate in the referenced secret
 	if err := c.storeCertInSecret(issuedCert, spec.Secret); err != nil {
-		return fmt.Errorf("Error storing ingress gateway cert in secret %s/%s: %w", spec.Secret.Namespace, spec.Secret.Name, err)
+		return fmt.Errorf("error storing ingress gateway cert in secret %s/%s: %w", spec.Secret.Namespace, spec.Secret.Name, err)
 	}
 
 	return nil
@@ -78,12 +78,12 @@ func (c *client) createAndStoreGatewayCert(spec configv1alpha3.IngressGatewayCer
 // it in the referenced k8s secret if the spec is valid.
 func (c *client) createAndStoreAccessCert(spec policyv1alpha1.AccessCertSpec) error {
 	if len(spec.SubjectAltNames) == 0 {
-		return fmt.Errorf("Ingress gateway certificate spec must specify at least 1 SAN")
+		return fmt.Errorf("ingress gateway certificate spec must specify at least 1 SAN")
 	}
 
 	// Validate the secret ref
 	if spec.Secret.Name == "" || spec.Secret.Namespace == "" {
-		return fmt.Errorf("Access cert secret's name and namespace cannot be nil, got %s/%s", spec.Secret.Namespace, spec.Secret.Name)
+		return fmt.Errorf("access cert secret's name and namespace cannot be nil, got %s/%s", spec.Secret.Namespace, spec.Secret.Name)
 	}
 
 	// Issue a certificate
@@ -94,12 +94,12 @@ func (c *client) createAndStoreAccessCert(spec policyv1alpha1.AccessCertSpec) er
 	c.certProvider.ReleaseCertificate(certCN)
 	issuedCert, err := c.certProvider.IssueCertificate(certCN, certificate.Service, certificate.FullCNProvided())
 	if err != nil {
-		return fmt.Errorf("Error issuing a certificate for access: %w", err)
+		return fmt.Errorf("error issuing a certificate for access: %w", err)
 	}
 
 	// Store the certificate in the referenced secret
 	if err := c.storeCertInSecret(issuedCert, spec.Secret); err != nil {
-		return fmt.Errorf("Error storing access cert in secret %s/%s: %w", spec.Secret.Namespace, spec.Secret.Name, err)
+		return fmt.Errorf("error storing access cert in secret %s/%s: %w", spec.Secret.Namespace, spec.Secret.Name, err)
 	}
 
 	return nil

@@ -20,7 +20,7 @@ var commonNamespaceCmds = [][]string{
 func (c *Config) initRootNamespaceDir() error {
 	rootNsDir := c.rootNamespaceDirPath()
 	if err := os.Mkdir(rootNsDir, 0700); err != nil {
-		return fmt.Errorf("Error creating root dir %s for namespaces: %w", rootNsDir, err)
+		return fmt.Errorf("error creating root dir %s for namespaces: %w", rootNsDir, err)
 	}
 	return nil
 }

@@ -85,7 +85,6 @@ func (s *KtoGSyncer) Run(ctx context.Context, ctrls ...*connector.CacheControlle
 
 	for _, ctrl := range ctrls {
 		for !ctrl.HasSynced() {
-
 			time.Sleep(time.Second)
 		}
 	}

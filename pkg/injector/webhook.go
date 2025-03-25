@@ -102,7 +102,7 @@ func (wh *mutatingWebhook) podCreationHandler(w http.ResponseWriter, req *http.R
 	log.Trace().Msgf("Received mutating webhook request: Method=%v, URL=%v", req.Method, req.URL)
 
 	if contentType := req.Header.Get(webhook.HTTPHeaderContentType); contentType != webhook.ContentTypeJSON {
-		err := fmt.Errorf("Invalid content type %s; Expected %s", contentType, webhook.ContentTypeJSON)
+		err := fmt.Errorf("invalid content type %s; Expected %s", contentType, webhook.ContentTypeJSON)
 		http.Error(w, err.Error(), http.StatusUnsupportedMediaType)
 		log.Error().Err(err).Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrInvalidAdmissionReqHeader)).
 			Msgf("Responded to admission request with HTTP %v", http.StatusUnsupportedMediaType)

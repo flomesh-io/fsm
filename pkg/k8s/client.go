@@ -8,7 +8,6 @@ import (
 
 	mapset "github.com/deckarep/golang-set"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -299,7 +298,7 @@ func (c *client) ListServiceIdentitiesForService(svc service.MeshService) ([]ide
 
 	k8sSvc := c.GetService(svc)
 	if k8sSvc == nil {
-		return nil, fmt.Errorf("Error fetching service %q: %s", svc, errServiceNotFound)
+		return nil, fmt.Errorf("error fetching service %q: %s", svc, errServiceNotFound)
 	}
 
 	svcAccountsSet := mapset.NewSet()
@@ -366,7 +365,7 @@ func (c *client) UpdateStatus(resource interface{}) (metav1.Object, error) {
 		return c.pluginClient.PluginV1alpha1().PluginChains(obj.Namespace).UpdateStatus(context.Background(), obj, metav1.UpdateOptions{})
 
 	default:
-		return nil, fmt.Errorf("Unsupported type: %T", t)
+		return nil, fmt.Errorf("unsupported type: %T", t)
 	}
 }
 
@@ -513,7 +512,7 @@ func GetTargetPortFromEndpoints(endpointName string, endpoints corev1.Endpoints)
 	return
 }
 
-func (c *client) GetPodForProxy(proxy models.Proxy) (*v1.Pod, error) {
+func (c *client) GetPodForProxy(proxy models.Proxy) (*corev1.Pod, error) {
 	var pod *corev1.Pod
 	proxyUUID, svcAccount := proxy.GetUUID().String(), proxy.GetIdentity().ToK8sServiceAccount()
 	log.Trace().Msgf("Looking for pod with label %q=%q", constants.SidecarUniqueIDLabelName, proxyUUID)
@@ -531,7 +530,7 @@ func (c *client) GetPodForProxy(proxy models.Proxy) (*v1.Pod, error) {
 			return nil, errDidNotFindPodForUUID
 		}
 	} else {
-		var pods []v1.Pod
+		var pods []corev1.Pod
 		podList := c.ListPods()
 
 		for _, pod := range podList {

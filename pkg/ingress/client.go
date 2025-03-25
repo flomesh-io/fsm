@@ -23,7 +23,7 @@ func Initialize(kubeClient kubernetes.Interface, kubeController k8s.Controller, 
 	}
 
 	if err := c.provisionIngressGatewayCert(stop); err != nil {
-		return fmt.Errorf("Error provisioning ingress gateway certificate: %w", err)
+		return fmt.Errorf("error provisioning ingress gateway certificate: %w", err)
 	}
 
 	return nil

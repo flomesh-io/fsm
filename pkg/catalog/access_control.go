@@ -189,7 +189,7 @@ func (mc *MeshCatalog) getStrictAccessControlTrafficPolicy(svc service.MeshServi
 					if _, err := mc.kubeController.UpdateStatus(&aclWithStatus); err != nil {
 						log.Error().Err(err).Msg("Error updating status for AccessControl")
 					}
-					return fmt.Errorf("Could not list endpoints of the source service %s/%s specified in the AccessControl %s/%s",
+					return fmt.Errorf("could not list endpoints of the source service %s/%s specified in the AccessControl %s/%s",
 						source.Namespace, source.Name, aclPolicy.Namespace, aclPolicy.Name)
 				}
 

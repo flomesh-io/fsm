@@ -311,19 +311,19 @@ func getInjectorPod(kubeClient kubernetes.Interface) (*corev1.Pod, error) {
 // validateCLIParams contains all checks necessary that various permutations of the CLI flags are consistent
 func validateCLIParams() error {
 	if meshName == "" {
-		return fmt.Errorf("Please specify the mesh name using --mesh-name")
+		return fmt.Errorf("please specify the mesh name using --mesh-name")
 	}
 
 	if fsmNamespace == "" {
-		return fmt.Errorf("Please specify the FSM namespace using --fsm-namespace")
+		return fmt.Errorf("please specify the FSM namespace using --fsm-namespace")
 	}
 
 	if webhookConfigName == "" {
-		return fmt.Errorf("Please specify the mutatingwebhookconfiguration name using --webhook-config-name value")
+		return fmt.Errorf("please specify the mutatingwebhookconfiguration name using --webhook-config-name value")
 	}
 
 	if caBundleSecretName == "" {
-		return fmt.Errorf("Please specify the CA bundle secret name using --ca-bundle-secret-name")
+		return fmt.Errorf("please specify the CA bundle secret name using --ca-bundle-secret-name")
 	}
 
 	return nil

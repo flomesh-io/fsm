@@ -85,7 +85,7 @@ func (mc *MeshCatalog) GetIngressTrafficPolicy(svc service.MeshService) (*traffi
 					if _, err := mc.kubeController.UpdateStatus(&ingressBackendWithStatus); err != nil {
 						log.Error().Err(err).Msg("Error updating status for IngressBackend")
 					}
-					return nil, fmt.Errorf("Could not list endpoints of the source service %s/%s specified in the IngressBackend %s/%s",
+					return nil, fmt.Errorf("could not list endpoints of the source service %s/%s specified in the IngressBackend %s/%s",
 						source.Namespace, source.Name, ingressBackendPolicy.Namespace, ingressBackendPolicy.Name)
 				}
 
