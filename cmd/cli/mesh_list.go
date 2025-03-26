@@ -47,12 +47,12 @@ func newMeshList(out io.Writer) *cobra.Command {
 		RunE: func(_ *cobra.Command, args []string) error {
 			config, err := settings.RESTClientGetter().ToRESTConfig()
 			if err != nil {
-				return fmt.Errorf("error fetching kubeconfig: %w", err)
+				return fmt.Errorf("Error fetching kubeconfig: %w", err)
 			}
 			listCmd.config = config
 			clientset, err := kubernetes.NewForConfig(config)
 			if err != nil {
-				return fmt.Errorf("could not access Kubernetes cluster, check kubeconfig: %w", err)
+				return fmt.Errorf("Could not access Kubernetes cluster, check kubeconfig: %w", err)
 			}
 			listCmd.clientSet = clientset
 			return listCmd.run()

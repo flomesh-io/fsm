@@ -42,12 +42,12 @@ func newNamespaceIgnore(out io.Writer) *cobra.Command {
 			ignoreCmd.namespaces = args
 			config, err := settings.RESTClientGetter().ToRESTConfig()
 			if err != nil {
-				return fmt.Errorf("error fetching kubeconfig: %w", err)
+				return fmt.Errorf("Error fetching kubeconfig: %w", err)
 			}
 
 			clientset, err := kubernetes.NewForConfig(config)
 			if err != nil {
-				return fmt.Errorf("could not access Kubernetes cluster, check kubeconfig: %w", err)
+				return fmt.Errorf("Could not access Kubernetes cluster, check kubeconfig: %w", err)
 			}
 			ignoreCmd.clientSet = clientset
 			return ignoreCmd.run()
@@ -65,7 +65,7 @@ func (cmd *namespaceIgnoreCmd) run() error {
 		defer cancel()
 
 		if _, err := cmd.clientSet.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{}); err != nil {
-			return fmt.Errorf("failed to retrieve namespace [%s]: %w", ns, err)
+			return fmt.Errorf("Failed to retrieve namespace [%s]: %w", ns, err)
 		}
 
 		// Patch the namespace with ignore label
@@ -80,7 +80,7 @@ func (cmd *namespaceIgnoreCmd) run() error {
 
 		_, err := cmd.clientSet.CoreV1().Namespaces().Patch(ctx, ns, types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{}, "")
 		if err != nil {
-			return fmt.Errorf("failed to configure namespace [%s] to be ignored: %w", ns, err)
+			return fmt.Errorf("Failed to configure namespace [%s] to be ignored: %w", ns, err)
 		}
 
 		fmt.Fprintf(cmd.out, "Successfully configured namespace [%s] to be ignored\n", ns)

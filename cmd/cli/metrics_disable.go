@@ -38,12 +38,12 @@ func newMetricsDisable(out io.Writer) *cobra.Command {
 		RunE: func(_ *cobra.Command, args []string) error {
 			config, err := settings.RESTClientGetter().ToRESTConfig()
 			if err != nil {
-				return fmt.Errorf("error fetching kubeconfig: %w", err)
+				return fmt.Errorf("Error fetching kubeconfig: %w", err)
 			}
 
 			clientset, err := kubernetes.NewForConfig(config)
 			if err != nil {
-				return fmt.Errorf("could not access Kubernetes cluster, check kubeconfig: %w", err)
+				return fmt.Errorf("Could not access Kubernetes cluster, check kubeconfig: %w", err)
 			}
 			disableCmd.clientSet = clientset
 			return disableCmd.run()
@@ -65,7 +65,7 @@ func (cmd *metricsDisableCmd) run() error {
 
 		namespace, err := cmd.clientSet.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
 		if err != nil {
-			return fmt.Errorf("failed to retrieve namespace [%s]: %w", ns, err)
+			return fmt.Errorf("Failed to retrieve namespace [%s]: %w", ns, err)
 		}
 
 		// Check if the namespace belongs to a mesh, if not return an error
@@ -74,7 +74,7 @@ func (cmd *metricsDisableCmd) run() error {
 			return err
 		}
 		if !monitored {
-			return fmt.Errorf("namespace [%s] does not belong to a mesh, missing annotation %q",
+			return fmt.Errorf("Namespace [%s] does not belong to a mesh, missing annotation %q",
 				ns, constants.FSMKubeResourceMonitorAnnotation)
 		}
 
@@ -90,12 +90,12 @@ func (cmd *metricsDisableCmd) run() error {
 
 		_, err = cmd.clientSet.CoreV1().Namespaces().Patch(ctx, ns, types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{}, "")
 		if err != nil {
-			return fmt.Errorf("failed to disable metrics in namespace [%s]: %w", ns, err)
+			return fmt.Errorf("Failed to disable metrics in namespace [%s]: %w", ns, err)
 		}
 
 		// Disable metrics on pods belonging to this namespace
 		if err := cmd.disableMetricsForPods(ns); err != nil {
-			return fmt.Errorf("failed to disable metrics for existing pod in namespace [%s]: %w", ns, err)
+			return fmt.Errorf("Failed to disable metrics for existing pod in namespace [%s]: %w", ns, err)
 		}
 
 		fmt.Fprintf(cmd.out, "Metrics successfully disabled in namespace [%s]\n", ns)

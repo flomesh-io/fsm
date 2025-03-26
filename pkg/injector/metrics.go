@@ -30,7 +30,7 @@ func IsMetricsEnabled(kubeController k8s.Controller, namespace string) (enabled 
 		case "disabled", "no", "false":
 			enabled = false
 		default:
-			err = fmt.Errorf("invalid value specified for annotation %q: %s", constants.MetricsAnnotation, metrics)
+			err = fmt.Errorf("Invalid value specified for annotation %q: %s", constants.MetricsAnnotation, metrics)
 		}
 	}
 	return

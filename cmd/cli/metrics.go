@@ -37,11 +37,11 @@ func isMonitoredNamespace(ns corev1.Namespace, meshList mapset.Set) (bool, error
 		return false, nil
 	}
 	if meshName == "" {
-		return false, fmt.Errorf("label %q on namespace %q cannot be empty",
+		return false, fmt.Errorf("Label %q on namespace %q cannot be empty",
 			constants.FSMKubeResourceMonitorAnnotation, ns.Name)
 	}
 	if !meshList.Contains(meshName) {
-		return false, fmt.Errorf("invalid mesh name %q used with label %q on namespace %q, must be one of %v",
+		return false, fmt.Errorf("Invalid mesh name %q used with label %q on namespace %q, must be one of %v",
 			meshName, constants.FSMKubeResourceMonitorAnnotation, ns.Name, meshList.ToSlice())
 	}
 

@@ -36,7 +36,7 @@ var _ = Describe("test health probe helpers", func() {
 		}
 		actualResponseCode, err := p.Probe()
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring(`refused`))
+		Expect(err.Error()).To(ContainSubstring(`EOF`))
 		Expect(actualResponseCode).To(Equal(503))
 	})
 

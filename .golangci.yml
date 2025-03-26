@@ -42,7 +42,10 @@ linters:
         text: 'SA1019:'
       - linters:
           - staticcheck
-        text: 'ST1001: should not use dot imports'
+        text: 'ST1001:'
+      - linters:
+          - staticcheck
+        text: 'ST1005:'
       - linters:
           - gosec
         text: 'G101:'

@@ -48,12 +48,12 @@ func newPolicyCheckConflicts(stdout io.Writer) *cobra.Command {
 
 			config, err := settings.RESTClientGetter().ToRESTConfig()
 			if err != nil {
-				return fmt.Errorf("error fetching kubeconfig: %w", err)
+				return fmt.Errorf("Error fetching kubeconfig: %w", err)
 			}
 
 			policyClient, err := policyClientset.NewForConfig(config)
 			if err != nil {
-				return fmt.Errorf("error initializing %s client: %w", policyv1alpha1.SchemeGroupVersion, err)
+				return fmt.Errorf("Error initializing %s client: %w", policyv1alpha1.SchemeGroupVersion, err)
 			}
 			policyCheckConflictsCmd.policyClient = policyClient
 
@@ -76,7 +76,7 @@ func (cmd *policyCheckConflictsCmd) run() error {
 		err = cmd.checkIngressBackendConflict()
 
 	default:
-		return fmt.Errorf("invalid resource kind %s", cmd.resourceKind)
+		return fmt.Errorf("Invalid resource kind %s", cmd.resourceKind)
 	}
 
 	return err
@@ -85,14 +85,14 @@ func (cmd *policyCheckConflictsCmd) run() error {
 func (cmd *policyCheckConflictsCmd) checkIngressBackendConflict() error {
 	givenNsCount := len(cmd.namespaces)
 	if givenNsCount != 1 {
-		return fmt.Errorf("requires single namespace specified by '-n|--namespace' to check for conflicts, got %d", givenNsCount)
+		return fmt.Errorf("Requires single namespace specified by '-n|--namespace' to check for conflicts, got %d", givenNsCount)
 	}
 
 	ns := cmd.namespaces[0]
 
 	ingressBackends, err := cmd.policyClient.PolicyV1alpha1().IngressBackends(ns).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		return fmt.Errorf("error listing IngressBackend resources in namespace %s: %w", ns, err)
+		return fmt.Errorf("Error listing IngressBackend resources in namespace %s: %w", ns, err)
 	}
 
 	conflictsExist := false

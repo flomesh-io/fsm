@@ -42,14 +42,14 @@ func TestGetPortExclusionListForPod(t *testing.T) {
 			name:          "contains outbound port exclusion list annontation but invalid port",
 			podAnnotation: map[string]string{OutboundPortExclusionListAnnotation: "6060, -7070"},
 			forAnnotation: OutboundPortExclusionListAnnotation,
-			expectedError: fmt.Errorf("invalid port value '%s' specified for annotation '%s'", "-7070", OutboundPortExclusionListAnnotation),
+			expectedError: fmt.Errorf("Invalid port value '%s' specified for annotation '%s'", "-7070", OutboundPortExclusionListAnnotation),
 			expectedPorts: nil,
 		},
 		{
 			name:          "contains inbound port exclusion list annontation but invalid port",
 			podAnnotation: map[string]string{InboundPortExclusionListAnnotation: "6060, -7070"},
 			forAnnotation: InboundPortExclusionListAnnotation,
-			expectedError: fmt.Errorf("invalid port value '%s' specified for annotation '%s'", "-7070", InboundPortExclusionListAnnotation),
+			expectedError: fmt.Errorf("Invalid port value '%s' specified for annotation '%s'", "-7070", InboundPortExclusionListAnnotation),
 			expectedPorts: nil,
 		},
 	}
@@ -168,7 +168,7 @@ func TestGetOutboundIPRangeListForPod(t *testing.T) {
 			name:             "invalid annotation",
 			podAnnotation:    map[string]string{OutboundIPRangeExclusionListAnnotation: "foobar"},
 			forAnnotation:    OutboundIPRangeExclusionListAnnotation,
-			expectedError:    fmt.Errorf("invalid IP range 'foobar' specified for annotation '%s'", OutboundIPRangeExclusionListAnnotation),
+			expectedError:    fmt.Errorf("Invalid IP range 'foobar' specified for annotation '%s'", OutboundIPRangeExclusionListAnnotation),
 			expectedIPRanges: nil,
 		},
 	}

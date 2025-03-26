@@ -121,7 +121,7 @@ func getMeshInfoList(restConfig *rest.Config, clientSet kubernetes.Interface) ([
 
 	fsmControllerDeployments, err := getControllerDeployments(clientSet)
 	if err != nil {
-		return meshInfoList, fmt.Errorf("could not list deployments %w", err)
+		return meshInfoList, fmt.Errorf("Could not list deployments %w", err)
 	}
 	if len(fsmControllerDeployments.Items) == 0 {
 		return meshInfoList, nil
@@ -247,7 +247,7 @@ func getSupportedSmiForControllerPod(pod string, namespace string, restConfig *r
 
 	portForwarder, err := k8s.NewPortForwarder(dialer, fmt.Sprintf("%d:%d", localPort, constants.FSMHTTPServerPort))
 	if err != nil {
-		return nil, fmt.Errorf("error setting up port forwarding: %w", err)
+		return nil, fmt.Errorf("Error setting up port forwarding: %w", err)
 	}
 
 	var smiSupported map[string]string
@@ -259,16 +259,16 @@ func getSupportedSmiForControllerPod(pod string, namespace string, restConfig *r
 		// #nosec G107: Potential HTTP request made with variable url
 		resp, err := http.Get(url)
 		if err != nil {
-			return fmt.Errorf("error fetching url %s: %s", url, err)
+			return fmt.Errorf("Error fetching url %s: %s", url, err)
 		}
 
 		if err := json.NewDecoder(resp.Body).Decode(&smiSupported); err != nil {
-			return fmt.Errorf("error rendering HTTP response: %s", err)
+			return fmt.Errorf("Error rendering HTTP response: %s", err)
 		}
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving supported SMI versions for pod %s in namespace %s: %s", pod, namespace, err)
+		return nil, fmt.Errorf("Error retrieving supported SMI versions for pod %s in namespace %s: %s", pod, namespace, err)
 	}
 
 	for smiAPI, smiAPIVersion := range smiSupported {

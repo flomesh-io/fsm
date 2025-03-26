@@ -45,7 +45,7 @@ func WebhookConfigurationManagedBy(m manager.Manager) *WebhookConfigurationBuild
 
 func (b *WebhookConfigurationBuilder) For(apiType runtime.Object) *WebhookConfigurationBuilder {
 	if b.apiType != nil {
-		b.err = errors.New("for(...) should only be called once, could not assign multiple objects for webhook registration")
+		b.err = errors.New("For(...) should only be called once, could not assign multiple objects for webhook registration")
 	}
 
 	b.apiType = apiType

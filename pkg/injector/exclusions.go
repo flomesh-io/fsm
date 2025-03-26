@@ -48,7 +48,7 @@ func GetPortExclusionListForPod(pod *corev1.Pod, annotation string) ([]int, erro
 		portStr := strings.TrimSpace(portStr)
 		portVal, err := strconv.Atoi(portStr)
 		if err != nil || portVal <= 0 {
-			return nil, fmt.Errorf("invalid port value '%s' specified for annotation '%s'", portStr, annotation)
+			return nil, fmt.Errorf("Invalid port value '%s' specified for annotation '%s'", portStr, annotation)
 		}
 		ports = append(ports, portVal)
 	}
@@ -100,7 +100,7 @@ func GetOutboundIPRangeListForPod(pod *corev1.Pod, annotation string) ([]string,
 	for _, ip := range strings.Split(ipRangeExclusionsStr, ",") {
 		ip := strings.TrimSpace(ip)
 		if _, _, err := net.ParseCIDR(ip); err != nil {
-			return nil, fmt.Errorf("invalid IP range '%s' specified for annotation '%s'", ip, annotation)
+			return nil, fmt.Errorf("Invalid IP range '%s' specified for annotation '%s'", ip, annotation)
 		}
 		ipRanges = append(ipRanges, ip)
 	}
