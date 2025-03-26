@@ -14,7 +14,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/util"
 )
 
-func (s *Server) xNetDNSProxyUpstreamsObserveFilter(obj interface{}) bool {
+func (s *Server) xNetDnsProxyUpstreamsObserveFilter(obj interface{}) bool {
 	service, ok := obj.(*corev1.Service)
 	if !ok {
 		return false
@@ -32,7 +32,102 @@ func (s *Server) xNetDNSProxyUpstreamsObserveFilter(obj interface{}) bool {
 	return false
 }
 
-func (s *Server) updateDNSNat() {
+type NatBrVal struct {
+	natVal *maps.NatVal
+	brVal  *maps.IFaceVal
+}
+
+func (s *Server) initDnsUpstreams() []configv1alpha3.DNSUpstream {
+	var upstreams []configv1alpha3.DNSUpstream
+	if s.cfg.IsXNetDNSProxyEnabled() {
+		upstreams = s.cfg.GetXNetDNSProxyUpstreams()
+	}
+	if len(upstreams) == 0 && s.cfg.IsLocalDNSProxyEnabled() {
+		upstreams = append(upstreams, configv1alpha3.DNSUpstream{
+			Name:      constants.FSMControllerName,
+			Namespace: s.cfg.GetFSMNamespace(),
+		})
+	}
+	return upstreams
+}
+
+func (s *Server) initDnsNatKeys() map[*maps.NatKey]*NatBrVal {
+	nats := make(map[*maps.NatKey]*NatBrVal)
+	if br4Val := s.getCniBridge4Info(); br4Val != nil {
+		nat4Key := new(maps.NatKey)
+		nat4Key.Dport = util.HostToNetShort(53)
+		nat4Key.Proto = uint8(maps.IPPROTO_UDP)
+		nat4Key.TcDir = uint8(maps.TC_DIR_EGR)
+		nat4Key.V6 = 0
+		nat4Val := new(maps.NatVal)
+		nats[nat4Key] = &NatBrVal{
+			natVal: nat4Val,
+			brVal:  br4Val,
+		}
+	}
+	if br6Val := s.getCniBridge6Info(); br6Val != nil {
+		nat6Key := new(maps.NatKey)
+		nat6Key.Dport = util.HostToNetShort(53)
+		nat6Key.Proto = uint8(maps.IPPROTO_UDP)
+		nat6Key.TcDir = uint8(maps.TC_DIR_EGR)
+		nat6Key.V6 = 1
+		nat6Val := new(maps.NatVal)
+		nats[nat6Key] = &NatBrVal{
+			natVal: nat6Val,
+			brVal:  br6Val,
+		}
+	}
+	return nats
+}
+
+func (s *Server) initDnsNatEndpoints(upstreams []configv1alpha3.DNSUpstream, nats map[*maps.NatKey]*NatBrVal) {
+	for _, upstream := range upstreams {
+		var rips []string
+		if len(upstream.IP) > 0 {
+			rips = append(rips, upstream.IP)
+		} else if len(upstream.Name) > 0 {
+			meshSvc := service.MeshService{
+				Name:      upstream.Name,
+				Namespace: upstream.Namespace,
+			}
+			if len(meshSvc.Namespace) == 0 {
+				meshSvc.Namespace = s.cfg.GetFSMNamespace()
+			}
+			if k8sSvc := s.kubeController.GetService(meshSvc); k8sSvc != nil {
+				for _, clusterIP := range k8sSvc.Spec.ClusterIPs {
+					if len(clusterIP) > 0 {
+						rips = append(rips, clusterIP)
+					}
+				}
+			}
+		}
+		if len(rips) == 0 {
+			continue
+		}
+
+		rPort := uint16(53)
+		if upstream.Port > 0 && upstream.Port <= math.MaxUint16 {
+			rPort = uint16(upstream.Port)
+		}
+		for _, rip := range rips {
+			if rAddr := net.ParseIP(rip); rAddr != nil {
+				for natKey, nat := range nats {
+					if rAddr.To4() != nil {
+						if natKey.V6 == 0 {
+							nat.natVal.AddEp(rAddr, rPort, nat.brVal.Mac[:], 0, 0, nil, true)
+						}
+					} else {
+						if natKey.V6 == 1 {
+							nat.natVal.AddEp(rAddr, rPort, nat.brVal.Mac[:], 0, 0, nil, true)
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+func (s *Server) updateDnsNat() {
 	obsoleteNats := make(map[string]*XNat)
 	for natKey, natVal := range s.xnatCache {
 		if natVal.key.Sys == uint32(maps.SysMesh) && natVal.key.TcDir == uint8(maps.TC_DIR_EGR) {
@@ -40,71 +135,35 @@ func (s *Server) updateDNSNat() {
 		}
 	}
 
-	brVal := s.getCniBridge4Info()
-
-	natKey := new(maps.NatKey)
-	natKey.Dport = util.HostToNetShort(53)
-	natKey.Proto = uint8(maps.IPPROTO_UDP)
-	natKey.TcDir = uint8(maps.TC_DIR_EGR)
-	natVal := new(maps.NatVal)
-
-	var upstreams []configv1alpha3.DNSUpstream
-
-	if s.cfg.IsXNetDNSProxyEnabled() {
-		upstreams = s.cfg.GetXNetDNSProxyUpstreams()
+	nats := s.initDnsNatKeys()
+	if len(nats) == 0 {
+		return
 	}
 
-	if len(upstreams) == 0 && s.cfg.IsLocalDNSProxyEnabled() {
-		upstreams = append(upstreams, configv1alpha3.DNSUpstream{
-			Name:      constants.FSMControllerName,
-			Namespace: s.cfg.GetFSMNamespace(),
-		})
+	upstreams := s.initDnsUpstreams()
+	if len(upstreams) == 0 {
+		return
 	}
 
-	if len(upstreams) > 0 {
-		for _, upstream := range upstreams {
-			var rip string
-			if len(upstream.IP) > 0 {
-				rip = upstream.IP
-			} else if len(upstream.Name) > 0 {
-				meshSvc := service.MeshService{
-					Name:      upstream.Name,
-					Namespace: upstream.Namespace,
-				}
-				if len(meshSvc.Namespace) == 0 {
-					meshSvc.Namespace = s.cfg.GetFSMNamespace()
-				}
-				if k8sSvc := s.kubeController.GetService(meshSvc); k8sSvc != nil {
-					rip = k8sSvc.Spec.ClusterIP
-				}
-			}
-			if len(rip) == 0 {
-				continue
-			}
+	s.initDnsNatEndpoints(upstreams, nats)
 
-			rport := uint16(53)
-			if upstream.Port > 0 && upstream.Port <= math.MaxUint16 {
-				rport = uint16(upstream.Port)
-			}
-			natVal.AddEp(net.ParseIP(rip), rport, brVal.Mac[:], 0, 0, nil, true)
-		}
-	}
-
-	if natVal.EpCnt > 0 {
-		dnsNat := newXNat(maps.SysMesh, natKey, natVal)
-		if existsNat, exists := s.xnatCache[dnsNat.Key()]; !exists {
-			if err := s.setupDnsNat(natKey, natVal); err != nil {
-				log.Error().Err(err).Msg(`failed to store dns nat`)
-			}
-			s.xnatCache[dnsNat.Key()] = dnsNat
-		} else {
-			if existsNat.valHash != dnsNat.valHash {
-				if err := s.setupDnsNat(natKey, natVal); err != nil {
+	for natKey, nat := range nats {
+		if nat.natVal.EpCnt > 0 {
+			dnsNat := newXNat(maps.SysMesh, natKey, nat.natVal)
+			if existsNat, exists := s.xnatCache[dnsNat.Key()]; !exists {
+				if err := s.setupDnsNat(natKey, nat.natVal); err != nil {
 					log.Error().Err(err).Msg(`failed to store dns nat`)
 				}
 				s.xnatCache[dnsNat.Key()] = dnsNat
+			} else {
+				if existsNat.valHash != dnsNat.valHash {
+					if err := s.setupDnsNat(natKey, nat.natVal); err != nil {
+						log.Error().Err(err).Msg(`failed to store dns nat`)
+					}
+					s.xnatCache[dnsNat.Key()] = dnsNat
+				}
+				delete(obsoleteNats, dnsNat.Key())
 			}
-			delete(obsoleteNats, dnsNat.Key())
 		}
 	}
 
