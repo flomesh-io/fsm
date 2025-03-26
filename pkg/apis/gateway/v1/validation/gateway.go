@@ -171,7 +171,8 @@ func validateGatewayAddresses(addresses []gatewayv1.GatewayAddress, path *field.
 	ipAddrSet, hostnameAddrSet := sets.Set[string]{}, sets.Set[string]{}
 	for i, address := range addresses {
 		if address.Type != nil {
-			if *address.Type == gatewayv1.IPAddressType {
+			switch *address.Type {
+			case gatewayv1.IPAddressType:
 				if _, err := netip.ParseAddr(address.Value); err != nil {
 					errs = append(errs, field.Invalid(path.Index(i), address.Value, "invalid ip address"))
 				}
@@ -180,7 +181,7 @@ func validateGatewayAddresses(addresses []gatewayv1.GatewayAddress, path *field.
 				} else {
 					ipAddrSet.Insert(address.Value)
 				}
-			} else if *address.Type == gatewayv1.HostnameAddressType {
+			case gatewayv1.HostnameAddressType:
 				if !validHostnameRegexp.MatchString(address.Value) {
 					errs = append(errs, field.Invalid(path.Index(i), address.Value, fmt.Sprintf("must only contain valid characters (matching %s)", validHostnameAddress)))
 				}

@@ -86,6 +86,7 @@ func parseToLinuxRouteStruct(output []byte) (linuxRouteStruct, error) {
 		}
 
 		// The default interface is the one that's 0 for both destination and mask.
+		//nolint:staticcheck
 		if !(tokens[destinationField] == "00000000" && tokens[maskField] == "00000000") {
 			continue
 		}

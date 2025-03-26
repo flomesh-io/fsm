@@ -128,7 +128,7 @@ func (c *client) GetServicesForServiceIdentity(svcIdentity identity.ServiceIdent
 			continue
 		}
 
-		podLabels := pod.ObjectMeta.Labels
+		podLabels := pod.Labels
 		meshServicesForPod := c.getServicesByLabels(podLabels, pod.Namespace)
 		for _, svc := range meshServicesForPod {
 			if added := svcSet.Add(svc); added {

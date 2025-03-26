@@ -411,11 +411,12 @@ func (r *serviceReconciler) getEndpoints(ctx context.Context, svc *corev1.Servic
 			for i, epPort := range ss.Ports {
 				targetPort := int32(0)
 
-				if port.Name == "" {
+				switch port.Name {
+				case "":
 					// port.Name is optional if there is only one port
 					targetPort = epPort.Port
 					matchedPortNameFound = true
-				} else if port.Name == epPort.Name {
+				case epPort.Name:
 					targetPort = epPort.Port
 					matchedPortNameFound = true
 				}

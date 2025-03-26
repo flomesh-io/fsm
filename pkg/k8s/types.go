@@ -6,7 +6,6 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -125,7 +124,7 @@ type Controller interface {
 	UpdateStatus(interface{}) (metav1.Object, error)
 
 	// GetPodForProxy returns the pod for the given proxy
-	GetPodForProxy(models.Proxy) (*v1.Pod, error)
+	GetPodForProxy(models.Proxy) (*corev1.Pod, error)
 
 	// GetVmForProxy returns the VM for the given proxy
 	GetVmForProxy(models.Proxy) (*machinev1alpha1.VirtualMachine, error)

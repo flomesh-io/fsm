@@ -73,7 +73,7 @@ func SetLogLevel(verbosity string) error {
 		zerolog.SetGlobalLevel(zerolog.TraceLevel)
 
 	default:
-		return fmt.Errorf("Invalid log level '%s' specified. Please specify one of %v", verbosity, AllowedLevels)
+		return fmt.Errorf("invalid log level '%s' specified. Please specify one of %v", verbosity, AllowedLevels)
 	}
 	return nil
 }

@@ -24,7 +24,7 @@ func (c *Config) Run() error {
 	// Create staging directory
 	stagingDir, err := ioutil.TempDir("", "fsm_bug_report_")
 	if err != nil {
-		return fmt.Errorf("Error creating temp directory needed for creating bug report. Aborting: %w", err)
+		return fmt.Errorf("error creating temp directory needed for creating bug report. Aborting: %w", err)
 	}
 	c.stagingDir = stagingDir
 	fmt.Fprintf(c.Stdout, "[+] Created staging dir %s to generate bug report\n", stagingDir)
@@ -72,7 +72,7 @@ func (c *Config) Run() error {
 		outFd, err := ioutil.TempFile("", "*_fsm-bug-report.tar.gz")
 		if err != nil {
 			c.completionFailure("Error creating temp file for bug report")
-			return fmt.Errorf("Error creating bug report: %w", err)
+			return fmt.Errorf("error creating bug report: %w", err)
 		}
 		c.OutFile = outFd.Name()
 	}
@@ -81,7 +81,7 @@ func (c *Config) Run() error {
 	fmt.Fprintf(c.Stdout, "[+] Collecting information from individual app namespaces\n")
 	if err := c.archive(stagingDir, c.OutFile); err != nil {
 		c.completionFailure("Error archiving bug report")
-		return fmt.Errorf("Error creating bug report: %w", err)
+		return fmt.Errorf("error creating bug report: %w", err)
 	}
 	// Remove staging dir
 	if err := os.RemoveAll(c.stagingDir); err != nil {
@@ -96,7 +96,7 @@ func checkPrereq() error {
 	requiredTools := []string{"fsm", "kubectl"}
 	for _, tool := range requiredTools {
 		if !pathExists(tool) {
-			return fmt.Errorf("Prerequisite not met: %s not found", tool)
+			return fmt.Errorf("prerequisite not met: %s not found", tool)
 		}
 	}
 	return nil
@@ -121,12 +121,12 @@ func (c *Config) completionFailure(format string, a ...interface{}) {
 
 func runCmdAndWriteToFile(cmdList []string, outFile string) error {
 	if len(cmdList) == 0 {
-		return fmt.Errorf("Atleast 1 command must be provided, none provided")
+		return fmt.Errorf("atleast 1 command must be provided, none provided")
 	}
 
 	// Create parent directory if it doesn't exist
 	if err := os.MkdirAll(filepath.Dir(outFile), 0700); err != nil {
-		return fmt.Errorf("Error creating parent directory for path: %s: %w", outFile, err)
+		return fmt.Errorf("error creating parent directory for path: %s: %w", outFile, err)
 	}
 
 	cmd := exec.Command(cmdList[0], cmdList[1:]...) //#nosec G204

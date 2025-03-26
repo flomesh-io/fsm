@@ -377,7 +377,7 @@ func (b *bootstrap) ensureMeshConfig() error {
 func (b *bootstrap) initiatilizeKubernetesEventsRecorder() error {
 	bootstrapPod, err := b.getBootstrapPod()
 	if err != nil {
-		return fmt.Errorf("Error fetching fsm-bootstrap pod: %w", err)
+		return fmt.Errorf("error fetching fsm-bootstrap pod: %w", err)
 	}
 	eventRecorder := events.GenericEventRecorder()
 	return eventRecorder.Initialize(bootstrapPod, b.kubeClient, fsmNamespace)
@@ -411,7 +411,7 @@ func parseFlags() error {
 // validateCLIParams contains all checks necessary that various permutations of the CLI flags are consistent
 func validateCLIParams() error {
 	if fsmNamespace == "" {
-		return errors.New("Please specify the FSM namespace using --fsm-namespace")
+		return errors.New("please specify the FSM namespace using --fsm-namespace")
 	}
 
 	return nil

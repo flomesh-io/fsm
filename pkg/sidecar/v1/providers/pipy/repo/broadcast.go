@@ -249,7 +249,7 @@ func GetProxyFromPod(pod *corev1.Pod) (*pipy.Proxy, error) {
 	}
 	proxyUUID, err := uuid.Parse(uuidString)
 	if err != nil {
-		return nil, fmt.Errorf("Could not parse UUID label into UUID type (%s): %w", uuidString, err)
+		return nil, fmt.Errorf("could not parse UUID label into UUID type (%s): %w", uuidString, err)
 	}
 
 	return pipy.NewProxy(models.KindSidecar,
@@ -273,7 +273,7 @@ func GetProxyFromVm(vm *machinev1alpha1.VirtualMachine) (*pipy.Proxy, error) {
 	}
 	proxyUUID, err := uuid.Parse(uuidString)
 	if err != nil {
-		return nil, fmt.Errorf("Could not parse UUID label into UUID type (%s): %w", uuidString, err)
+		return nil, fmt.Errorf("could not parse UUID label into UUID type (%s): %w", uuidString, err)
 	}
 
 	return pipy.NewProxy(models.KindSidecar,
@@ -293,7 +293,7 @@ func GetProxyUUIDFromPod(pod *corev1.Pod) (string, error) {
 	}
 	proxyUUID, err := uuid.Parse(uuidString)
 	if err != nil {
-		return "", fmt.Errorf("Could not parse UUID label into UUID type (%s): %w", uuidString, err)
+		return "", fmt.Errorf("could not parse UUID label into UUID type (%s): %w", uuidString, err)
 	}
 	return proxyUUID.String(), nil
 }
@@ -306,7 +306,7 @@ func GetProxyUUIDFromVm(vm *machinev1alpha1.VirtualMachine) (string, error) {
 	}
 	proxyUUID, err := uuid.Parse(uuidString)
 	if err != nil {
-		return "", fmt.Errorf("Could not parse UUID label into UUID type (%s): %w", uuidString, err)
+		return "", fmt.Errorf("could not parse UUID label into UUID type (%s): %w", uuidString, err)
 	}
 	return proxyUUID.String(), nil
 }

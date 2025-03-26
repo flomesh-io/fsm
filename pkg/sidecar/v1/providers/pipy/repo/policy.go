@@ -826,7 +826,7 @@ func (hmr *HTTPMatchRule) addMethodMatch(method Method) {
 	if hmr.allowedAnyMethod {
 		return
 	}
-	if "*" == method {
+	if method == "*" {
 		hmr.allowedAnyMethod = true
 	}
 	if hmr.allowedAnyMethod {
@@ -847,7 +847,7 @@ func (hrr *HTTPRouteRule) addAllowedService(serviceName ServiceName) {
 	if hrr.allowedAnyService {
 		return
 	}
-	if "*" == serviceName {
+	if serviceName == "*" {
 		hrr.allowedAnyService = true
 	}
 	if hrr.allowedAnyService {

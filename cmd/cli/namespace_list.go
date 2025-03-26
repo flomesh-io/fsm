@@ -40,12 +40,12 @@ func newNamespaceList(out io.Writer) *cobra.Command {
 
 			config, err := settings.RESTClientGetter().ToRESTConfig()
 			if err != nil {
-				return fmt.Errorf("Error fetching kubeconfig: %w", err)
+				return fmt.Errorf("error fetching kubeconfig: %w", err)
 			}
 
 			clientset, err := kubernetes.NewForConfig(config)
 			if err != nil {
-				return fmt.Errorf("Could not access Kubernetes cluster, check kubeconfig: %w", err)
+				return fmt.Errorf("could not access Kubernetes cluster, check kubeconfig: %w", err)
 			}
 			namespaceList.clientSet = clientset
 			return namespaceList.run()
@@ -62,7 +62,7 @@ func newNamespaceList(out io.Writer) *cobra.Command {
 func (l *namespaceListCmd) run() error {
 	namespaces, err := selectNamespacesMonitoredByMesh(l.meshName, l.clientSet)
 	if err != nil {
-		return fmt.Errorf("Could not list namespaces related to fsm [%s]: %w", l.meshName, err)
+		return fmt.Errorf("could not list namespaces related to fsm [%s]: %w", l.meshName, err)
 	}
 
 	if len(namespaces.Items) == 0 {
@@ -78,8 +78,8 @@ func (l *namespaceListCmd) run() error {
 	w := newTabWriter(l.out)
 	fmt.Fprintln(w, "NAMESPACE\tMESH\tSIDECAR-INJECTION")
 	for _, ns := range namespaces.Items {
-		fsmName := ns.ObjectMeta.Labels[constants.FSMKubeResourceMonitorAnnotation]
-		sidecarInjectionEnabled, ok := ns.ObjectMeta.Annotations[constants.SidecarInjectionAnnotation]
+		fsmName := ns.Labels[constants.FSMKubeResourceMonitorAnnotation]
+		sidecarInjectionEnabled, ok := ns.Annotations[constants.SidecarInjectionAnnotation]
 		if !ok {
 			sidecarInjectionEnabled = "-" // not set
 		}

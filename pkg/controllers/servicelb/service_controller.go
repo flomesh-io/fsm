@@ -389,9 +389,10 @@ func (r *serviceReconciler) podIPs(ctx context.Context, pods []corev1.Pod, svc *
 		}
 
 		for _, addr := range node.Status.Addresses {
-			if addr.Type == corev1.NodeExternalIP {
+			switch addr.Type {
+			case corev1.NodeExternalIP:
 				extIPs[addr.Address] = true
-			} else if addr.Type == corev1.NodeInternalIP {
+			case corev1.NodeInternalIP:
 				intIPs[addr.Address] = true
 			}
 		}

@@ -139,7 +139,7 @@ func (r *NamespacedIngressWebhook) ValidateCreate(ctx context.Context, obj runti
 	}
 
 	list := &nsigv1alpha1.NamespacedIngressList{}
-	if err := r.Client.List(ctx, list, client.InNamespace(namespacedingress.Namespace)); err != nil {
+	if err := r.List(ctx, list, client.InNamespace(namespacedingress.Namespace)); err != nil {
 		return nil, err
 	}
 

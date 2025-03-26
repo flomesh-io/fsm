@@ -4,7 +4,6 @@ package fake
 import (
 	access "github.com/servicemeshinterface/smi-sdk-go/pkg/apis/access/v1alpha3"
 	smiSpecs "github.com/servicemeshinterface/smi-sdk-go/pkg/apis/specs/v1alpha4"
-	spec "github.com/servicemeshinterface/smi-sdk-go/pkg/apis/specs/v1alpha4"
 	split "github.com/servicemeshinterface/smi-sdk-go/pkg/apis/split/v1alpha4"
 
 	"github.com/flomesh-io/fsm/pkg/identity"
@@ -14,8 +13,8 @@ import (
 
 type fakeMeshSpec struct {
 	trafficSplits   []*split.TrafficSplit
-	httpRouteGroups []*spec.HTTPRouteGroup
-	tcpRoutes       []*spec.TCPRoute
+	httpRouteGroups []*smiSpecs.HTTPRouteGroup
+	tcpRoutes       []*smiSpecs.TCPRoute
 	trafficTargets  []*access.TrafficTarget
 	serviceAccounts []identity.K8sServiceAccount
 }
@@ -25,8 +24,8 @@ type fakeMeshSpec struct {
 func NewFakeMeshSpecClient() smi.MeshSpec {
 	return fakeMeshSpec{
 		trafficSplits:   []*split.TrafficSplit{&tests.TrafficSplit},
-		httpRouteGroups: []*spec.HTTPRouteGroup{&tests.HTTPRouteGroup},
-		tcpRoutes:       []*spec.TCPRoute{&tests.TCPRoute},
+		httpRouteGroups: []*smiSpecs.HTTPRouteGroup{&tests.HTTPRouteGroup},
+		tcpRoutes:       []*smiSpecs.TCPRoute{&tests.TCPRoute},
 		trafficTargets:  []*access.TrafficTarget{&tests.TrafficTarget, &tests.BookstoreV2TrafficTarget},
 		serviceAccounts: []identity.K8sServiceAccount{
 			tests.BookstoreServiceAccount,
@@ -53,7 +52,7 @@ func (f fakeMeshSpec) ListServiceAccounts() []identity.K8sServiceAccount {
 }
 
 // ListHTTPTrafficSpecs lists SMI HTTPRouteGroup resources
-func (f fakeMeshSpec) ListHTTPTrafficSpecs() []*spec.HTTPRouteGroup {
+func (f fakeMeshSpec) ListHTTPTrafficSpecs() []*smiSpecs.HTTPRouteGroup {
 	return f.httpRouteGroups
 }
 
@@ -63,12 +62,12 @@ func (f fakeMeshSpec) GetHTTPRouteGroup(_ string) *smiSpecs.HTTPRouteGroup {
 }
 
 // ListTCPTrafficSpecs lists SMI TCPRoute resources
-func (f fakeMeshSpec) ListTCPTrafficSpecs() []*spec.TCPRoute {
+func (f fakeMeshSpec) ListTCPTrafficSpecs() []*smiSpecs.TCPRoute {
 	return f.tcpRoutes
 }
 
 // GetTCPRoute returns an SMI TCPRoute resource given its name of the form <namespace>/<name>s
-func (f fakeMeshSpec) GetTCPRoute(_ string) *spec.TCPRoute {
+func (f fakeMeshSpec) GetTCPRoute(_ string) *smiSpecs.TCPRoute {
 	return nil
 }
 

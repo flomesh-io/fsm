@@ -102,17 +102,17 @@ func validateHTTPRouteBackendServicePorts(rules []gatewayv1.HTTPRouteRule, path 
 	for i, rule := range rules {
 		path = path.Index(i).Child("backendRefs")
 		for i, ref := range rule.BackendRefs {
-			if ref.BackendObjectReference.Group != nil &&
-				*ref.BackendObjectReference.Group != "" {
+			if ref.Group != nil &&
+				*ref.Group != "" {
 				continue
 			}
 
-			if ref.BackendObjectReference.Kind != nil &&
-				*ref.BackendObjectReference.Kind != "Service" {
+			if ref.Kind != nil &&
+				*ref.Kind != "Service" {
 				continue
 			}
 
-			if ref.BackendObjectReference.Port == nil {
+			if ref.Port == nil {
 				errs = append(errs, field.Required(path.Index(i).Child("port"), "missing port for Service reference"))
 			}
 		}

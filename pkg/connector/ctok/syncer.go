@@ -495,10 +495,10 @@ func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *cor
 	}
 
 	enc, hash := connector.Encode(svcMeta)
-	createSvc.ObjectMeta.Annotations[connector.AnnotationMeshEndpointAddr] = enc
-	createSvc.ObjectMeta.Annotations[constants.AnnotationMeshEndpointHash] = fmt.Sprintf("%d", hash)
+	createSvc.Annotations[connector.AnnotationMeshEndpointAddr] = enc
+	createSvc.Annotations[constants.AnnotationMeshEndpointHash] = fmt.Sprintf("%d", hash)
 	if svcMeta.GRPCMeta != nil && len(svcMeta.GRPCMeta.Interface) > 0 {
-		createSvc.ObjectMeta.Labels[constants.GRPCServiceInterfaceLabel] = svcMeta.GRPCMeta.Interface
+		createSvc.Labels[constants.GRPCServiceInterfaceLabel] = svcMeta.GRPCMeta.Interface
 	}
 
 	if fillEndpoints && len(endpointAddresses) > 0 && len(endpointPorts) > 0 {

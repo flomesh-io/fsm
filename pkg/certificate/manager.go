@@ -130,17 +130,17 @@ func (m *Manager) handleMRCEvent(mrcClient MRCClient, event MRCEvent) error {
 		}
 
 		c := &issuer{Issuer: client, ID: mrc.Name, CertificateAuthority: ca, TrustDomain: mrc.Spec.TrustDomain}
-		switch {
-		case mrc.Status.State == constants.MRCStateActive:
+		switch mrc.Status.State {
+		case constants.MRCStateActive:
 			m.mu.Lock()
 			m.signingIssuer = c
 			m.validatingIssuer = c
 			m.mu.Unlock()
-		case mrc.Status.State == constants.MRCStateIssuingRollback || mrc.Status.State == constants.MRCStateIssuingRollout:
+		case constants.MRCStateIssuingRollback, constants.MRCStateIssuingRollout:
 			m.mu.Lock()
 			m.signingIssuer = c
 			m.mu.Unlock()
-		case mrc.Status.State == constants.MRCStateValidatingRollback || mrc.Status.State == constants.MRCStateValidatingRollout:
+		case constants.MRCStateValidatingRollback, constants.MRCStateValidatingRollout:
 			m.mu.Lock()
 			m.validatingIssuer = c
 			m.mu.Unlock()

@@ -45,7 +45,6 @@ import (
 	"helm.sh/helm/v3/pkg/releaseutil"
 
 	"helm.sh/helm/v3/pkg/action"
-	helm "helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,7 +60,7 @@ import (
 
 // RenderChart renders a chart and returns the rendered manifest
 func RenderChart(
-	templateClient *helm.Install,
+	templateClient *action.Install,
 	object metav1.Object,
 	chartSource []byte,
 	mc configurator.Configurator,
@@ -100,7 +99,7 @@ func RenderChart(
 
 // RenderChartWithValues renders a chart and returns the rendered manifest
 func RenderChartWithValues(
-	templateClient *helm.Install,
+	templateClient *action.Install,
 	object metav1.Object,
 	chartSource []byte,
 	client client.Client,
@@ -112,9 +111,9 @@ func RenderChartWithValues(
 	})
 }
 
-func TemplateClient(cfg *helm.Configuration, releaseName, namespace string, kubeVersion *chartutil.KubeVersion) *helm.Install {
+func TemplateClient(cfg *action.Configuration, releaseName, namespace string, kubeVersion *chartutil.KubeVersion) *action.Install {
 	//log.Debug().Msgf("[HELM UTIL] Creating Helm Install Client ...")
-	installClient := helm.NewInstall(cfg)
+	installClient := action.NewInstall(cfg)
 	installClient.ReleaseName = releaseName
 	installClient.Namespace = namespace
 	installClient.CreateNamespace = false
@@ -125,7 +124,7 @@ func TemplateClient(cfg *helm.Configuration, releaseName, namespace string, kube
 	return installClient
 }
 
-func ActionConfig(namespace string, debugLog action.DebugLog) *helm.Configuration {
+func ActionConfig(namespace string, debugLog action.DebugLog) *action.Configuration {
 	configFlags := &genericclioptions.ConfigFlags{Namespace: &namespace}
 
 	actionConfig := new(action.Configuration)

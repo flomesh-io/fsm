@@ -263,7 +263,7 @@ func (gw *GatewaySource) updateGatewayHTTPRoute(k8sSvc *corev1.Service, portSpec
 			Name:      k8sSvc.Name,
 		},
 	}
-	newRt.Spec.CommonRouteSpec.ParentRefs = parentRefs
+	newRt.Spec.ParentRefs = parentRefs
 	newRt.Spec.Hostnames = gw.getGatewayRouteHostnamesForService(k8sSvc)
 	newRt.Spec.Rules = []gwv1.HTTPRouteRule{{
 		Matches: []gwv1.HTTPRouteMatch{{
@@ -328,7 +328,7 @@ func (gw *GatewaySource) updateGatewayGRPCRoute(k8sSvc *corev1.Service, portSpec
 			Name:      k8sSvc.Name,
 		},
 	}
-	newRt.Spec.CommonRouteSpec.ParentRefs = parentRefs
+	newRt.Spec.ParentRefs = parentRefs
 	newRt.Spec.Hostnames = gw.getGatewayRouteHostnamesForService(k8sSvc)
 	newRt.Spec.Rules = []gwv1.GRPCRouteRule{{
 		Matches: grpcRouteMatches,
@@ -389,7 +389,7 @@ func (gw *GatewaySource) updateGatewayTCPRoute(k8sSvc *corev1.Service, portSpec 
 			Name:      k8sSvc.Name,
 		},
 	}
-	newRt.Spec.CommonRouteSpec.ParentRefs = parentRefs
+	newRt.Spec.ParentRefs = parentRefs
 	newRt.Spec.Rules = []gwv1alpha2.TCPRouteRule{{
 		BackendRefs: []gwv1alpha2.BackendRef{
 			{

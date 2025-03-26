@@ -99,7 +99,7 @@ func (out *OutboundTrafficPolicy) AddRoute(httpRouteMatch HTTPRouteMatch, retryP
 				existingRoute.RetryPolicy = retryPolicy
 				return nil
 			}
-			return fmt.Errorf("Route for HTTP Route Match: %v already exists: %v for outbound traffic policy: %s", existingRoute.HTTPRouteMatch, existingRoute, out.Name)
+			return fmt.Errorf("route for HTTP Route Match: %v already exists: %v for outbound traffic policy: %s", existingRoute.HTTPRouteMatch, existingRoute, out.Name)
 		}
 	}
 

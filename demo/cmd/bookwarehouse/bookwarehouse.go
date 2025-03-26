@@ -81,7 +81,7 @@ func restockBooks(w http.ResponseWriter, r *http.Request) {
 	totalBooks := int(record.ValueInt)
 	db.Save(record)
 
-	_, _ = w.Write([]byte(fmt.Sprintf("{\"restocked\":%d}", numberOfBooks)))
+	_, _ = fmt.Fprintf(w, "{\"restocked\":%d}", numberOfBooks)
 	log.Info().Msgf("Restocking bookstore with %d new books; Total so far: %d", numberOfBooks, totalBooks)
 	if totalBooks >= 3 {
 		fmt.Println(common.Success)

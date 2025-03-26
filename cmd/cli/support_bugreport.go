@@ -90,15 +90,15 @@ func newSupportBugReportCmd(config *action.Configuration, stdout io.Writer, stde
 		RunE: func(_ *cobra.Command, args []string) error {
 			config, err := settings.RESTClientGetter().ToRESTConfig()
 			if err != nil {
-				return fmt.Errorf("Error fetching kubeconfig: %w", err)
+				return fmt.Errorf("error fetching kubeconfig: %w", err)
 			}
 			bugReportCmd.kubeClient, err = kubernetes.NewForConfig(config)
 			if err != nil {
-				return fmt.Errorf("Could not access Kubernetes cluster, check kubeconfig: %w", err)
+				return fmt.Errorf("could not access Kubernetes cluster, check kubeconfig: %w", err)
 			}
 			bugReportCmd.policyClient, err = policyClientset.NewForConfig(config)
 			if err != nil {
-				return fmt.Errorf("Could not access FSM, check configuration: %w", err)
+				return fmt.Errorf("could not access FSM, check configuration: %w", err)
 			}
 			return bugReportCmd.run()
 		},
@@ -130,7 +130,7 @@ func (cmd *bugReportCmd) run() error {
 			fmt.Fprintf(cmd.stderr, "Unable to list mesh namespaces")
 		}
 		for _, namespace := range namespaces.Items {
-			namespaceName := namespace.ObjectMeta.Name
+			namespaceName := namespace.Name
 			cmd.appNamespaces = append(cmd.appNamespaces, namespaceName)
 			pods, err := cmd.kubeClient.CoreV1().Pods(namespaceName).List(ctx, metav1.ListOptions{})
 			if err != nil {

@@ -45,7 +45,7 @@ func WebhookManagedBy(m manager.Manager) *WebhookBuilder {
 // If the given object implements the admission.Validator interface, a ValidatingWebhook will be wired for this type.
 func (blder *WebhookBuilder) For(apiType runtime.Object) *WebhookBuilder {
 	if blder.apiType != nil {
-		blder.err = errors.New("For(...) should only be called once, could not assign multiple objects for webhook registration")
+		blder.err = errors.New("for(...) should only be called once, could not assign multiple objects for webhook registration")
 	}
 	blder.apiType = apiType
 	return blder
@@ -257,7 +257,7 @@ func (blder *WebhookBuilder) getType() (runtime.Object, error) {
 	if blder.apiType != nil {
 		return blder.apiType, nil
 	}
-	return nil, errors.New("For() must be called with a valid object")
+	return nil, errors.New("for() must be called with a valid object")
 }
 
 func (blder *WebhookBuilder) isAlreadyHandled(path string) bool {

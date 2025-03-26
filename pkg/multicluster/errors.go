@@ -3,5 +3,5 @@ package multicluster
 import "fmt"
 
 var (
-	errServiceNotFound = fmt.Errorf("Service not found")
+	errServiceNotFound = fmt.Errorf("service not found")
 )
