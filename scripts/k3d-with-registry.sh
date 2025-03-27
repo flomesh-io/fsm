@@ -143,11 +143,9 @@ options:
       - arg: --cluster-cidr=10.42.0.0/16
         nodeFilters:
           - server:*
-          - agent:*
       - arg: --service-cidr=10.43.0.0/16
         nodeFilters:
           - server:*
-          - agent:*
     nodeLabels:
       - label: ingress-ready=true
         nodeFilters:
