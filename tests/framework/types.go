@@ -110,6 +110,7 @@ type FsmTestData struct {
 
 	K3dNodeLogs           bool // Whether to collect logs from k3d nodes
 	LoadImagesIntoCluster bool // Whether to load images into the cluster
+	IncreaseK3dCIDRRange  bool // Whether to increase the CIDR range of the k3d cluster
 }
 
 // InstallFSMOpts describes install options for FSM

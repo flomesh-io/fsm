@@ -204,6 +204,7 @@ func registerFlags(td *FsmTestData) {
 
 	flag.BoolVar(&td.K3dNodeLogs, "k3dNodeLogs", utils.GetBoolEnv("K3D_NODE_LOGS"), "Collect and write k3d node logs to stdout")
 	flag.BoolVar(&td.LoadImagesIntoCluster, "loadImagesIntoCluster", utils.GetBoolEnv("LOAD_IMAGES_INTO_CLUSTER"), "Load images into cluster")
+	flag.BoolVar(&td.IncreaseK3dCIDRRange, "increaseK3dCIDRRange", utils.GetBoolEnv("INCREASE_K3D_CIDR_RANGE"), "Whether to increase the CIDR range of the k3d cluster")
 }
 
 // ValidateStringParams validates input string parameters are valid
@@ -594,6 +595,23 @@ func (td *FsmTestData) k3dClusterConfig() *k3dCfg.ClusterConfig {
 		Host:     exposeAPI.Host,
 		HostIP:   exposeAPI.Binding.HostIP,
 		HostPort: exposeAPI.Binding.HostPort,
+	}
+
+	if td.IncreaseK3dCIDRRange {
+		simpleCfg.Options.K3sOptions.ExtraArgs = append(simpleCfg.Options.K3sOptions.ExtraArgs, []k3dCfg.K3sArgWithNodeFilters{
+			{
+				Arg:         "--cluster-cidr=10.42.0.0/16",
+				NodeFilters: []string{"server:*"},
+			},
+			{
+				Arg:         "--service-cidr=10.43.0.0/16",
+				NodeFilters: []string{"server:*"},
+			},
+			{
+				Arg:         "--kube-controller-manager-arg=node-cidr-mask-size-ipv4=22",
+				NodeFilters: []string{"server:*"},
+			},
+		}...)
 	}
 
 	if err := config.ProcessSimpleConfig(&simpleCfg); err != nil {
