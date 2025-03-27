@@ -116,7 +116,7 @@ func (c *MRCProviderGenerator) GetCertIssuerForMRC(mrc *v1alpha3.MeshRootCertifi
 	case p.CertManager != nil:
 		issuer, err = c.getCertManagerFSMCertificateManager(mrc)
 	default:
-		return nil, nil, fmt.Errorf("unknown certificate provider: %+v", p)
+		return nil, nil, fmt.Errorf("Unknown certificate provider: %+v", p)
 	}
 
 	if err != nil {
@@ -142,20 +142,20 @@ func (c *MRCProviderGenerator) getTresorFSMCertificateManager(mrc *v1alpha3.Mesh
 	// Regardless of success or failure, all instances can proceed to load the same CA.
 	rootCert, err = tresor.NewCA(constants.CertificationAuthorityCommonName, constants.CertificationAuthorityRootValidityPeriod, rootCertCountry, rootCertLocality, rootCertOrganization)
 	if err != nil {
-		return nil, errors.New("failed to create new Certificate Authority with cert issuer tresor")
+		return nil, errors.New("Failed to create new Certificate Authority with cert issuer tresor")
 	}
 
 	if rootCert.GetPrivateKey() == nil {
-		return nil, errors.New("root cert does not have a private key")
+		return nil, errors.New("Root cert does not have a private key")
 	}
 
 	rootCert, err = k8s.GetCertificateFromSecret(mrc.Namespace, mrc.Spec.Provider.Tresor.CA.SecretRef.Name, rootCert, c.kubeClient)
 	if err != nil {
-		return nil, fmt.Errorf("failed to synchronize certificate on Secrets API : %w", err)
+		return nil, fmt.Errorf("Failed to synchronize certificate on Secrets API : %w", err)
 	}
 
 	if rootCert.GetPrivateKey() == nil {
-		return nil, fmt.Errorf("root cert does not have a private key: %w", certificate.ErrInvalidCertSecret)
+		return nil, fmt.Errorf("Root cert does not have a private key: %w", certificate.ErrInvalidCertSecret)
 	}
 
 	tresorClient, err := tresor.New(
@@ -220,7 +220,7 @@ func (c *MRCProviderGenerator) getCertManagerFSMCertificateManager(mrc *v1alpha3
 	provider := mrc.Spec.Provider.CertManager
 	client, err := cmversionedclient.NewForConfig(c.kubeConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to build cert-manager client set: %w", err)
+		return nil, fmt.Errorf("Failed to build cert-manager client set: %w", err)
 	}
 
 	cmClient, err := certmanager.New(

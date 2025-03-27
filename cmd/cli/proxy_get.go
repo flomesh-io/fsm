@@ -58,13 +58,13 @@ func newProxyGetCmd(config *action.Configuration, factory common.Factory, out io
 			getCmd.pod = args[1]
 			conf, err := config.RESTClientGetter.ToRESTConfig()
 			if err != nil {
-				return fmt.Errorf("error fetching kubeconfig: %w", err)
+				return fmt.Errorf("Error fetching kubeconfig: %w", err)
 			}
 			getCmd.config = conf
 
 			clientset, err := kubernetes.NewForConfig(conf)
 			if err != nil {
-				return fmt.Errorf("could not access Kubernetes cluster, check kubeconfig: %w", err)
+				return fmt.Errorf("Could not access Kubernetes cluster, check kubeconfig: %w", err)
 			}
 			getCmd.clientSet = clientset
 			return getCmd.run(factory)
@@ -93,7 +93,7 @@ func (cmd *proxyGetCmd) run(factory common.Factory) error {
 	if cmd.outFile != "" {
 		fd, err := os.Create(cmd.outFile)
 		if err != nil {
-			return fmt.Errorf("error opening file %s: %w", cmd.outFile, err)
+			return fmt.Errorf("Error opening file %s: %w", cmd.outFile, err)
 		}
 		//nolint: errcheck
 		//#nosec G307

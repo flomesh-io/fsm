@@ -40,12 +40,12 @@ func newNamespaceList(out io.Writer) *cobra.Command {
 
 			config, err := settings.RESTClientGetter().ToRESTConfig()
 			if err != nil {
-				return fmt.Errorf("error fetching kubeconfig: %w", err)
+				return fmt.Errorf("Error fetching kubeconfig: %w", err)
 			}
 
 			clientset, err := kubernetes.NewForConfig(config)
 			if err != nil {
-				return fmt.Errorf("could not access Kubernetes cluster, check kubeconfig: %w", err)
+				return fmt.Errorf("Could not access Kubernetes cluster, check kubeconfig: %w", err)
 			}
 			namespaceList.clientSet = clientset
 			return namespaceList.run()
@@ -62,7 +62,7 @@ func newNamespaceList(out io.Writer) *cobra.Command {
 func (l *namespaceListCmd) run() error {
 	namespaces, err := selectNamespacesMonitoredByMesh(l.meshName, l.clientSet)
 	if err != nil {
-		return fmt.Errorf("could not list namespaces related to fsm [%s]: %w", l.meshName, err)
+		return fmt.Errorf("Could not list namespaces related to fsm [%s]: %w", l.meshName, err)
 	}
 
 	if len(namespaces.Items) == 0 {

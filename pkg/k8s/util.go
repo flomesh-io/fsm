@@ -167,17 +167,17 @@ func GetSubdomainFromHostname(c Controller, host string) string {
 // GetKubernetesServerVersionNumber returns the Kubernetes server version number in chunks, ex. v1.19.3 => [1, 19, 3]
 func GetKubernetesServerVersionNumber(kubeClient kubernetes.Interface) ([]int, error) {
 	if kubeClient == nil {
-		return nil, fmt.Errorf("kubernetes client is not initialized")
+		return nil, fmt.Errorf("Kubernetes client is not initialized")
 	}
 
 	version, err := kubeClient.Discovery().ServerVersion()
 	if err != nil {
-		return nil, fmt.Errorf("error getting K8s server version: %w", err)
+		return nil, fmt.Errorf("Error getting K8s server version: %w", err)
 	}
 
 	ver, err := goversion.NewVersion(version.String())
 	if err != nil {
-		return nil, fmt.Errorf("error parsing k8s server version %s: %w", version, err)
+		return nil, fmt.Errorf("Error parsing k8s server version %s: %w", version, err)
 	}
 
 	return ver.Segments(), nil

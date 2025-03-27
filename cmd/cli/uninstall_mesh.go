@@ -73,18 +73,18 @@ func newUninstallMeshCmd(config *action.Configuration, in io.Reader, out io.Writ
 			// get kubeconfig and initialize k8s client
 			kubeconfig, err := settings.RESTClientGetter().ToRESTConfig()
 			if err != nil {
-				return fmt.Errorf("error fetching kubeconfig: %w", err)
+				return fmt.Errorf("Error fetching kubeconfig: %w", err)
 			}
 			uninstall.config = kubeconfig
 
 			uninstall.clientSet, err = kubernetes.NewForConfig(kubeconfig)
 			if err != nil {
-				return fmt.Errorf("could not access Kubernetes cluster, check kubeconfig: %w", err)
+				return fmt.Errorf("Could not access Kubernetes cluster, check kubeconfig: %w", err)
 			}
 
 			uninstall.extensionsClientset, err = extensionsClientset.NewForConfig(kubeconfig)
 			if err != nil {
-				return fmt.Errorf("could not access extension client set: %w", err)
+				return fmt.Errorf("Could not access extension client set: %w", err)
 			}
 
 			uninstall.meshNamespace = settings.FsmNamespace()
@@ -232,7 +232,7 @@ func (d *uninstallMeshCmd) deleteNs(ctx context.Context, ns string) error {
 			fmt.Fprintf(d.out, "FSM namespace [%s] not found\n", ns)
 			return nil
 		}
-		return fmt.Errorf("could not delete FSM namespace [%s] - %v", ns, err)
+		return fmt.Errorf("Could not delete FSM namespace [%s] - %v", ns, err)
 	}
 	fmt.Fprintf(d.out, "FSM namespace [%s] deleted successfully\n", ns)
 	return nil
@@ -253,7 +253,7 @@ func (d *uninstallMeshCmd) deleteClusterResources() error {
 
 		failedDeletions := d.uninstallClusterResources()
 		if len(failedDeletions) != 0 {
-			return fmt.Errorf("failed to completely delete the following FSM resource types: %+v", failedDeletions)
+			return fmt.Errorf("Failed to completely delete the following FSM resource types: %+v", failedDeletions)
 		}
 	}
 	return nil
@@ -327,7 +327,7 @@ func (d *uninstallMeshCmd) uninstallCustomResourceDefinitions() error {
 	}
 
 	if len(failedDeletions) != 0 {
-		return fmt.Errorf("failed to delete the following FSM CRDs: %+v", failedDeletions)
+		return fmt.Errorf("Failed to delete the following FSM CRDs: %+v", failedDeletions)
 	}
 
 	return nil
@@ -374,7 +374,7 @@ func (d *uninstallMeshCmd) uninstallMutatingWebhookConfigurations() error {
 	}
 
 	if len(failedDeletions) != 0 {
-		return fmt.Errorf("found but failed to delete the following FSM MutatingWebhookConfigurations: %+v", failedDeletions)
+		return fmt.Errorf("Found but failed to delete the following FSM MutatingWebhookConfigurations: %+v", failedDeletions)
 	}
 
 	return nil
@@ -422,7 +422,7 @@ func (d *uninstallMeshCmd) uninstallValidatingWebhookConfigurations() error {
 	}
 
 	if len(failedDeletions) != 0 {
-		return fmt.Errorf("found but failed to delete the following FSM ValidatingWebhookConfigurations: %+v", failedDeletions)
+		return fmt.Errorf("Found but failed to delete the following FSM ValidatingWebhookConfigurations: %+v", failedDeletions)
 	}
 
 	return nil
@@ -456,7 +456,7 @@ func (d *uninstallMeshCmd) uninstallSecrets() error {
 	}
 
 	if len(failedDeletions) != 0 {
-		return fmt.Errorf("found but failed to delete the following FSM secrets in namespace %s: %+v", d.meshNamespace, failedDeletions)
+		return fmt.Errorf("Found but failed to delete the following FSM secrets in namespace %s: %+v", d.meshNamespace, failedDeletions)
 	}
 
 	return nil

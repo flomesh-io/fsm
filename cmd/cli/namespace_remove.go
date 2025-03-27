@@ -39,12 +39,12 @@ func newNamespaceRemove(out io.Writer) *cobra.Command {
 			namespaceRemove.namespace = args[0]
 			config, err := settings.RESTClientGetter().ToRESTConfig()
 			if err != nil {
-				return fmt.Errorf("error fetching kubeconfig: %w", err)
+				return fmt.Errorf("Error fetching kubeconfig: %w", err)
 			}
 
 			clientset, err := kubernetes.NewForConfig(config)
 			if err != nil {
-				return fmt.Errorf("could not access Kubernetes cluster, check kubeconfig: %w", err)
+				return fmt.Errorf("Could not access Kubernetes cluster, check kubeconfig: %w", err)
 			}
 			namespaceRemove.clientSet = clientset
 			return namespaceRemove.run()
@@ -65,7 +65,7 @@ func (r *namespaceRemoveCmd) run() error {
 	namespace, err := r.clientSet.CoreV1().Namespaces().Get(ctx, r.namespace, metav1.GetOptions{})
 
 	if err != nil {
-		return fmt.Errorf("could not get namespace [%s]: %w", r.namespace, err)
+		return fmt.Errorf("Could not get namespace [%s]: %w", r.namespace, err)
 	}
 
 	val, exists := namespace.Labels[constants.FSMKubeResourceMonitorAnnotation]
@@ -92,12 +92,12 @@ func (r *namespaceRemoveCmd) run() error {
 			_, err = r.clientSet.CoreV1().Namespaces().Patch(ctx, r.namespace, types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{}, "")
 
 			if err != nil {
-				return fmt.Errorf("could not remove namespace [%s] from mesh [%s]: %w", r.namespace, r.meshName, err)
+				return fmt.Errorf("Could not remove namespace [%s] from mesh [%s]: %w", r.namespace, r.meshName, err)
 			}
 
 			fmt.Fprintf(r.out, "Namespace [%s] successfully removed from mesh [%s]\n", r.namespace, r.meshName)
 		} else {
-			return fmt.Errorf("namespace belongs to mesh [%s], not mesh [%s]. Please specify the correct mesh", val, r.meshName)
+			return fmt.Errorf("Namespace belongs to mesh [%s], not mesh [%s]. Please specify the correct mesh", val, r.meshName)
 		}
 	} else {
 		fmt.Fprintf(r.out, "Namespace [%s] already does not belong to any mesh\n", r.namespace)

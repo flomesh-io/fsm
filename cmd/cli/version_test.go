@@ -62,8 +62,8 @@ func TestGetMeshVersion(t *testing.T) {
 					},
 				},
 			},
-			proxyGetMeshVersionErr: fmt.Errorf("error retrieving mesh version from pod [controllerPod] in namespace [test]"),
-			expectedErr:            fmt.Errorf("error retrieving mesh version from pod [controllerPod] in namespace [test]"),
+			proxyGetMeshVersionErr: fmt.Errorf("Error retrieving mesh version from pod [controllerPod] in namespace [test]"),
+			expectedErr:            fmt.Errorf("Error retrieving mesh version from pod [controllerPod] in namespace [test]"),
 		},
 		{
 			name:      "mesh in namespace and remote version found",

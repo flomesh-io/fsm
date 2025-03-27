@@ -457,7 +457,7 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 
 	k8sServerVersion, err := Td.getKubernetesServerVersionNumber()
 	if err != nil {
-		return fmt.Errorf("error getting k8s server version")
+		return fmt.Errorf("Error getting k8s server version")
 	}
 
 	// Logs v<major>.<minor>.<patch>
@@ -1765,7 +1765,7 @@ func (td *FsmTestData) RetryFuncOnError(f RetryOnErrorFunc, retryTimes int, slee
 		}
 		time.Sleep(sleepBetweenRetries)
 	}
-	return fmt.Errorf("error after retrying %d times: %w", retryTimes, err)
+	return fmt.Errorf("Error after retrying %d times: %w", retryTimes, err)
 }
 
 // waitForCABundleSecret waits for the CA bundle secret to be created
@@ -1987,7 +1987,7 @@ func (td *FsmTestData) GrabLogs() error {
 // AddOpenShiftSCC adds the specified SecurityContextConstraint to the given service account
 func (td *FsmTestData) AddOpenShiftSCC(scc, serviceAccount, namespace string) error {
 	if !td.DeployOnOpenShift {
-		return fmt.Errorf("tests are not configured for OpenShift. Try again with -deployOnOpenShift=true")
+		return fmt.Errorf("Tests are not configured for OpenShift. Try again with -deployOnOpenShift=true")
 	}
 
 	roleName := serviceAccount + "-scc"
@@ -2002,7 +2002,7 @@ func (td *FsmTestData) AddOpenShiftSCC(scc, serviceAccount, namespace string) er
 
 	_, err := td.createRole(namespace, &roleDefinition)
 	if err != nil {
-		return fmt.Errorf("failed to create Role %s: %w", roleName, err)
+		return fmt.Errorf("Failed to create Role %s: %w", roleName, err)
 	}
 
 	roleBindingName := serviceAccount + "-scc"
@@ -2022,7 +2022,7 @@ func (td *FsmTestData) AddOpenShiftSCC(scc, serviceAccount, namespace string) er
 
 	_, err = td.createRoleBinding(namespace, &roleBindingDefinition)
 	if err != nil {
-		return fmt.Errorf("failed to create RoleBinding %s: %w", roleBindingName, err)
+		return fmt.Errorf("Failed to create RoleBinding %s: %w", roleBindingName, err)
 	}
 
 	return nil

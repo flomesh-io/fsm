@@ -36,7 +36,7 @@ func DetectIngressBackendConflicts(x policyv1alpha1.IngressBackend, y policyv1al
 
 	duplicates := xSet.Intersect(ySet)
 	for b := range duplicates.Iter() {
-		err := fmt.Errorf("backend %s specified in %s and %s conflicts", b.(setKey).name, x.Name, y.Name)
+		err := fmt.Errorf("Backend %s specified in %s and %s conflicts", b.(setKey).name, x.Name, y.Name)
 		conflicts = append(conflicts, err)
 	}
 
@@ -71,7 +71,7 @@ func DetectAccessControlConflicts(x policyv1alpha1.AccessControl, y policyv1alph
 
 	duplicates := xSet.Intersect(ySet)
 	for b := range duplicates.Iter() {
-		err := fmt.Errorf("backend %s specified in %s and %s conflicts", b.(setKey).name, x.Name, y.Name)
+		err := fmt.Errorf("Backend %s specified in %s and %s conflicts", b.(setKey).name, x.Name, y.Name)
 		conflicts = append(conflicts, err)
 	}
 

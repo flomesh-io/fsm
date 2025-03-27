@@ -298,7 +298,7 @@ func (c *client) ListServiceIdentitiesForService(svc service.MeshService) ([]ide
 
 	k8sSvc := c.GetService(svc)
 	if k8sSvc == nil {
-		return nil, fmt.Errorf("error fetching service %q: %s", svc, errServiceNotFound)
+		return nil, fmt.Errorf("Error fetching service %q: %s", svc, errServiceNotFound)
 	}
 
 	svcAccountsSet := mapset.NewSet()
@@ -365,7 +365,7 @@ func (c *client) UpdateStatus(resource interface{}) (metav1.Object, error) {
 		return c.pluginClient.PluginV1alpha1().PluginChains(obj.Namespace).UpdateStatus(context.Background(), obj, metav1.UpdateOptions{})
 
 	default:
-		return nil, fmt.Errorf("unsupported type: %T", t)
+		return nil, fmt.Errorf("Unsupported type: %T", t)
 	}
 }
 

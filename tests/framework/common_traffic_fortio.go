@@ -98,7 +98,7 @@ func (td *FsmTestData) FortioHTTPLoadTest(ht FortioHTTPLoadTestDef) FortioLoadRe
 	if err != nil {
 		// Error codes from the execution come through err
 		return FortioLoadResult{
-			Err: fmt.Errorf("remote exec err: %v | stderr: %s", err, stderr),
+			Err: fmt.Errorf("Remote exec err: %v | stderr: %s", err, stderr),
 		}
 	}
 	if len(stderr) > 0 {
@@ -122,7 +122,7 @@ func (td *FsmTestData) FortioTCPLoadTest(req FortioTCPLoadTestDef) FortioLoadRes
 
 	if err != nil {
 		return FortioLoadResult{
-			Err: fmt.Errorf("remote exec err: %v | stderr: %s | cmd: %s", err, stderr, command),
+			Err: fmt.Errorf("Remote exec err: %v | stderr: %s | cmd: %s", err, stderr, command),
 		}
 	}
 	if len(stderr) > 0 {
@@ -146,7 +146,7 @@ func (td *FsmTestData) FortioGRPCLoadTest(req FortioGRPCLoadTestDef) FortioLoadR
 
 	if err != nil {
 		return FortioLoadResult{
-			Err: fmt.Errorf("remote exec err: %w | stderr: %s | cmd: %s", err, stderr, command),
+			Err: fmt.Errorf("Remote exec err: %w | stderr: %s | cmd: %s", err, stderr, command),
 		}
 	}
 	if len(stderr) > 0 {
