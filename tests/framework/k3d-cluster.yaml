@@ -70,7 +70,7 @@ options:
       - arg: --service-cidr=10.43.0.0/16
         nodeFilters:
           - server:*
-      - arg: --node-cidr-mask-size-ipv4=22
+      - arg: --kube-controller-manager-arg=node-cidr-mask-size-ipv4=22
         nodeFilters:
           - server:*
     nodeLabels:
