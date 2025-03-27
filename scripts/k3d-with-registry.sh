@@ -140,15 +140,6 @@ options:
         nodeFilters:
           - server:*
           - agent:*
-      - arg: --cluster-cidr=10.42.0.0/16
-        nodeFilters:
-          - server:*
-      - arg: --service-cidr=10.43.0.0/16
-        nodeFilters:
-          - server:*
-      - arg: --kube-controller-manager-arg=node-cidr-mask-size-ipv4=22
-        nodeFilters:
-          - server:*
     nodeLabels:
       - label: ingress-ready=true
         nodeFilters:
