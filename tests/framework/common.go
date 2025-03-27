@@ -607,11 +607,24 @@ func (td *FsmTestData) k3dClusterConfig() *k3dCfg.ClusterConfig {
 				Arg:         "--service-cidr=10.43.0.0/16",
 				NodeFilters: []string{"server:*"},
 			},
-			{
-				Arg:         "--kube-controller-manager-arg=node-cidr-mask-size-ipv4=22",
-				NodeFilters: []string{"server:*"},
-			},
 		}...)
+
+		_, tag, _, _ := utils.ParseImageName(simpleCfg.Image)
+		if strings.HasPrefix(tag, "v1.19.") || strings.HasPrefix(tag, "v1.20.") {
+			simpleCfg.Options.K3sOptions.ExtraArgs = append(simpleCfg.Options.K3sOptions.ExtraArgs, []k3dCfg.K3sArgWithNodeFilters{
+				{
+					Arg:         "--kube-controller-manager-arg=node-cidr-mask-size=22",
+					NodeFilters: []string{"server:*"},
+				},
+			}...)
+		} else {
+			simpleCfg.Options.K3sOptions.ExtraArgs = append(simpleCfg.Options.K3sOptions.ExtraArgs, []k3dCfg.K3sArgWithNodeFilters{
+				{
+					Arg:         "--kube-controller-manager-arg=node-cidr-mask-size-ipv4=22",
+					NodeFilters: []string{"server:*"},
+				},
+			}...)
+		}
 	}
 
 	if err := config.ProcessSimpleConfig(&simpleCfg); err != nil {
