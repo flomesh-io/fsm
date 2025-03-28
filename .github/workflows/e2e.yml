@@ -27,6 +27,10 @@ on:
         required: false
         type: boolean
         default: ${{ vars.FREE_DISK_SPACE == 'true' }}
+      increase_k3d_cidr_range:
+        required: false
+        type: boolean
+        default: false
 
 env:
   FSM_HUMAN_DEBUG_LOG: ${{ vars.FSM_HUMAN_DEBUG_LOG || 'false' }}
@@ -95,6 +99,7 @@ jobs:
         env:
           K8S_NAMESPACE: "fsm-system"
           LOAD_IMAGES_INTO_CLUSTER: "true"
+          INCREASE_K3D_CIDR_RANGE: ${{ inputs.increase_k3d_cidr_range }}
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
