@@ -297,7 +297,7 @@ jobs:
       focus: ${{ matrix.focus }}
       install_grpcurl: true
       add_hosts: true
-      increase_k3d_cidr_range: ${{ matrix.bucket == '7' }}
+      increase_k3d_cidr_range: false
     secrets: inherit
 
   ingress-e2e-test:
