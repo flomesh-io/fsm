@@ -268,6 +268,7 @@ jobs:
     strategy:
       matrix:
         focus: [""]
+        bucket: [6, 7]
         include:
           - bucket: "6"
             k8s_version: v1.32.3-k3s1
