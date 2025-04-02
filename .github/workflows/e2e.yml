@@ -100,6 +100,8 @@ jobs:
           K8S_NAMESPACE: "fsm-system"
           LOAD_IMAGES_INTO_CLUSTER: "true"
           INCREASE_K3D_CIDR_RANGE: ${{ inputs.increase_k3d_cidr_range }}
+          NUM_K3D_SERVERS: ${{ vars.NUM_K3D_SERVERS || '1' }}
+          NUM_K3D_AGENTS: ${{ vars.NUM_K3D_AGENTS || '1' }}
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"

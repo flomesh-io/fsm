@@ -270,7 +270,7 @@ jobs:
         focus: [""]
         bucket: [6, 7]
         k8s:
-          - version: "v1.32.3-k3s1"
+          - version: "latest"
             os: ubuntu-24.04
           - version: v1.19.16-k3s1
             os: ubuntu-20.04
@@ -418,6 +418,8 @@ jobs:
           PUBLISH_IMAGES: "false"
           BUILD_FSM_CLI: "false"
           GODEBUG: "netdns=go+1"
+          NUM_K3D_SERVERS: ${{ vars.NUM_K3D_SERVERS || '1' }}
+          NUM_K3D_AGENTS: ${{ vars.NUM_K3D_AGENTS || '1' }}
         run: |
           touch .env
           make k3d-up

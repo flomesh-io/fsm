@@ -13,8 +13,8 @@ K3D_FLB_ENABLE="${K3D_FLB_ENABLE:-false}"
 K3D_SERVICELB_ENABLE="${K3D_SERVICELB_ENABLE:-false}"
 K3D_IMAGE="${K3D_IMAGE:-rancher/k3s:v1.25.16-k3s4}"
 CREATE_LOCAL_REGISTRY="${CREATE_LOCAL_REGISTRY:-true}"
-NUMBER_OF_K3D_SERVERS="${NUMBER_OF_K3D_SERVERS:-1}"
-NUMBER_OF_K3D_AGENTS="${NUMBER_OF_K3D_AGENTS:-0}"
+NUM_K3D_SERVERS="${NUM_K3D_SERVERS:-1}"
+NUM_K3D_AGENTS="${NUM_K3D_AGENTS:-0}"
 
 # shellcheck disable=SC2086
 jq_cluster_exists=".[] | select(.name == \"${K3D_CLUSTER_NAME}\")"
@@ -79,8 +79,8 @@ apiVersion: k3d.io/v1alpha5
 kind: Simple
 metadata:
   name: ${K3D_CLUSTER_NAME}
-servers: ${NUMBER_OF_K3D_SERVERS}
-agents: ${NUMBER_OF_K3D_AGENTS}
+servers: ${NUM_K3D_SERVERS}
+agents: ${NUM_K3D_AGENTS}
 image: ${K3D_IMAGE}
 ${reg_config}
 ports:
