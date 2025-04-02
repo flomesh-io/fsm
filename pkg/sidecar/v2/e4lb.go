@@ -7,9 +7,10 @@ import (
 	"math"
 	"net"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
-	probing "github.com/prometheus-community/pro-bing"
 	"github.com/vishvananda/netlink"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -287,14 +288,18 @@ func (s *Server) headlessService(k8sSvc *corev1.Service, upstreams map[string]bo
 				microMeta := connector.Decode(k8sSvc, v)
 				for addr := range microMeta.Endpoints {
 					upstreams[string(addr)] = true
-					go func() {
-						if pinger, err := probing.NewPinger(string(addr)); err == nil {
-							pinger.Count = 1
-							if err = pinger.Run(); err != nil {
-								log.Warn().Err(err).Msgf("fail to ping %s", string(addr))
-							}
+					for _, port := range k8sSvc.Spec.Ports {
+						if corev1.ProtocolTCP == port.Protocol || corev1.ProtocolSCTP == port.Protocol {
+							go func() {
+								s.doTCPProbe(string(addr), strconv.Itoa(int(port.Port)), time.Second*3)
+							}()
 						}
-					}()
+						if corev1.ProtocolUDP == port.Protocol {
+							go func() {
+								s.doUDPProbe(string(addr), strconv.Itoa(int(port.Port)), time.Second*3)
+							}()
+						}
+					}
 				}
 			}
 		}
@@ -349,18 +354,6 @@ func (s *Server) setupE4LBServiceNeigh(defaultIfi int, eip string, defaultHwAddr
 		}
 	}
 }
-
-//func (s *Server) unsetE4LBServiceNeigh(defaultIfi int, eip string, defaultHwAddr net.HardwareAddr) {
-//	neigh := &netlink.Neigh{
-//		LinkIndex:    defaultIfi,
-//		State:        arp.NUD_REACHABLE,
-//		IP:           net.ParseIP(eip),
-//		HardwareAddr: defaultHwAddr,
-//	}
-//	if err := netlink.NeighDel(neigh); err != nil {
-//		log.Error().Msg(err.Error())
-//	}
-//}
 
 // IsE4LBEnabled checks if the service is enabled for flb
 func IsE4LBEnabled(svc *corev1.Service, kubeClient kubernetes.Interface) bool {
