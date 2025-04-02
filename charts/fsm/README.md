@@ -258,6 +258,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmXnetwork.xnet.image.name | string | `"xnet"` | xnet image name |
 | fsm.fsmXnetwork.xnet.image.registry | string | `"flomesh"` | Registry for xnet image |
 | fsm.fsmXnetwork.xnet.image.tag | string | `"latest"` | xnet image tag |
+| fsm.fsmXnetwork.xnet.nodePaths.k3s.cniBin | string | `"/bin"` | If the version is higher than v1.28, it needs to be set to: -- /var/lib/rancher/k3s/data/cni |
 | fsm.grafana.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
 | fsm.grafana.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator | string | `"In"` |  |
 | fsm.grafana.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0] | string | `"linux"` |  |
