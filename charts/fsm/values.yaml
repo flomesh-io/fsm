@@ -323,6 +323,8 @@ fsm:
           sysRun: "/var/run"
         k3s:
           enable: true
+          # -- If the version is higher than v1.28, it needs to be set to:
+          # -- /var/lib/rancher/k3s/data/cni
           cniBin: "/bin"
           cniNetd: "/var/lib/rancher/k3s/agent/etc/cni/net.d"
           sysFs: "/opt"
