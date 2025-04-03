@@ -2,8 +2,8 @@ apiVersion: k3d.io/v1alpha5
 kind: Simple
 metadata:
   name: fsm-e2e
-servers: 1
-agents: 1
+servers: ${NUM_K3D_SERVERS}
+agents: ${NUM_K3D_AGENTS}
 ports:
   - port: 80:80
     nodeFilters:

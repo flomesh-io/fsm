@@ -268,8 +268,7 @@ jobs:
     strategy:
       matrix:
         focus: [""]
-#        bucket: [6, 7]
-        bucket: [6]
+        bucket: [6, 7]
         k8s:
           - version: "latest"
             os: ubuntu-24.04
@@ -279,17 +278,17 @@ jobs:
             os: ubuntu-24.04
           - version: v1.23.17-k3s1
             os: ubuntu-24.04
-#        exclude:
-#          - focus: ""
-#            bucket: "7"
-#            k8s:
-#              version: v1.21.14-k3s1
-#              os: ubuntu-24.04
-#          - focus: ""
-#            bucket: "7"
-#            k8s:
-#              version: v1.23.17-k3s1
-#              os: ubuntu-24.04
+        exclude:
+          - focus: ""
+            bucket: "7"
+            k8s:
+              version: v1.21.14-k3s1
+              os: ubuntu-24.04
+          - focus: ""
+            bucket: "7"
+            k8s:
+              version: v1.23.17-k3s1
+              os: ubuntu-24.04
     uses: ./.github/workflows/e2e.yml
     with:
       os: ${{ matrix.k8s.os }}
@@ -419,6 +418,8 @@ jobs:
           PUBLISH_IMAGES: "false"
           BUILD_FSM_CLI: "false"
           GODEBUG: "netdns=go+1"
+          NUM_K3D_SERVERS: ${{ vars.NUM_K3D_SERVERS || '1' }}
+          NUM_K3D_AGENTS: ${{ vars.NUM_K3D_AGENTS || '1' }}
         run: |
           touch .env
           make k3d-up
