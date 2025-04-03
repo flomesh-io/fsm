@@ -248,9 +248,17 @@ securityContext:
 {{- if .Values.fsm.fsmXnetwork.xnet.nodePaths.k8s.enable -}}
 {{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k8s.cniBin -}}
 {{- else if .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.enable -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.cniBin -}}
+{{- if (semverCompare ">=1.29-0" .Capabilities.KubeVersion.GitVersion) }}
+/var/lib/rancher/k3s/data/cni
 {{- else -}}
 {{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.cniBin -}}
+{{- end -}}
+{{- else -}}
+{{- if (semverCompare ">=1.29-0" .Capabilities.KubeVersion.GitVersion) }}
+/var/lib/rancher/k3s/data/cni
+{{- else -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.cniBin -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
