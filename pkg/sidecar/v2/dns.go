@@ -114,11 +114,11 @@ func (s *Server) initDnsNatEndpoints(upstreams []configv1alpha3.DNSUpstream, nat
 				for natKey, nat := range nats {
 					if rAddr.To4() != nil {
 						if natKey.V6 == 0 {
-							nat.natVal.AddEp(rAddr, rPort, nat.brVal.Mac[:], 0, 0, nil, true)
+							nat.natVal.AddEp(rAddr, rPort, nat.brVal.Mac[:], 0, maps.BPF_F_EGRESS, nil, true)
 						}
 					} else {
 						if natKey.V6 == 1 {
-							nat.natVal.AddEp(rAddr, rPort, nat.brVal.Mac[:], 0, 0, nil, true)
+							nat.natVal.AddEp(rAddr, rPort, nat.brVal.Mac[:], 0, maps.BPF_F_EGRESS, nil, true)
 						}
 					}
 				}
@@ -149,7 +149,7 @@ func (s *Server) updateDnsNat() {
 
 	for natKey, nat := range nats {
 		if nat.natVal.EpCnt > 0 {
-			dnsNat := newXNat(maps.SysMesh, natKey, nat.natVal)
+			dnsNat := newXNat(natKey, nat.natVal)
 			if existsNat, exists := s.xnatCache[dnsNat.Key()]; !exists {
 				if err := s.setupDnsNat(natKey, nat.natVal); err != nil {
 					log.Error().Err(err).Msg(`failed to store dns nat`)

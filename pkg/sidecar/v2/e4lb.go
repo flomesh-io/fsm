@@ -149,21 +149,43 @@ func (s *Server) processEIPAdvertisements(readyNodes map[string]bool, existsE4lb
 }
 
 func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4lbEips map[types.UID]string) {
+	obsoleteNats := make(map[string]*XNat)
+	for natKey, natVal := range s.xnatCache {
+		if natVal.key.Sys == uint32(maps.SysE4lb) {
+			obsoleteNats[natKey] = natVal
+		} else if natVal.key.Sys == uint32(maps.SysMesh) && natVal.key.Proto == uint8(maps.IPPROTO_TCP) {
+			obsoleteNats[natKey] = natVal
+		}
+	}
+
+	s.setupE4LBNats(e4lbSvcs, e4lbEips, obsoleteNats)
+
+	for natKey, e4lbNat := range obsoleteNats {
+		if e4lbNat.key.Sys == uint32(maps.SysE4lb) {
+			if err := s.unsetE4LBNodeNat(&e4lbNat.key); err == nil {
+				delete(s.xnatCache, natKey)
+			} else {
+				log.Error().Err(err).Msgf(`failed to unset e4lb node nat`)
+			}
+		} else if e4lbNat.key.Sys == uint32(maps.SysMesh) {
+			if err := s.unsetE4LBPodNat(&e4lbNat.key); err == nil {
+				delete(s.xnatCache, natKey)
+			} else {
+				log.Error().Err(err).Msgf(`failed to unset e4lb pod nat`)
+			}
+		}
+	}
+}
+
+func (s *Server) setupE4LBNats(e4lbSvcs map[types.UID]*corev1.Service, e4lbEips map[types.UID]string, obsoleteNats map[string]*XNat) {
 	defaultIfi, defaultEth, defaultHwAddr, err := s.discoverGateway()
 	if err != nil {
 		log.Error().Err(err).Msg(`fail to discover gateway`)
 		return
 	}
 
-	obsoleteNats := make(map[string]*XNat)
-	for natKey, natVal := range s.xnatCache {
-		if natVal.key.Sys == uint32(maps.SysE4lb) && natVal.key.TcDir == uint8(maps.TC_DIR_IGR) {
-			obsoleteNats[natKey] = natVal
-		}
-	}
-
 	for uid, k8sSvc := range e4lbSvcs {
-		eip, exists := e4lbEips[uid]
+		eIP, exists := e4lbEips[uid]
 		if !exists {
 			continue
 		}
@@ -187,64 +209,69 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 			if !strings.EqualFold(string(port.Protocol), string(corev1.ProtocolTCP)) {
 				continue
 			}
-			vport := uint16(0)
+			ePort := uint16(0)
 			if port.Port > 0 && port.Port <= math.MaxUint16 {
-				vport = uint16(port.Port)
+				ePort = uint16(port.Port)
 			}
 
-			eipAddr := net.ParseIP(eip)
-			natKey := s.getE4lbNatKey(eipAddr, vport)
-			natVal := s.getE4lbNatVal(upstreams, natKey, port, vport)
-
-			e4lbNat := newXNat(maps.SysE4lb, natKey, natVal)
-			if existsNat, exists := s.xnatCache[e4lbNat.Key()]; !exists {
-				s.setupE4LBServiceNeigh(defaultIfi, eip, defaultHwAddr)
-				if err := s.setupE4LBServiceNat(natKey, natVal); err != nil {
-					log.Error().Err(err).Msgf(`failed to setup e4lb nat, eip: %s`, eip)
-					continue
+			nodeNatKey, nodeNatVal := s.getE4lbNodeNat(maps.SysE4lb, eIP, ePort, upstreams, port)
+			nodeNat := newXNat(nodeNatKey, nodeNatVal)
+			if existsNat, exists := s.xnatCache[nodeNat.Key()]; !exists {
+				s.setupE4LBServiceNeigh(defaultIfi, eIP, defaultHwAddr)
+				if err := s.setupE4LBNodeNat(nodeNatKey, nodeNatVal); err == nil {
+					s.xnatCache[nodeNat.Key()] = nodeNat
+				} else {
+					log.Error().Err(err).Msgf(`failed to setup e4lb node nat, eip: %s`, eIP)
 				}
-				s.xnatCache[e4lbNat.Key()] = e4lbNat
 			} else {
-				if existsNat.valHash != e4lbNat.valHash {
-					s.setupE4LBServiceNeigh(defaultIfi, eip, defaultHwAddr)
-					if err := s.setupE4LBServiceNat(natKey, natVal); err != nil {
-						log.Error().Err(err).Msgf(`failed to setup e4lb nat, eip: %s`, eip)
-						continue
+				if existsNat.valHash != nodeNat.valHash {
+					s.setupE4LBServiceNeigh(defaultIfi, eIP, defaultHwAddr)
+					if err := s.setupE4LBNodeNat(nodeNatKey, nodeNatVal); err == nil {
+						s.xnatCache[nodeNat.Key()] = nodeNat
+					} else {
+						log.Error().Err(err).Msgf(`failed to setup e4lb node nat, eip: %s`, eIP)
 					}
-					s.xnatCache[e4lbNat.Key()] = e4lbNat
 				}
-				delete(obsoleteNats, e4lbNat.Key())
+				delete(obsoleteNats, nodeNat.Key())
+			}
+
+			podNatKey, podNatVal := s.getE4lbPodNat(maps.SysMesh, eIP, ePort, upstreams, port)
+			podNat := newXNat(podNatKey, podNatVal)
+			if existsNat, exists := s.xnatCache[podNat.Key()]; !exists {
+				if err := s.setupE4LBPodNat(podNatKey, podNatVal); err == nil {
+					s.xnatCache[podNat.Key()] = podNat
+				} else {
+					log.Error().Err(err).Msgf(`failed to setup e4lb pod nat, eip: %s`, eIP)
+				}
+			} else {
+				if existsNat.valHash != podNat.valHash {
+					if err := s.setupE4LBPodNat(podNatKey, podNatVal); err == nil {
+						s.xnatCache[podNat.Key()] = podNat
+					} else {
+						log.Error().Err(err).Msgf(`failed to setup e4lb pod nat, eip: %s`, eIP)
+					}
+				}
+				delete(obsoleteNats, podNat.Key())
 			}
 		}
 
-		if err := arp.Announce(defaultEth, eip, defaultHwAddr); err != nil {
+		if err := arp.Announce(defaultEth, eIP, defaultHwAddr); err != nil {
 			log.Error().Msg(err.Error())
-		}
-	}
-
-	if len(obsoleteNats) > 0 {
-		for natKey, e4lbNat := range obsoleteNats {
-			if err := s.unsetE4LBServiceNat(&e4lbNat.key); err != nil {
-				log.Error().Err(err).Msgf(`failed to unset e4lb nat`)
-				continue
-			}
-			delete(s.xnatCache, natKey)
 		}
 	}
 }
 
-func (s *Server) getE4lbNatKey(eipAddr net.IP, vport uint16) *maps.NatKey {
+func (s *Server) getE4lbNodeNat(sysId maps.SysID, eIP string, ePort uint16, upstreams map[string]bool, port corev1.ServicePort) (*maps.NatKey, *maps.NatVal) {
+	eipAddr := net.ParseIP(eIP)
 	natKey := new(maps.NatKey)
+	natKey.Sys = uint32(sysId)
 	natKey.Daddr[0], natKey.Daddr[1], natKey.Daddr[2], natKey.Daddr[3], natKey.V6, _ = util.IPToInt(eipAddr)
-	natKey.Dport = util.HostToNetShort(vport)
+	natKey.Dport = util.HostToNetShort(ePort)
 	natKey.Proto = uint8(maps.IPPROTO_TCP)
 	if eipAddr.To4() == nil {
 		natKey.V6 = 1
 	}
-	return natKey
-}
 
-func (s *Server) getE4lbNatVal(upstreams map[string]bool, natKey *maps.NatKey, port corev1.ServicePort, vport uint16) *maps.NatVal {
 	natVal := new(maps.NatVal)
 	for rip, microSvc := range upstreams {
 		ripAddr := net.ParseIP(rip)
@@ -263,7 +290,7 @@ func (s *Server) getE4lbNatVal(upstreams map[string]bool, natKey *maps.NatKey, p
 				continue
 			}
 		} else {
-			rport := vport
+			rport := ePort
 			var brVal *maps.IFaceVal
 			if natKey.V6 == 1 {
 				brVal = s.getCniBridge6Info()
@@ -276,7 +303,45 @@ func (s *Server) getE4lbNatVal(upstreams map[string]bool, natKey *maps.NatKey, p
 			natVal.AddEp(ripAddr, rport, brVal.Xmac[:], brVal.Ifi, maps.BPF_F_INGRESS, nil, true)
 		}
 	}
-	return natVal
+	return natKey, natVal
+}
+
+func (s *Server) getE4lbPodNat(sysId maps.SysID, eIP string, ePort uint16, upstreams map[string]bool, port corev1.ServicePort) (*maps.NatKey, *maps.NatVal) {
+	eipAddr := net.ParseIP(eIP)
+	natKey := new(maps.NatKey)
+	natKey.Sys = uint32(sysId)
+	natKey.Daddr[0], natKey.Daddr[1], natKey.Daddr[2], natKey.Daddr[3], natKey.V6, _ = util.IPToInt(eipAddr)
+	natKey.Dport = util.HostToNetShort(ePort)
+	natKey.Proto = uint8(maps.IPPROTO_TCP)
+	if eipAddr.To4() == nil {
+		natKey.V6 = 1
+	}
+
+	natVal := new(maps.NatVal)
+	for rip, microSvc := range upstreams {
+		ripAddr := net.ParseIP(rip)
+		var brVal *maps.IFaceVal
+		if natKey.V6 == 1 && ripAddr.To16() == nil {
+			brVal = s.getCniBridge6Info()
+		} else {
+			brVal = s.getCniBridge4Info()
+		}
+		if brVal == nil {
+			continue
+		}
+		if microSvc {
+			if port.TargetPort.IntVal > 0 && port.TargetPort.IntVal <= math.MaxUint16 {
+				rport := uint16(port.TargetPort.IntVal)
+				natVal.AddEp(ripAddr, rport, brVal.Mac[:], 0, maps.BPF_F_EGRESS, nil, true)
+			} else {
+				continue
+			}
+		} else {
+			rport := ePort
+			natVal.AddEp(ripAddr, rport, brVal.Mac[:], 0, maps.BPF_F_EGRESS, nil, true)
+		}
+	}
+	return natKey, natVal
 }
 
 func (s *Server) headlessService(k8sSvc *corev1.Service, upstreams map[string]bool) bool {
@@ -320,7 +385,7 @@ func (s *Server) discoverGateway() (int, string, net.HardwareAddr, error) {
 	}
 }
 
-func (s *Server) setupE4LBServiceNat(natKey *maps.NatKey, natVal *maps.NatVal) error {
+func (s *Server) setupE4LBNodeNat(natKey *maps.NatKey, natVal *maps.NatVal) error {
 	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {
 		natKey.TcDir = uint8(tcDir)
 		if err := maps.AddNatEntry(maps.SysE4lb, natKey, natVal); err != nil {
@@ -330,10 +395,30 @@ func (s *Server) setupE4LBServiceNat(natKey *maps.NatKey, natVal *maps.NatVal) e
 	return nil
 }
 
-func (s *Server) unsetE4LBServiceNat(natKey *maps.NatKey) error {
+func (s *Server) unsetE4LBNodeNat(natKey *maps.NatKey) error {
 	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {
 		natKey.TcDir = uint8(tcDir)
 		if err := maps.DelNatEntry(maps.SysE4lb, natKey); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Server) setupE4LBPodNat(natKey *maps.NatKey, natVal *maps.NatVal) error {
+	for _, tcDir := range []maps.TcDir{maps.TC_DIR_EGR} {
+		natKey.TcDir = uint8(tcDir)
+		if err := maps.AddNatEntry(maps.SysMesh, natKey, natVal); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Server) unsetE4LBPodNat(natKey *maps.NatKey) error {
+	for _, tcDir := range []maps.TcDir{maps.TC_DIR_EGR} {
+		natKey.TcDir = uint8(tcDir)
+		if err := maps.DelNatEntry(maps.SysMesh, natKey); err != nil {
 			return err
 		}
 	}
