@@ -40,7 +40,7 @@ func Announce(iface, aip string, hwAddr net.HardwareAddr) error {
 		return err
 	}
 
-	for _, op := range []arp.Operation{arp.OperationRequest, arp.OperationReply} {
+	for _, op := range []arp.Operation{arp.OperationReply} {
 		if pkt, err := arp.NewPacket(op, hwAddr, ip, ethernet.Broadcast, ip); err != nil {
 			return err
 		} else if err = c.WriteTo(pkt, ethernet.Broadcast); err != nil {
