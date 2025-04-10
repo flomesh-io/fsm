@@ -105,6 +105,11 @@ spec:
           "--cni-ipv6-bridge-name", "{{ include "fsmXnetwork.xnet.cni.bridge6.name" . }}",
           "--cni-ipv6-bridge-mac", "{{ include "fsmXnetwork.xnet.cni.bridge6.mac" . }}",
         ]
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
         resources:
           limits:
             cpu: "{{.Values.fsm.fsmXnetwork.xnet.resource.limits.cpu}}"
