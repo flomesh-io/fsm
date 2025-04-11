@@ -1,7 +1,6 @@
 package v2
 
 import (
-	"fmt"
 	"math"
 	"net"
 	"strings"
@@ -174,7 +173,7 @@ func (s *Server) updateDnsNat() {
 
 	if len(obsoleteNats) > 0 {
 		for natKey, xnat := range obsoleteNats {
-			fmt.Println("obsoleteNats left key:", natKey)
+			log.Debug().Msgf("obsoleteNats left key: %s", natKey)
 			if err := s.unsetDnsNat(&xnat.key); err != nil {
 				log.Error().Err(err).Msgf(`failed to unset dns nat`)
 				continue
