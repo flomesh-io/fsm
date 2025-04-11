@@ -70,6 +70,9 @@ spec:
         - mountPath: /host/sys/fs
           name: host-sys-fs
           mountPropagation: Bidirectional
+        - mountPath: /host/run
+          name: host-run
+          mountPropagation: Bidirectional
       - name: fsm-xnet
         image: "{{ include "fsmXnetwork.xnet.image" . }}"
         imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
@@ -119,12 +122,6 @@ spec:
             memory: "{{.Values.fsm.fsmXnetwork.xnet.resource.requests.memory}}"
         securityContext:
           privileged: true
-        lifecycle:
-          postStart:
-            exec:
-              command:
-              - "xnat"
-              - "wait"
         volumeMounts:
           - mountPath: /host/cni/bin
             name: host-cni-bin

@@ -2,6 +2,9 @@ package v2
 
 import (
 	"context"
+	"net"
+	"net/http"
+	"path"
 	"time"
 
 	"k8s.io/client-go/kubernetes"
@@ -11,6 +14,8 @@ import (
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/flomesh-io/fsm/pkg/workerpool"
 	"github.com/flomesh-io/fsm/pkg/xnetwork"
+	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/util"
+	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/volume"
 )
 
 const (
@@ -44,6 +49,8 @@ func NewXNetConfigServer(ctx context.Context,
 }
 
 func (s *Server) Start() error {
+	s.waitXnetReady()
+
 	retries := 0
 	for {
 		retries++
@@ -66,4 +73,25 @@ func (s *Server) Start() error {
 
 	s.ready = true
 	return nil
+}
+
+func (s *Server) waitXnetReady() {
+	unixSock := path.Join(volume.SysRun.MountPath, `.xnet.sock`)
+	for {
+		if util.Exists(unixSock) {
+			httpClient := http.Client{
+				Transport: &http.Transport{
+					DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+						return net.Dial("unix", unixSock)
+					},
+				},
+			}
+			if r, err := httpClient.Get("http://xcni/version"); err == nil {
+				if r.StatusCode == http.StatusOK {
+					break
+				}
+			}
+		}
+		time.Sleep(time.Second * 2)
+	}
 }

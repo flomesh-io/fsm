@@ -153,14 +153,25 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 	for natKey, natVal := range s.xnatCache {
 		if natVal.key.Sys == uint32(maps.SysE4lb) {
 			obsoleteNats[natKey] = natVal
-		} else if natVal.key.Sys == uint32(maps.SysMesh) && natVal.key.Proto == uint8(maps.IPPROTO_TCP) {
+			log.Debug().Msgf("obsoleteNats natKey: %s", natKey)
+		} else if natVal.key.Sys == uint32(maps.SysMesh) &&
+			natVal.key.Proto == uint8(maps.IPPROTO_TCP) &&
+			natVal.key.TcDir == uint8(maps.TC_DIR_EGR) {
+			if natVal.key.Daddr[0] == 0 && natVal.key.Daddr[1] == 0 &&
+				natVal.key.Daddr[2] == 0 && natVal.key.Daddr[3] == 0 && natVal.key.Dport == 0 {
+				continue
+			}
 			obsoleteNats[natKey] = natVal
+			log.Debug().Msgf("obsoleteNats natKey: %s", natKey)
 		}
 	}
 
 	s.setupE4LBNats(e4lbSvcs, e4lbEips, obsoleteNats)
 
+	log.Debug().Msgf("obsoleteNats left: %d", len(obsoleteNats))
+
 	for natKey, e4lbNat := range obsoleteNats {
+		log.Debug().Msgf("obsoleteNats left key: %s", natKey)
 		if e4lbNat.key.Sys == uint32(maps.SysE4lb) {
 			if err := s.unsetE4LBNodeNat(&e4lbNat.key); err == nil {
 				delete(s.xnatCache, natKey)
@@ -214,44 +225,58 @@ func (s *Server) setupE4LBNats(e4lbSvcs map[types.UID]*corev1.Service, e4lbEips 
 				ePort = uint16(port.Port)
 			}
 
+			s.setupE4LBServiceNeigh(defaultIfi, eIP, defaultHwAddr)
+
 			nodeNatKey, nodeNatVal := s.getE4lbNodeNat(maps.SysE4lb, eIP, ePort, upstreams, port)
-			nodeNat := newXNat(nodeNatKey, nodeNatVal)
-			if existsNat, exists := s.xnatCache[nodeNat.Key()]; !exists {
-				s.setupE4LBServiceNeigh(defaultIfi, eIP, defaultHwAddr)
-				if err := s.setupE4LBNodeNat(nodeNatKey, nodeNatVal); err == nil {
-					s.xnatCache[nodeNat.Key()] = nodeNat
-				} else {
-					log.Error().Err(err).Msgf(`failed to setup e4lb node nat, eip: %s`, eIP)
-				}
-			} else {
-				if existsNat.valHash != nodeNat.valHash {
-					s.setupE4LBServiceNeigh(defaultIfi, eIP, defaultHwAddr)
+			for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {
+				nodeNatKey.TcDir = uint8(tcDir)
+				nodeNat := newXNat(nodeNatKey, nodeNatVal)
+				log.Debug().Msgf("nodeNat.Key: %s", nodeNat.Key())
+				if existsNat, exists := s.xnatCache[nodeNat.Key()]; !exists {
 					if err := s.setupE4LBNodeNat(nodeNatKey, nodeNatVal); err == nil {
+						log.Debug().Msgf("nodeNat.Key() cache add: %s", nodeNat.Key())
 						s.xnatCache[nodeNat.Key()] = nodeNat
 					} else {
 						log.Error().Err(err).Msgf(`failed to setup e4lb node nat, eip: %s`, eIP)
 					}
+				} else {
+					if existsNat.valHash != nodeNat.valHash {
+						if err := s.setupE4LBNodeNat(nodeNatKey, nodeNatVal); err == nil {
+							log.Debug().Msgf("nodeNat.Key() cache add: %s", nodeNat.Key())
+							s.xnatCache[nodeNat.Key()] = nodeNat
+						} else {
+							log.Error().Err(err).Msgf(`failed to setup e4lb node nat, eip: %s`, eIP)
+						}
+					}
+					log.Debug().Msgf("nodeNat.Key() obsoleteNats del: %s", nodeNat.Key())
+					delete(obsoleteNats, nodeNat.Key())
 				}
-				delete(obsoleteNats, nodeNat.Key())
 			}
 
 			podNatKey, podNatVal := s.getE4lbPodNat(maps.SysMesh, eIP, ePort, upstreams, port)
-			podNat := newXNat(podNatKey, podNatVal)
-			if existsNat, exists := s.xnatCache[podNat.Key()]; !exists {
-				if err := s.setupE4LBPodNat(podNatKey, podNatVal); err == nil {
-					s.xnatCache[podNat.Key()] = podNat
-				} else {
-					log.Error().Err(err).Msgf(`failed to setup e4lb pod nat, eip: %s`, eIP)
-				}
-			} else {
-				if existsNat.valHash != podNat.valHash {
+			for _, tcDir := range []maps.TcDir{maps.TC_DIR_EGR} {
+				podNatKey.TcDir = uint8(tcDir)
+				podNat := newXNat(podNatKey, podNatVal)
+				log.Debug().Msgf("podNat.Key: %s", podNat.Key())
+				if existsNat, exists := s.xnatCache[podNat.Key()]; !exists {
 					if err := s.setupE4LBPodNat(podNatKey, podNatVal); err == nil {
+						log.Debug().Msgf("podNat.Key() cache add: %s", podNat.Key())
 						s.xnatCache[podNat.Key()] = podNat
 					} else {
 						log.Error().Err(err).Msgf(`failed to setup e4lb pod nat, eip: %s`, eIP)
 					}
+				} else {
+					if existsNat.valHash != podNat.valHash {
+						if err := s.setupE4LBPodNat(podNatKey, podNatVal); err == nil {
+							log.Debug().Msgf("podNat.Key() cache add: %s", podNat.Key())
+							s.xnatCache[podNat.Key()] = podNat
+						} else {
+							log.Error().Err(err).Msgf(`failed to setup e4lb pod nat, eip: %s`, eIP)
+						}
+					}
+					log.Debug().Msgf("podNat.Key() obsoleteNats del: %s", podNat.Key())
+					delete(obsoleteNats, podNat.Key())
 				}
-				delete(obsoleteNats, podNat.Key())
 			}
 		}
 
@@ -386,43 +411,19 @@ func (s *Server) discoverGateway() (int, string, net.HardwareAddr, error) {
 }
 
 func (s *Server) setupE4LBNodeNat(natKey *maps.NatKey, natVal *maps.NatVal) error {
-	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {
-		natKey.TcDir = uint8(tcDir)
-		if err := maps.AddNatEntry(maps.SysE4lb, natKey, natVal); err != nil {
-			return err
-		}
-	}
-	return nil
+	return maps.AddNatEntry(maps.SysE4lb, natKey, natVal)
 }
 
 func (s *Server) unsetE4LBNodeNat(natKey *maps.NatKey) error {
-	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {
-		natKey.TcDir = uint8(tcDir)
-		if err := maps.DelNatEntry(maps.SysE4lb, natKey); err != nil {
-			return err
-		}
-	}
-	return nil
+	return maps.DelNatEntry(maps.SysE4lb, natKey)
 }
 
 func (s *Server) setupE4LBPodNat(natKey *maps.NatKey, natVal *maps.NatVal) error {
-	for _, tcDir := range []maps.TcDir{maps.TC_DIR_EGR} {
-		natKey.TcDir = uint8(tcDir)
-		if err := maps.AddNatEntry(maps.SysMesh, natKey, natVal); err != nil {
-			return err
-		}
-	}
-	return nil
+	return maps.AddNatEntry(maps.SysMesh, natKey, natVal)
 }
 
 func (s *Server) unsetE4LBPodNat(natKey *maps.NatKey) error {
-	for _, tcDir := range []maps.TcDir{maps.TC_DIR_EGR} {
-		natKey.TcDir = uint8(tcDir)
-		if err := maps.DelNatEntry(maps.SysMesh, natKey); err != nil {
-			return err
-		}
-	}
-	return nil
+	return maps.DelNatEntry(maps.SysMesh, natKey)
 }
 
 func (s *Server) setupE4LBServiceNeigh(defaultIfi int, eip string, defaultHwAddr net.HardwareAddr) {
