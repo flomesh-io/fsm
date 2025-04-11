@@ -10,4 +10,9 @@ var (
 		HostPath:  "/opt",
 		MountPath: "/host/sys/fs",
 	}
+
+	SysRun = HostMount{
+		HostPath:  "/var/run",
+		MountPath: "/host/run",
+	}
 )
