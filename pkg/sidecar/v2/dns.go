@@ -1,6 +1,7 @@
 package v2
 
 import (
+	"fmt"
 	"math"
 	"net"
 	"strings"
@@ -55,6 +56,7 @@ func (s *Server) initDnsNatKeys() map[*maps.NatKey]*NatBrVal {
 	nats := make(map[*maps.NatKey]*NatBrVal)
 	if br4Val := s.getCniBridge4Info(); br4Val != nil {
 		nat4Key := new(maps.NatKey)
+		nat4Key.Sys = uint32(maps.SysMesh)
 		nat4Key.Dport = util.HostToNetShort(53)
 		nat4Key.Proto = uint8(maps.IPPROTO_UDP)
 		nat4Key.TcDir = uint8(maps.TC_DIR_EGR)
@@ -67,6 +69,7 @@ func (s *Server) initDnsNatKeys() map[*maps.NatKey]*NatBrVal {
 	}
 	if br6Val := s.getCniBridge6Info(); br6Val != nil {
 		nat6Key := new(maps.NatKey)
+		nat6Key.Sys = uint32(maps.SysMesh)
 		nat6Key.Dport = util.HostToNetShort(53)
 		nat6Key.Proto = uint8(maps.IPPROTO_UDP)
 		nat6Key.TcDir = uint8(maps.TC_DIR_EGR)
@@ -130,7 +133,9 @@ func (s *Server) initDnsNatEndpoints(upstreams []configv1alpha3.DNSUpstream, nat
 func (s *Server) updateDnsNat() {
 	obsoleteNats := make(map[string]*XNat)
 	for natKey, natVal := range s.xnatCache {
-		if natVal.key.Sys == uint32(maps.SysMesh) && natVal.key.TcDir == uint8(maps.TC_DIR_EGR) {
+		if natVal.key.Sys == uint32(maps.SysMesh) &&
+			natVal.key.Proto == uint8(maps.IPPROTO_UDP) &&
+			natVal.key.TcDir == uint8(maps.TC_DIR_EGR) {
 			obsoleteNats[natKey] = natVal
 		}
 	}
@@ -169,6 +174,7 @@ func (s *Server) updateDnsNat() {
 
 	if len(obsoleteNats) > 0 {
 		for natKey, xnat := range obsoleteNats {
+			fmt.Println("obsoleteNats left key:", natKey)
 			if err := s.unsetDnsNat(&xnat.key); err != nil {
 				log.Error().Err(err).Msgf(`failed to unset dns nat`)
 				continue
