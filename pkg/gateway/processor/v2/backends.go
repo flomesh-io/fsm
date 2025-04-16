@@ -229,7 +229,7 @@ func (c *ConfigGenerator) upstreamsByEndpointSlices(svc *corev1.Service, port *i
 	}
 
 	endpointSliceList := &discoveryv1.EndpointSliceList{}
-	if err := c.client.List(context.TODO(), endpointSliceList, client.MatchingLabelsSelector{Selector: selector}); err != nil {
+	if err := c.client.List(context.TODO(), endpointSliceList, client.InNamespace(svc.Namespace), client.MatchingLabelsSelector{Selector: selector}); err != nil {
 		log.Error().Msgf("Failed to list EndpointSlice of Service %s/%s: %s", svc.Namespace, svc.Name, err)
 		return nil
 	}
