@@ -1,12 +1,9 @@
 package v2
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha256"
 	"math"
 	"net"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -16,8 +13,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/utils/strings/slices"
 
+	xnetv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/xnetwork/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/k8s"
@@ -30,119 +27,57 @@ import (
 )
 
 func (s *Server) doConfigE4LBs() {
-	readyNodes, existsE4lbNode := availableNetworkNodes(s.kubeClient)
-	if len(readyNodes) == 0 {
-		return
-	} else if _, exists := readyNodes[s.nodeName]; !exists {
-		return
+	if s.Leading {
+		s.doE4lbLayout()
 	}
+	s.doApplyE4LBs()
+}
 
+func (s *Server) doE4lbLayout() {
+	topo := &E4lbTopo{
+		NodeCache:       make(map[string]bool),
+		NodeEipLayout:   make(map[string]map[string]uint8),
+		EipNodeLayout:   make(map[string]string),
+		EipSvcCache:     make(map[string]uint8),
+		AdvAnnounceHash: make(map[types.UID]uint64),
+	}
+	availableNetworkNodes(s.kubeClient, topo)
+	if eipAdvs := s.xnetworkController.GetEIPAdvertisements(); len(eipAdvs) > 0 {
+		topo.loadEIPAdvertisements(eipAdvs)
+		topo.processEIPAdvertisements(eipAdvs, s.xnetworkClient)
+	}
+}
+
+func (s *Server) doApplyE4LBs() {
 	e4lbSvcs := make(map[types.UID]*corev1.Service)
 	e4lbEips := make(map[types.UID]string)
-	s.processEIPAdvertisements(readyNodes, existsE4lbNode, e4lbSvcs, e4lbEips)
-	s.processServiceAnnotations(readyNodes, existsE4lbNode, e4lbSvcs, e4lbEips)
+	if eipAdvs := s.xnetworkController.GetEIPAdvertisements(); len(eipAdvs) > 0 {
+		s.doApplyEIPAdvertisements(eipAdvs, e4lbSvcs, e4lbEips)
+	}
 	s.announceE4LBService(e4lbSvcs, e4lbEips)
 }
 
-func (s *Server) processServiceAnnotations(readyNodes map[string]bool, existsE4lbNode bool, e4lbSvcs map[types.UID]*corev1.Service, e4lbEips map[types.UID]string) {
-	k8sSvcs := s.kubeController.ListServices(false, true)
-	if len(k8sSvcs) > 0 {
-		for _, k8sSvc := range k8sSvcs {
-			if !IsE4LBEnabled(k8sSvc, s.kubeClient) {
-				continue
-			}
-
-			eip := k8sSvc.Annotations[constants.FLBDesiredIPAnnotation]
-			ipAddr := net.ParseIP(eip)
-			if ipAddr == nil || (ipAddr.To4() == nil && ipAddr.To16() == nil) || ipAddr.IsUnspecified() || ipAddr.IsMulticast() {
-				continue
-			}
-
-			var availableNodes []string
-			for nodeName, e4lbEnabled := range readyNodes {
-				if existsE4lbNode {
-					if e4lbEnabled {
-						availableNodes = append(availableNodes, nodeName)
-					}
-				} else {
-					availableNodes = append(availableNodes, nodeName)
-				}
-			}
-			if len(availableNodes) == 0 {
-				continue
-			}
-
-			sort.Slice(availableNodes, func(i, j int) bool {
-				hi := sha256.Sum256([]byte(availableNodes[i] + "#" + eip))
-				hj := sha256.Sum256([]byte(availableNodes[j] + "#" + eip))
-
-				return bytes.Compare(hi[:], hj[:]) < 0
-			})
-
-			if availableNodes[0] == s.nodeName {
-				e4lbSvcs[k8sSvc.GetUID()] = k8sSvc
-				e4lbEips[k8sSvc.GetUID()] = eip
-			}
+func (s *Server) doApplyEIPAdvertisements(eipAdvs []*xnetv1alpha1.EIPAdvertisement, e4lbSvcs map[types.UID]*corev1.Service, e4lbEips map[types.UID]string) {
+	for _, eipAdv := range eipAdvs {
+		if len(eipAdv.Status.Announce) == 0 {
+			continue
 		}
-	}
-}
-
-func (s *Server) processEIPAdvertisements(readyNodes map[string]bool, existsE4lbNode bool, e4lbSvcs map[types.UID]*corev1.Service, e4lbEips map[types.UID]string) {
-	eipAdvs := s.xnetworkController.GetEIPAdvertisements()
-	if len(eipAdvs) > 0 {
-		for _, eipAdv := range eipAdvs {
-			var availableNodes []string
-			if len(eipAdv.Spec.Nodes) > 0 {
-				if !slices.Contains(eipAdv.Spec.Nodes, s.nodeName) {
+		meshSvc := service.MeshService{Name: eipAdv.Spec.Service.Name}
+		if len(eipAdv.Spec.Service.Namespace) > 0 {
+			meshSvc.Namespace = eipAdv.Spec.Service.Namespace
+		} else {
+			meshSvc.Namespace = eipAdv.Namespace
+		}
+		if k8sSvc := s.kubeController.GetService(meshSvc); k8sSvc != nil {
+			for eip, selectedNode := range eipAdv.Status.Announce {
+				ipAddr := net.ParseIP(eip)
+				if ipAddr == nil || (ipAddr.To4() == nil && ipAddr.To16() == nil) || ipAddr.IsUnspecified() || ipAddr.IsMulticast() {
 					continue
 				}
-				for _, nodeName := range eipAdv.Spec.Nodes {
-					if _, exists := readyNodes[nodeName]; exists {
-						availableNodes = append(availableNodes, nodeName)
-					}
+				if strings.EqualFold(selectedNode, s.nodeName) {
+					e4lbSvcs[k8sSvc.GetUID()] = k8sSvc
+					e4lbEips[k8sSvc.GetUID()] = eip
 				}
-			} else {
-				for nodeName, e4lbEnabled := range readyNodes {
-					if existsE4lbNode {
-						if e4lbEnabled {
-							availableNodes = append(availableNodes, nodeName)
-						}
-					} else {
-						availableNodes = append(availableNodes, nodeName)
-					}
-				}
-			}
-			if len(availableNodes) == 0 {
-				continue
-			}
-
-			meshSvc := service.MeshService{Name: eipAdv.Spec.Service.Name}
-			if len(eipAdv.Spec.Service.Namespace) > 0 {
-				meshSvc.Namespace = eipAdv.Spec.Service.Namespace
-			} else {
-				meshSvc.Namespace = eipAdv.Namespace
-			}
-			k8sSvc := s.kubeController.GetService(meshSvc)
-			if k8sSvc == nil {
-				continue
-			}
-
-			eip := eipAdv.Spec.EIP
-			ipAddr := net.ParseIP(eip)
-			if ipAddr == nil || (ipAddr.To4() == nil && ipAddr.To16() == nil) || ipAddr.IsUnspecified() || ipAddr.IsMulticast() {
-				continue
-			}
-
-			sort.Slice(availableNodes, func(i, j int) bool {
-				hi := sha256.Sum256([]byte(availableNodes[i] + "#" + eip))
-				hj := sha256.Sum256([]byte(availableNodes[j] + "#" + eip))
-
-				return bytes.Compare(hi[:], hj[:]) < 0
-			})
-
-			if availableNodes[0] == s.nodeName {
-				e4lbSvcs[k8sSvc.GetUID()] = k8sSvc
-				e4lbEips[k8sSvc.GetUID()] = eip
 			}
 		}
 	}

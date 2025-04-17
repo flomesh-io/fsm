@@ -137,6 +137,10 @@ rules:
     resources: ["accesscontrols", "eipadvertisements" ]
     verbs: ["list", "get", "watch"]
 
+  - apiGroups: ["xnetwork.flomesh.io"]
+    resources: ["eipadvertisements/status" ]
+    verbs: ["get", "patch", "update"]
+
   # FSM's NamespacedIngress API
   - apiGroups: [ "networking.flomesh.io" ]
     resources: [ "namespacedingresses" ]

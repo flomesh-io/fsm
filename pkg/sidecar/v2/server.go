@@ -10,6 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
+	xnetworkClientset "github.com/flomesh-io/fsm/pkg/gen/client/xnetwork/clientset/versioned"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/flomesh-io/fsm/pkg/workerpool"
@@ -29,6 +30,7 @@ func NewXNetConfigServer(ctx context.Context,
 	xnetworkController xnetwork.Controller,
 	KubeClient kubernetes.Interface,
 	kubeController k8s.Controller,
+	xnetworkClient xnetworkClientset.Interface,
 	msgBroker *messaging.Broker,
 	nodeName, cniBridge4, cniBridge6 string) *Server {
 	server := &Server{
@@ -38,6 +40,7 @@ func NewXNetConfigServer(ctx context.Context,
 		xnetworkController: xnetworkController,
 		kubeClient:         KubeClient,
 		kubeController:     kubeController,
+		xnetworkClient:     xnetworkClient,
 		msgBroker:          msgBroker,
 		workQueues:         workerpool.NewWorkerPool(workerPoolSize),
 		cniBridge4:         cniBridge4,

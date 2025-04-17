@@ -11,6 +11,8 @@ import (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
 // +kubebuilder:resource:shortName=eipadvertisement,scope=Namespaced
+// +kubebuilder:storageversion
+// +kubebuilder:subresource:status
 type EIPAdvertisement struct {
 	// Object's type metadata
 	metav1.TypeMeta `json:",inline"`
@@ -22,6 +24,15 @@ type EIPAdvertisement struct {
 	// Spec is the Ingress backend policy specification
 	// +optional
 	Spec EIPAdvertisementSpec `json:"spec,omitempty"`
+
+	// +optional
+	Status EIPAdvertisementStatus `json:"status,omitempty"`
+}
+
+// EIPAdvertisementStatus is the type used to represent the status.
+type EIPAdvertisementStatus struct {
+	// +optional
+	Announce map[string]string `json:"announce,omitempty"`
 }
 
 // EIPAdvertisementSpec is the type used to represent the EIPAdvertisement policy specification.
@@ -29,8 +40,9 @@ type EIPAdvertisementSpec struct {
 	// Service defines the name of the service.
 	Service ElbServiceSpec `json:"service"`
 
-	// EIP defines the 4-layer ip for the service.
-	EIP string `json:"eip"`
+	// EIPs defines the 4-layer ips for the service.
+	// +kubebuilder:validation:MinItems=1
+	EIPs []string `json:"eips"`
 
 	// +optional
 	Nodes []string `json:"nodes"`

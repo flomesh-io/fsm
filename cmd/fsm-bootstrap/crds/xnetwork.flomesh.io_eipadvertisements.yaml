@@ -46,9 +46,12 @@ spec:
           spec:
             description: Spec is the Ingress backend policy specification
             properties:
-              eip:
-                description: EIP defines the 4-layer ip for the service.
-                type: string
+              eips:
+                description: EIPs defines the 4-layer ips for the service.
+                items:
+                  type: string
+                minItems: 1
+                type: array
               nodes:
                 items:
                   type: string
@@ -72,9 +75,20 @@ spec:
                 - name
                 type: object
             required:
-            - eip
+            - eips
             - service
+            type: object
+          status:
+            description: EIPAdvertisementStatus is the type used to represent the
+              status.
+            properties:
+              announce:
+                additionalProperties:
+                  type: string
+                type: object
             type: object
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}
