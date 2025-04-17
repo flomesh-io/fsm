@@ -7,12 +7,16 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/spf13/pflag"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/leaderelection"
+	"k8s.io/client-go/tools/leaderelection/resourcelock"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -137,8 +141,41 @@ func main() {
 
 	xnetworkController := xnetwork.NewXNetworkController(informerCollection, kubeClient, kubeController, msgBroker)
 
-	server := sidecarv2.NewXNetConfigServer(ctx, cfg, xnetworkController, kubeClient, kubeController, msgBroker, nodeName, cniIPv4BridgeName, cniIPv6BridgeName)
+	server := sidecarv2.NewXNetConfigServer(ctx, cfg, xnetworkController, kubeClient, kubeController, xnetworkClient, msgBroker, nodeName, cniIPv4BridgeName, cniIPv6BridgeName)
 	server.Start()
+
+	lock := &resourcelock.LeaseLock{
+		LeaseMeta: metav1.ObjectMeta{
+			Name:      `xnetwork`,
+			Namespace: fsmNamespace,
+		},
+		Client: kubeClient.CoordinationV1(),
+		LockConfig: resourcelock.ResourceLockConfig{
+			Identity: nodeName,
+		},
+	}
+
+	go func() {
+		leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
+			Lock:            lock,
+			ReleaseOnCancel: true,
+			LeaseDuration:   10 * time.Second,
+			RenewDeadline:   8 * time.Second,
+			RetryPeriod:     5 * time.Second,
+			Callbacks: leaderelection.LeaderCallbacks{
+				OnStartedLeading: func(ctx context.Context) {
+					server.Leading = true
+				},
+				OnStoppedLeading: func() {
+					server.Leading = false
+				},
+				OnNewLeader: func(identity string) {
+					log.Info().Msgf("new leader %s", identity)
+				},
+			},
+		})
+	}()
+
 	go server.BroadcastListener(stop)
 
 	version.SetMetric()

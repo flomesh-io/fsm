@@ -36,6 +36,8 @@ type EIPAdvertisementsGetter interface {
 type EIPAdvertisementInterface interface {
 	Create(ctx context.Context, eIPAdvertisement *xnetworkv1alpha1.EIPAdvertisement, opts v1.CreateOptions) (*xnetworkv1alpha1.EIPAdvertisement, error)
 	Update(ctx context.Context, eIPAdvertisement *xnetworkv1alpha1.EIPAdvertisement, opts v1.UpdateOptions) (*xnetworkv1alpha1.EIPAdvertisement, error)
+	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+	UpdateStatus(ctx context.Context, eIPAdvertisement *xnetworkv1alpha1.EIPAdvertisement, opts v1.UpdateOptions) (*xnetworkv1alpha1.EIPAdvertisement, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
 	Get(ctx context.Context, name string, opts v1.GetOptions) (*xnetworkv1alpha1.EIPAdvertisement, error)
