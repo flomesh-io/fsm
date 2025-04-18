@@ -53,23 +53,7 @@ func (topo *E4lbTopo) processEIPAdvertisements(eipAdvs []*xnetv1alpha1.EIPAdvert
 	for _, eipAdv := range eipAdvs {
 		statusAnnounce := make(map[string]string)
 		availableNodeSet := mapset.NewSet()
-		if len(eipAdv.Spec.Nodes) > 0 {
-			for _, nodeName := range eipAdv.Spec.Nodes {
-				if _, exists := topo.NodeCache[nodeName]; exists {
-					availableNodeSet.Add(nodeName)
-				}
-			}
-		} else {
-			for nodeName, e4lbEnabled := range topo.NodeCache {
-				if topo.ExistsE4lbNodes {
-					if e4lbEnabled {
-						availableNodeSet.Add(nodeName)
-					}
-				} else {
-					availableNodeSet.Add(nodeName)
-				}
-			}
-		}
+		topo.fillAvailableNodeSet(eipAdv, availableNodeSet)
 		if availableNodeSet.Cardinality() == 0 {
 			continue
 		}
@@ -84,6 +68,10 @@ func (topo *E4lbTopo) processEIPAdvertisements(eipAdvs []*xnetv1alpha1.EIPAdvert
 			if selectedNode, assigned := topo.EipNodeLayout[eip]; assigned {
 				statusAnnounce[eip] = selectedNode
 				continue
+			}
+
+			if availableNodeSet.Cardinality() == 0 {
+				topo.fillAvailableNodeSet(eipAdv, availableNodeSet)
 			}
 
 			var selectedNode string
@@ -115,6 +103,7 @@ func (topo *E4lbTopo) processEIPAdvertisements(eipAdvs []*xnetv1alpha1.EIPAdvert
 				}
 				selectedNode = availableNodes[0].(string)
 			}
+
 			topo.EipNodeLayout[eip] = selectedNode
 			statusAnnounce[eip] = selectedNode
 			if len(selectedNode) > 0 {
@@ -139,6 +128,26 @@ func (topo *E4lbTopo) processEIPAdvertisements(eipAdvs []*xnetv1alpha1.EIPAdvert
 				log.Error().Err(err).Msgf("fail to update status for EIPAdvertisement: %s/%s", eipAdv.Namespace, eipAdv.Name)
 			} else {
 				topo.AdvAnnounceHash[eipAdv.UID] = curHash
+			}
+		}
+	}
+}
+
+func (topo *E4lbTopo) fillAvailableNodeSet(eipAdv *xnetv1alpha1.EIPAdvertisement, availableNodeSet mapset.Set) {
+	if len(eipAdv.Spec.Nodes) > 0 {
+		for _, nodeName := range eipAdv.Spec.Nodes {
+			if _, exists := topo.NodeCache[nodeName]; exists {
+				availableNodeSet.Add(nodeName)
+			}
+		}
+	} else {
+		for nodeName, e4lbEnabled := range topo.NodeCache {
+			if topo.ExistsE4lbNodes {
+				if e4lbEnabled {
+					availableNodeSet.Add(nodeName)
+				}
+			} else {
+				availableNodeSet.Add(nodeName)
 			}
 		}
 	}
