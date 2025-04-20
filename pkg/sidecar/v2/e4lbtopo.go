@@ -85,20 +85,16 @@ func (topo *E4lbTopo) processEIPAdvertisements(eipAdvs []*xnetv1alpha1.EIPAdvert
 						nj := availableNodes[j].(string)
 						if eipSet, exists := topo.NodeEipLayout[ni]; exists {
 							ci = len(eipSet)
-						} else {
-							topo.NodeEipLayout[ni] = make(map[string]uint8)
 						}
 						if eipSet, exists := topo.NodeEipLayout[nj]; exists {
 							cj = len(eipSet)
-						} else {
-							topo.NodeEipLayout[nj] = make(map[string]uint8)
 						}
-						if ci < cj {
-							return true
+						if ci == cj {
+							hi := sha256.Sum256([]byte(ni))
+							hj := sha256.Sum256([]byte(nj))
+							return bytes.Compare(hi[:], hj[:]) < 0
 						}
-						hi := sha256.Sum256([]byte(ni))
-						hj := sha256.Sum256([]byte(nj))
-						return bytes.Compare(hi[:], hj[:]) < 0
+						return ci < cj
 					})
 				}
 				selectedNode = availableNodes[0].(string)
