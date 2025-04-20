@@ -68,7 +68,7 @@ func (r *eurekaConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			r.removeDeployment(connector)
+			r.removeDeployment(string(ctv1.EurekaDiscoveryService), req.Namespace, req.Name)
 			log.Info().Msgf("EurekaConnector resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
