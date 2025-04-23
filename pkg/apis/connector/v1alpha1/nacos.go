@@ -261,6 +261,11 @@ type NacosAuthSpec struct {
 	// +kubebuilder:default=public
 	// +optional
 	NamespaceId string `json:"namespaceId,omitempty"`
+
+	// +kubebuilder:default=3600
+	// +kubebuilder:validation:Minimum=60
+	// +optional
+	TokenExpireSeconds *int32 `json:"tokenExpireSeconds,omitempty"`
 }
 
 // NacosStatus is the type used to represent the status of a Nacos Connector resource.

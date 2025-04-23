@@ -159,6 +159,7 @@ type ConnectController interface {
 	GetAuthNacosAccessKey() string
 	GetAuthNacosSecretKey() string
 	GetAuthNacosNamespaceId() string
+	GetAuthNacosTokenTtl() time.Duration
 
 	SyncCloudToK8s() bool
 	SyncK8sToCloud() bool

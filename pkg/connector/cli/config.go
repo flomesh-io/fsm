@@ -36,6 +36,7 @@ type config struct {
 			accessKey   string
 			secretKey   string
 			namespaceId string
+			tokenTtl    time.Duration
 		}
 	}
 
@@ -791,6 +792,12 @@ func (c *config) GetAuthNacosNamespaceId() string {
 	return c.auth.nacos.namespaceId
 }
 
+func (c *config) GetAuthNacosTokenTtl() time.Duration {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.auth.nacos.tokenTtl
+}
+
 func (c *config) GetAuthConsulUsername() string {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
@@ -917,6 +924,12 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 	c.auth.nacos.accessKey = spec.Auth.AccessKey
 	c.auth.nacos.secretKey = spec.Auth.SecretKey
 	c.auth.nacos.namespaceId = spec.Auth.NamespaceId
+
+	if spec.Auth.TokenExpireSeconds != nil && (*spec.Auth.TokenExpireSeconds) >= 60 {
+		c.auth.nacos.tokenTtl = time.Second * time.Duration(*spec.Auth.TokenExpireSeconds)
+	} else {
+		c.auth.nacos.tokenTtl = time.Second * 3600
+	}
 
 	c.c2kCfg.enable = spec.SyncToK8S.Enable
 	c.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
