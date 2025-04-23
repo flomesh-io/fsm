@@ -31,6 +31,9 @@ func (dc *MachineDiscoveryClient) CatalogInstances(service string, _ *connector.
 	if len(vms.Items) > 0 {
 		for _, vm := range vms.Items {
 			updateVM := false
+			if vm.Annotations == nil {
+				vm.Annotations = make(map[string]string)
+			}
 			if clusterId, exists := vm.Annotations[connector.AnnotationCloudServiceInheritedClusterID]; exists {
 				if len(dc.connectController.GetClusterId()) > 0 {
 					if !strings.EqualFold(dc.connectController.GetClusterId(), clusterId) {
