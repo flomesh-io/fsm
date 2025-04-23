@@ -227,10 +227,6 @@ type ConsulSpec struct {
 	// +optional
 	AsInternalServices bool `json:"asInternalServices,omitempty"`
 
-	// +kubebuilder:default={}
-	// +optional
-	Auth NacosAuthSpec `json:"auth,omitempty"`
-
 	// +kubebuilder:validation:Format="duration"
 	// +kubebuilder:default="5s"
 	// +optional
