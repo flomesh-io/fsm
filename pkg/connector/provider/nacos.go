@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	mapset "github.com/deckarep/golang-set"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients"
@@ -28,6 +29,7 @@ type nacosConnect struct {
 	namingClient naming_client.INamingClient
 	serverCfg    constant.ServerConfig
 	clientCfg    constant.ClientConfig
+	expiresAt    time.Time
 }
 
 type NacosDiscoveryClient struct {
@@ -40,14 +42,16 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INa
 	dc.lock.Lock()
 	defer dc.lock.Unlock()
 
+	connectController := dc.connectController
+
 	if len(connectKey) == 0 {
 		connectKey = aloneConnect
 	}
 
 	conn, exists := dc.nacosConnects[connectKey]
-	if !exists {
+	if !exists || time.Now().After(conn.expiresAt) {
+		level := env.GetString("LOG_LEVEL", "error")
 		conn = new(nacosConnect)
-		level := env.GetString("LOG_LEVEL", "warn")
 		conn.clientCfg = constant.ClientConfig{
 			TimeoutMs:            60000,
 			NotLoadCacheAtStart:  true,
@@ -58,10 +62,10 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INa
 			CacheDir:             "/tmp/nacos/cache",
 			LogLevel:             level,
 		}
+		conn.expiresAt = time.Now().Add(connectController.GetAuthNacosTokenTtl())
 		dc.nacosConnects[connectKey] = conn
 	}
 
-	connectController := dc.connectController
 	namespaceId := connectController.GetAuthNacosNamespaceId()
 	if len(namespaceId) == 0 {
 		namespaceId = constant.DEFAULT_NAMESPACE_ID

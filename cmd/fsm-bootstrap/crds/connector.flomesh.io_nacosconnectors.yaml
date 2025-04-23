@@ -95,6 +95,11 @@ spec:
                   secretKey:
                     default: ""
                     type: string
+                  tokenExpireSeconds:
+                    default: 3600
+                    format: int32
+                    minimum: 60
+                    type: integer
                   username:
                     default: ""
                     type: string
