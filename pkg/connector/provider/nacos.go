@@ -29,6 +29,7 @@ type nacosConnect struct {
 	namingClient naming_client.INamingClient
 	serverCfg    constant.ServerConfig
 	clientCfg    constant.ClientConfig
+	ttl          time.Duration
 	expiresAt    time.Time
 }
 
@@ -62,7 +63,8 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INa
 			CacheDir:             "/tmp/nacos/cache",
 			LogLevel:             level,
 		}
-		conn.expiresAt = time.Now().Add(connectController.GetAuthNacosTokenTtl())
+		conn.ttl = connectController.GetAuthNacosTokenTtl()
+		conn.expiresAt = time.Now().Add(conn.ttl)
 		dc.nacosConnects[connectKey] = conn
 	}
 
@@ -88,6 +90,10 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INa
 	}
 	if secretKey := connectController.GetAuthNacosSecretKey(); !strings.EqualFold(conn.clientCfg.SecretKey, secretKey) {
 		conn.clientCfg.SecretKey = secretKey
+		conn.namingClient = nil
+	}
+	if ttl := connectController.GetAuthNacosTokenTtl(); conn.ttl.Nanoseconds() != ttl.Nanoseconds() {
+		conn.ttl = ttl
 		conn.namingClient = nil
 	}
 
@@ -144,6 +150,7 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INa
 			"serverConfigs": []constant.ServerConfig{conn.serverCfg},
 			"clientConfig":  conn.clientCfg,
 		})
+		conn.expiresAt = time.Now().Add(conn.ttl)
 	}
 
 	connectController.WaitLimiter()
