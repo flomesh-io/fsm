@@ -63,27 +63,6 @@ spec:
               asInternalServices:
                 default: false
                 type: boolean
-              auth:
-                default: {}
-                description: NacosAuthSpec is the type used to represent the Nacos
-                  auth specification.
-                properties:
-                  accessKey:
-                    default: ""
-                    type: string
-                  namespaceId:
-                    default: public
-                    type: string
-                  password:
-                    default: ""
-                    type: string
-                  secretKey:
-                    default: ""
-                    type: string
-                  username:
-                    default: ""
-                    type: string
-                type: object
               deriveNamespace:
                 type: string
               httpAddr:

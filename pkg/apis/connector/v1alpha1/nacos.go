@@ -260,6 +260,11 @@ type NacosAuthSpec struct {
 	// +kubebuilder:default=public
 	// +optional
 	NamespaceId string `json:"namespaceId,omitempty"`
+
+	// +kubebuilder:default=3600
+	// +kubebuilder:validation:Minimum=60
+	// +optional
+	TokenExpireSeconds *int32 `json:"tokenExpireSeconds,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
