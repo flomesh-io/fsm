@@ -7,6 +7,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/utils/chm"
 )
 
 // C2KContext is the c2k context for connector controller
@@ -46,41 +47,41 @@ type K2CContext struct {
 
 	// ServiceMap holds services we should sync to cloud. Keys are the
 	// in the form <kube namespace>/<kube svc name>.
-	ServiceMap ConcurrentMap[string, *corev1.Service]
+	ServiceMap chm.ConcurrentMap[string, *corev1.Service]
 
 	// EndpointsMap uses the same keys as serviceMap but maps to the endpoints
 	// of each service.
-	EndpointsMap ConcurrentMap[string, *corev1.Endpoints]
+	EndpointsMap chm.ConcurrentMap[string, *corev1.Endpoints]
 
 	// IngressServiceMap uses the same keys as serviceMap but maps to the ingress
 	// of each service if it exists.
-	IngressServiceMap ConcurrentMap[string, ConcurrentMap[string, string]]
+	IngressServiceMap chm.ConcurrentMap[string, chm.ConcurrentMap[string, string]]
 
 	// ServiceHostnameMap maps the name of a service to the hostName and port that
 	// is provided by the Ingress resource for the service.
-	ServiceHostnameMap ConcurrentMap[string, ServiceAddress]
+	ServiceHostnameMap chm.ConcurrentMap[string, ServiceAddress]
 
 	// registeredServiceMap holds the services in cloud that we've registered from kube.
 	// It's populated via cloud's API and lets us diff what is actually in
 	// cloud vs. what we expect to be there.
-	RegisteredServiceMap ConcurrentMap[string, []*CatalogRegistration]
+	RegisteredServiceMap chm.ConcurrentMap[string, []*CatalogRegistration]
 
 	//
 	// Syncer Context
 	//
 
 	// ServiceNames is all namespaces mapped to a set of valid cloud service names
-	ServiceNames ConcurrentMap[string, mapset.Set]
+	ServiceNames chm.ConcurrentMap[string, mapset.Set]
 
 	// Namespaces is all namespaces mapped to a map of cloud service ids mapped to their CatalogRegistrations
-	Namespaces ConcurrentMap[string, ConcurrentMap[string, *CatalogRegistration]]
+	Namespaces chm.ConcurrentMap[string, chm.ConcurrentMap[string, *CatalogRegistration]]
 
 	//deregistrations
-	Deregs ConcurrentMap[string, *CatalogDeregistration]
+	Deregs chm.ConcurrentMap[string, *CatalogDeregistration]
 
 	// Watchers is all namespaces mapped to a map of cloud service
 	// names mapped to a cancel function for watcher routines
-	Watchers ConcurrentMap[string, ConcurrentMap[string, context.CancelFunc]]
+	Watchers chm.ConcurrentMap[string, chm.ConcurrentMap[string, context.CancelFunc]]
 }
 
 // K2GContext is the k2g context for connector controller
@@ -113,15 +114,15 @@ func NewC2KContext() *C2KContext {
 
 func NewK2CContext() *K2CContext {
 	return &K2CContext{
-		ServiceMap:           NewConcurrentMap[*corev1.Service](),
-		EndpointsMap:         NewConcurrentMap[*corev1.Endpoints](),
-		RegisteredServiceMap: NewConcurrentMap[[]*CatalogRegistration](),
-		ServiceNames:         NewConcurrentMap[mapset.Set](),
-		Namespaces:           NewConcurrentMap[ConcurrentMap[string, *CatalogRegistration]](),
-		IngressServiceMap:    NewConcurrentMap[ConcurrentMap[string, string]](),
-		ServiceHostnameMap:   NewConcurrentMap[ServiceAddress](),
-		Deregs:               NewConcurrentMap[*CatalogDeregistration](),
-		Watchers:             NewConcurrentMap[ConcurrentMap[string, context.CancelFunc]](),
+		ServiceMap:           chm.NewConcurrentMap[*corev1.Service](),
+		EndpointsMap:         chm.NewConcurrentMap[*corev1.Endpoints](),
+		RegisteredServiceMap: chm.NewConcurrentMap[[]*CatalogRegistration](),
+		ServiceNames:         chm.NewConcurrentMap[mapset.Set](),
+		Namespaces:           chm.NewConcurrentMap[chm.ConcurrentMap[string, *CatalogRegistration]](),
+		IngressServiceMap:    chm.NewConcurrentMap[chm.ConcurrentMap[string, string]](),
+		ServiceHostnameMap:   chm.NewConcurrentMap[ServiceAddress](),
+		Deregs:               chm.NewConcurrentMap[*CatalogDeregistration](),
+		Watchers:             chm.NewConcurrentMap[chm.ConcurrentMap[string, context.CancelFunc]](),
 	}
 }
 

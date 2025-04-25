@@ -6,7 +6,7 @@ import (
 
 	"github.com/mitchellh/hashstructure/v2"
 
-	"github.com/flomesh-io/fsm/pkg/connector"
+	"github.com/flomesh-io/fsm/pkg/utils/chm"
 )
 
 const (
@@ -37,8 +37,8 @@ type cache struct {
 
 	cacheLock sync.Mutex
 
-	catalogInstances    connector.ConcurrentMap[string, *catalogTimeScale]
-	registeredInstances connector.ConcurrentMap[string, *registerTimeScale]
+	catalogInstances    chm.ConcurrentMap[string, *catalogTimeScale]
+	registeredInstances chm.ConcurrentMap[string, *registerTimeScale]
 }
 
 func (c *cache) getCatalogInstanceTimeScale(key string) *catalogTimeScale {

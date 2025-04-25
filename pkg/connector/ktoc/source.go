@@ -23,6 +23,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
 	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/messaging"
+	"github.com/flomesh-io/fsm/pkg/utils/chm"
 	"github.com/flomesh-io/fsm/pkg/workerpool"
 )
 
@@ -1205,7 +1206,7 @@ func (t *serviceIngressSource) Upsert(key string, raw interface{}) error {
 			})
 		set, exists := svc.controller.GetK2CContext().IngressServiceMap.Get(key)
 		if !exists {
-			svc.controller.GetK2CContext().IngressServiceMap.SetIfAbsent(key, connector.NewConcurrentMap[string]())
+			svc.controller.GetK2CContext().IngressServiceMap.SetIfAbsent(key, chm.NewConcurrentMap[string]())
 			set, _ = svc.controller.GetK2CContext().IngressServiceMap.Get(key)
 		}
 		// Maintain a list of all the service names that map to an Ingress resource.

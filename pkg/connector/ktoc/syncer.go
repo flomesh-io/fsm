@@ -9,6 +9,7 @@ import (
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
+	"github.com/flomesh-io/fsm/pkg/utils/chm"
 )
 
 // Syncer is responsible for syncing a set of cloud catalog registrations.
@@ -76,7 +77,7 @@ func (s *KtoCSyncer) Sync(rs []*connector.CatalogRegistration) {
 		// Add service to namespaces map, initializing if necessary
 		nsSet, nsOk := s.controller.GetK2CContext().Namespaces.Get(ns)
 		if !nsOk {
-			s.controller.GetK2CContext().Namespaces.SetIfAbsent(ns, connector.NewConcurrentMap[*connector.CatalogRegistration]())
+			s.controller.GetK2CContext().Namespaces.SetIfAbsent(ns, chm.NewConcurrentMap[*connector.CatalogRegistration]())
 			nsSet, _ = s.controller.GetK2CContext().Namespaces.Get(ns)
 		}
 		nsSet.Set(r.Service.ID, r)
@@ -357,7 +358,7 @@ func (s *KtoCSyncer) syncFull(ctx context.Context) {
 			nsWatchers, ok := s.controller.GetK2CContext().Watchers.Get(ns)
 			if !ok {
 				// Create watcher map if it doesn't exist for this namespace
-				s.controller.GetK2CContext().Watchers.SetIfAbsent(ns, connector.NewConcurrentMap[context.CancelFunc]())
+				s.controller.GetK2CContext().Watchers.SetIfAbsent(ns, chm.NewConcurrentMap[context.CancelFunc]())
 				nsWatchers, _ = s.controller.GetK2CContext().Watchers.Get(ns)
 			}
 			if has := nsWatchers.Has(svc.(string)); !has {

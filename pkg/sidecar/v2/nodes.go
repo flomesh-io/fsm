@@ -31,7 +31,7 @@ func isNetworkUnavailable(n *corev1.Node) bool {
 	return ConditionStatus(n, corev1.NodeNetworkUnavailable) == corev1.ConditionTrue
 }
 
-func availableNetworkNodes(kubeClient kubernetes.Interface, topo *E4lbTopo) {
+func availableNetworkNodes(kubeClient kubernetes.Interface, topo *e4lbTopo) {
 	if nodes, err := kubeClient.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{}); err == nil {
 		for _, node := range nodes.Items {
 			if isNetworkUnavailable(&node) {
@@ -44,11 +44,11 @@ func availableNetworkNodes(kubeClient kubernetes.Interface, topo *E4lbTopo) {
 			if !e4lbEnabled && len(node.Labels) > 0 {
 				e4lbEnabled = utils.ParseEnabled(node.Labels[constants.FLBEnabledAnnotation])
 			}
-			if !topo.ExistsE4lbNodes && e4lbEnabled {
-				topo.ExistsE4lbNodes = true
+			if !topo.existsE4lbNodes && e4lbEnabled {
+				topo.existsE4lbNodes = true
 			}
-			topo.NodeCache[node.Name] = e4lbEnabled
-			topo.NodeEipLayout[node.Name] = make(map[string]uint8)
+			topo.nodeCache[node.Name] = e4lbEnabled
+			topo.nodeEipLayout[node.Name] = make(map[string]uint8)
 		}
 	}
 }

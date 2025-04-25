@@ -35,3 +35,21 @@ func (job *xnetworkE4lbJob) Run() {
 func (job *xnetworkE4lbJob) JobName() string {
 	return "fsm-xnetwork-e4lb-job"
 }
+
+type xnetworkEIPJob struct {
+	done   chan struct{}
+	server *Server
+}
+
+func (job *xnetworkEIPJob) GetDoneCh() <-chan struct{} {
+	return job.done
+}
+
+func (job *xnetworkEIPJob) Run() {
+	defer close(job.done)
+	job.server.gratuitousEIPs()
+}
+
+func (job *xnetworkEIPJob) JobName() string {
+	return "fsm-xnetwork-eip-job"
+}

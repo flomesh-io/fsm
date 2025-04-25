@@ -1,7 +1,6 @@
 package v2
 
 import (
-	"context"
 	"math"
 	"net"
 	"strconv"
@@ -10,18 +9,15 @@ import (
 
 	"github.com/vishvananda/netlink"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
+	utilnet "k8s.io/utils/net"
 
 	xnetv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/xnetwork/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/service"
-	"github.com/flomesh-io/fsm/pkg/utils"
-	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/arp"
 	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/maps"
+	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/neigh"
 	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/route"
 	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/util"
 )
@@ -34,12 +30,12 @@ func (s *Server) doConfigE4LBs() {
 }
 
 func (s *Server) doE4lbLayout() {
-	topo := &E4lbTopo{
-		NodeCache:       make(map[string]bool),
-		NodeEipLayout:   make(map[string]map[string]uint8),
-		EipNodeLayout:   make(map[string]string),
-		EipSvcCache:     make(map[string]uint8),
-		AdvAnnounceHash: make(map[types.UID]uint64),
+	topo := &e4lbTopo{
+		nodeCache:         make(map[string]bool),
+		nodeEipLayout:     make(map[string]map[string]uint8),
+		eipNodeLayout:     make(map[string]string),
+		eipSvcCache:       make(map[string]uint8),
+		advertisementHash: make(map[types.UID]uint64),
 	}
 	availableNetworkNodes(s.kubeClient, topo)
 	if eipAdvs := s.xnetworkController.GetEIPAdvertisements(); len(eipAdvs) > 0 {
@@ -93,15 +89,6 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 		if natVal.key.Sys == uint32(maps.SysE4lb) {
 			obsoleteNats[natKey] = natVal
 			log.Debug().Msgf("obsoleteNats natKey: %s", natKey)
-		} else if natVal.key.Sys == uint32(maps.SysMesh) &&
-			natVal.key.Proto == uint8(maps.IPPROTO_TCP) &&
-			natVal.key.TcDir == uint8(maps.TC_DIR_EGR) {
-			if natVal.key.Daddr[0] == 0 && natVal.key.Daddr[1] == 0 &&
-				natVal.key.Daddr[2] == 0 && natVal.key.Daddr[3] == 0 && natVal.key.Dport == 0 {
-				continue
-			}
-			obsoleteNats[natKey] = natVal
-			log.Debug().Msgf("obsoleteNats natKey: %s", natKey)
 		}
 	}
 
@@ -128,6 +115,7 @@ func (s *Server) setupE4LBNats(e4lbSvcs map[types.UID]*corev1.Service, e4lbEips 
 		return
 	}
 
+	obsoletes := s.eipCache.Items()
 	for uid, k8sSvc := range e4lbSvcs {
 		eips, exists := e4lbEips[uid]
 		if !exists || len(eips) == 0 {
@@ -159,8 +147,6 @@ func (s *Server) setupE4LBNats(e4lbSvcs map[types.UID]*corev1.Service, e4lbEips 
 					ePort = uint16(port.Port)
 				}
 
-				s.setupE4LBServiceNeigh(defaultIfi, eip, defaultHwAddr)
-
 				nodeNatKey, nodeNatVal := s.getE4lbNodeNat(maps.SysE4lb, eip, ePort, upstreams, port)
 				for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {
 					nodeNatKey.TcDir = uint8(tcDir)
@@ -188,9 +174,37 @@ func (s *Server) setupE4LBNats(e4lbSvcs map[types.UID]*corev1.Service, e4lbEips 
 				}
 			}
 
-			if err := arp.Announce(defaultEth, eip, defaultHwAddr); err != nil {
-				log.Error().Msg(err.Error())
+			if _, exists := obsoletes[eip]; exists {
+				delete(obsoletes, eip)
+			} else {
+				s.eipCache.Set(eip, &e4lbNeigh{
+					eip:     net.ParseIP(eip),
+					ifName:  defaultEth,
+					ifIndex: defaultIfi,
+					macAddr: defaultHwAddr,
+					adv:     false,
+				})
 			}
+		}
+	}
+
+	for eip, n := range obsoletes {
+		if n.adv {
+			neigh.DelNeighOverIface(n.ifIndex, n.eip, n.macAddr)
+		}
+		s.eipCache.Remove(eip)
+	}
+}
+
+func (s *Server) gratuitousEIPs() {
+	eips := s.eipCache.Keys()
+	for _, eip := range eips {
+		if n, exists := s.eipCache.Get(eip); exists {
+			if !n.adv {
+				neigh.SetNeighOverIface(n.ifIndex, n.eip, n.macAddr)
+				n.adv = true
+			}
+			neigh.GratuitousNeighOverIface(n.ifName, n.ifIndex, n.eip, n.macAddr)
 		}
 	}
 }
@@ -199,19 +213,19 @@ func (s *Server) getE4lbNodeNat(sysId maps.SysID, eIP string, ePort uint16, upst
 	eipAddr := net.ParseIP(eIP)
 	natKey := new(maps.NatKey)
 	natKey.Sys = uint32(sysId)
-	natKey.Daddr[0], natKey.Daddr[1], natKey.Daddr[2], natKey.Daddr[3], natKey.V6, _ = util.IPToInt(eipAddr)
 	natKey.Dport = util.HostToNetShort(ePort)
 	natKey.Proto = uint8(maps.IPPROTO_TCP)
-	if eipAddr.To4() == nil {
-		natKey.V6 = 1
-	}
+	natKey.Daddr[0], natKey.Daddr[1], natKey.Daddr[2], natKey.Daddr[3], natKey.V6, _ = util.IPToInt(eipAddr)
 
 	natVal := new(maps.NatVal)
 	for rip, microSvc := range upstreams {
-		ripAddr := net.ParseIP(rip)
-		if natKey.V6 == 1 && ripAddr.To16() == nil {
+		if natKey.V6 == 0 && !utilnet.IsIPv4String(rip) {
 			continue
 		}
+		if natKey.V6 == 1 && !utilnet.IsIPv6String(rip) {
+			continue
+		}
+		ripAddr := net.ParseIP(rip)
 		if microSvc {
 			if port.TargetPort.IntVal > 0 && port.TargetPort.IntVal <= math.MaxUint16 {
 				rport := uint16(port.TargetPort.IntVal)
@@ -287,50 +301,4 @@ func (s *Server) setupE4LBNodeNat(natKey *maps.NatKey, natVal *maps.NatVal) erro
 
 func (s *Server) unsetE4LBNodeNat(natKey *maps.NatKey) error {
 	return maps.DelNatEntry(maps.SysE4lb, natKey)
-}
-
-func (s *Server) setupE4LBServiceNeigh(defaultIfi int, eip string, defaultHwAddr net.HardwareAddr) {
-	neigh := &netlink.Neigh{
-		LinkIndex:    defaultIfi,
-		State:        arp.NUD_REACHABLE,
-		IP:           net.ParseIP(eip),
-		HardwareAddr: defaultHwAddr,
-	}
-	if err := netlink.NeighSet(neigh); err != nil {
-		log.Error().Msg(err.Error())
-		if err = netlink.NeighAdd(neigh); err != nil {
-			log.Error().Msg(err.Error())
-		}
-	}
-}
-
-// IsE4LBEnabled checks if the service is enabled for flb
-func IsE4LBEnabled(svc *corev1.Service, kubeClient kubernetes.Interface) bool {
-	if svc == nil {
-		return false
-	}
-
-	// if service doesn't have flb.flomesh.io/enabled annotation
-	if svc.Annotations == nil || svc.Annotations[constants.FLBEnabledAnnotation] == "" {
-		// check ns annotation
-		ns, err := kubeClient.CoreV1().
-			Namespaces().
-			Get(context.TODO(), svc.Namespace, metav1.GetOptions{})
-
-		if err != nil {
-			log.Error().Msgf("Failed to get namespace %q: %s", svc.Namespace, err)
-			return false
-		}
-
-		if ns.Annotations == nil || ns.Annotations[constants.FLBEnabledAnnotation] == "" {
-			return false
-		}
-
-		log.Debug().Msgf("Found annotation %q on Namespace %q", constants.FLBEnabledAnnotation, ns.Name)
-		return utils.ParseEnabled(ns.Annotations[constants.FLBEnabledAnnotation])
-	}
-
-	// parse svc annotation
-	log.Debug().Msgf("Found annotation %q on Service %s/%s", constants.FLBEnabledAnnotation, svc.Namespace, svc.Name)
-	return utils.ParseEnabled(svc.Annotations[constants.FLBEnabledAnnotation])
 }
