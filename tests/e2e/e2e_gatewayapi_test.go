@@ -1385,7 +1385,7 @@ func testFSMGatewayDNSModifierFilterTraffic() {
 	By("Creating DNSModifier configuration for modifying DNS response")
 
 	ipv4 := "1.11.11.111"
-	ipv6 := "aac6:19b8:d12f:f792:d39f:788b:f9e3:000b"
+	ipv6 := "a74b:29d2:adb4:627f:5976:3dd9:fe21:1678"
 
 	dnsModifier := extv1alpha1.DNSModifier{
 		ObjectMeta: metav1.ObjectMeta{
