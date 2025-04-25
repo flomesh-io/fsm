@@ -14,12 +14,12 @@ import (
 	xnetworkClientset "github.com/flomesh-io/fsm/pkg/gen/client/xnetwork/clientset/versioned"
 )
 
-func (topo *E4lbTopo) loadEIPAdvertisements(eipAdvs []*xnetv1alpha1.EIPAdvertisement) {
+func (topo *e4lbTopo) loadEIPAdvertisements(eipAdvs []*xnetv1alpha1.EIPAdvertisement) {
 	if len(eipAdvs) > 0 {
 		for _, eipAdv := range eipAdvs {
 			if len(eipAdv.Spec.EIPs) > 0 {
 				for _, eip := range eipAdv.Spec.EIPs {
-					topo.EipSvcCache[eip] = 0
+					topo.eipSvcCache[eip] = 0
 				}
 			}
 		}
@@ -30,16 +30,16 @@ func (topo *E4lbTopo) loadEIPAdvertisements(eipAdvs []*xnetv1alpha1.EIPAdvertise
 					IgnoreZeroValue: true,
 					SlicesAsSets:    true,
 				})
-			topo.AdvAnnounceHash[eipAdv.UID] = hash
+			topo.advertisementHash[eipAdv.UID] = hash
 			if len(eipAdv.Status.Announce) > 0 {
 				for eip, node := range eipAdv.Status.Announce {
 					if len(node) > 0 {
-						if eipSet, existsNode := topo.NodeEipLayout[node]; existsNode {
-							if eipSvc, existsEipSvc := topo.EipSvcCache[eip]; existsEipSvc {
+						if eipSet, existsNode := topo.nodeEipLayout[node]; existsNode {
+							if eipSvc, existsEipSvc := topo.eipSvcCache[eip]; existsEipSvc {
 								if _, existsEip := eipSet[eip]; !existsEip {
 									eipSet[eip] = eipSvc
 								}
-								topo.EipNodeLayout[eip] = node
+								topo.eipNodeLayout[eip] = node
 							}
 						}
 					}
@@ -49,7 +49,7 @@ func (topo *E4lbTopo) loadEIPAdvertisements(eipAdvs []*xnetv1alpha1.EIPAdvertise
 	}
 }
 
-func (topo *E4lbTopo) processEIPAdvertisements(eipAdvs []*xnetv1alpha1.EIPAdvertisement, xnetworkClient xnetworkClientset.Interface) {
+func (topo *e4lbTopo) processEIPAdvertisements(eipAdvs []*xnetv1alpha1.EIPAdvertisement, xnetworkClient xnetworkClientset.Interface) {
 	for _, eipAdv := range eipAdvs {
 		statusAnnounce := make(map[string]string)
 		availableNodeSet := mapset.NewSet()
@@ -59,13 +59,13 @@ func (topo *E4lbTopo) processEIPAdvertisements(eipAdvs []*xnetv1alpha1.EIPAdvert
 		}
 
 		for _, eip := range eipAdv.Spec.EIPs {
-			if selectedNode, assigned := topo.EipNodeLayout[eip]; assigned {
+			if selectedNode, assigned := topo.eipNodeLayout[eip]; assigned {
 				availableNodeSet.Remove(selectedNode)
 			}
 		}
 
 		for _, eip := range eipAdv.Spec.EIPs {
-			if selectedNode, assigned := topo.EipNodeLayout[eip]; assigned {
+			if selectedNode, assigned := topo.eipNodeLayout[eip]; assigned {
 				statusAnnounce[eip] = selectedNode
 				continue
 			}
@@ -83,10 +83,10 @@ func (topo *E4lbTopo) processEIPAdvertisements(eipAdvs []*xnetv1alpha1.EIPAdvert
 						cj := 0
 						ni := availableNodes[i].(string)
 						nj := availableNodes[j].(string)
-						if eipSet, exists := topo.NodeEipLayout[ni]; exists {
+						if eipSet, exists := topo.nodeEipLayout[ni]; exists {
 							ci = len(eipSet)
 						}
-						if eipSet, exists := topo.NodeEipLayout[nj]; exists {
+						if eipSet, exists := topo.nodeEipLayout[nj]; exists {
 							cj = len(eipSet)
 						}
 						if ci == cj {
@@ -100,10 +100,10 @@ func (topo *E4lbTopo) processEIPAdvertisements(eipAdvs []*xnetv1alpha1.EIPAdvert
 				selectedNode = availableNodes[0].(string)
 			}
 
-			topo.EipNodeLayout[eip] = selectedNode
+			topo.eipNodeLayout[eip] = selectedNode
 			statusAnnounce[eip] = selectedNode
 			if len(selectedNode) > 0 {
-				topo.NodeEipLayout[selectedNode][eip] = 0
+				topo.nodeEipLayout[selectedNode][eip] = 0
 				availableNodeSet.Remove(selectedNode)
 			}
 		}
@@ -114,7 +114,7 @@ func (topo *E4lbTopo) processEIPAdvertisements(eipAdvs []*xnetv1alpha1.EIPAdvert
 				IgnoreZeroValue: true,
 				SlicesAsSets:    true,
 			})
-		preHash := topo.AdvAnnounceHash[eipAdv.UID]
+		preHash := topo.advertisementHash[eipAdv.UID]
 		if curHash != preHash {
 			preAnnounce := eipAdv.Status.Announce
 			eipAdv.Status.Announce = statusAnnounce
@@ -123,22 +123,22 @@ func (topo *E4lbTopo) processEIPAdvertisements(eipAdvs []*xnetv1alpha1.EIPAdvert
 				eipAdv.Status.Announce = preAnnounce
 				log.Error().Err(err).Msgf("fail to update status for EIPAdvertisement: %s/%s", eipAdv.Namespace, eipAdv.Name)
 			} else {
-				topo.AdvAnnounceHash[eipAdv.UID] = curHash
+				topo.advertisementHash[eipAdv.UID] = curHash
 			}
 		}
 	}
 }
 
-func (topo *E4lbTopo) fillAvailableNodeSet(eipAdv *xnetv1alpha1.EIPAdvertisement, availableNodeSet mapset.Set) {
+func (topo *e4lbTopo) fillAvailableNodeSet(eipAdv *xnetv1alpha1.EIPAdvertisement, availableNodeSet mapset.Set) {
 	if len(eipAdv.Spec.Nodes) > 0 {
 		for _, nodeName := range eipAdv.Spec.Nodes {
-			if _, exists := topo.NodeCache[nodeName]; exists {
+			if _, exists := topo.nodeCache[nodeName]; exists {
 				availableNodeSet.Add(nodeName)
 			}
 		}
 	} else {
-		for nodeName, e4lbEnabled := range topo.NodeCache {
-			if topo.ExistsE4lbNodes {
+		for nodeName, e4lbEnabled := range topo.nodeCache {
+			if topo.existsE4lbNodes {
 				if e4lbEnabled {
 					availableNodeSet.Add(nodeName)
 				}

@@ -2,6 +2,7 @@ package v2
 
 import (
 	"context"
+	"net"
 
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -11,6 +12,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/messaging"
+	"github.com/flomesh-io/fsm/pkg/utils/chm"
 	"github.com/flomesh-io/fsm/pkg/workerpool"
 	"github.com/flomesh-io/fsm/pkg/xnetwork"
 )
@@ -36,19 +38,31 @@ type Server struct {
 	workQueues         *workerpool.WorkerPool
 	ready              bool
 
+	enableE4lb bool
+	enableMesh bool
+
 	cniBridge4 string
 	cniBridge6 string
 
 	xnatCache map[string]*XNat
+	eipCache  chm.ConcurrentMap[string, *e4lbNeigh]
 
 	Leading bool
 }
 
-type E4lbTopo struct {
-	ExistsE4lbNodes bool
-	NodeCache       map[string]bool
-	NodeEipLayout   map[string]map[string]uint8
-	EipNodeLayout   map[string]string
-	EipSvcCache     map[string]uint8
-	AdvAnnounceHash map[types.UID]uint64
+type e4lbTopo struct {
+	existsE4lbNodes   bool
+	nodeCache         map[string]bool
+	nodeEipLayout     map[string]map[string]uint8
+	eipNodeLayout     map[string]string
+	eipSvcCache       map[string]uint8
+	advertisementHash map[types.UID]uint64
+}
+
+type e4lbNeigh struct {
+	eip     net.IP
+	ifName  string
+	ifIndex int
+	macAddr net.HardwareAddr
+	adv     bool
 }

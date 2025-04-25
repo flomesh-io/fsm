@@ -13,6 +13,7 @@ import (
 	xnetworkClientset "github.com/flomesh-io/fsm/pkg/gen/client/xnetwork/clientset/versioned"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/messaging"
+	"github.com/flomesh-io/fsm/pkg/utils/chm"
 	"github.com/flomesh-io/fsm/pkg/workerpool"
 	"github.com/flomesh-io/fsm/pkg/xnetwork"
 	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/util"
@@ -32,6 +33,7 @@ func NewXNetConfigServer(ctx context.Context,
 	kubeController k8s.Controller,
 	xnetworkClient xnetworkClientset.Interface,
 	msgBroker *messaging.Broker,
+	enableMesh, enableE4lb bool,
 	nodeName, cniBridge4, cniBridge6 string) *Server {
 	server := &Server{
 		nodeName:           nodeName,
@@ -43,9 +45,12 @@ func NewXNetConfigServer(ctx context.Context,
 		xnetworkClient:     xnetworkClient,
 		msgBroker:          msgBroker,
 		workQueues:         workerpool.NewWorkerPool(workerPoolSize),
+		enableMesh:         enableMesh,
+		enableE4lb:         enableE4lb,
 		cniBridge4:         cniBridge4,
 		cniBridge6:         cniBridge6,
 		xnatCache:          make(map[string]*XNat),
+		eipCache:           chm.NewConcurrentMap[*e4lbNeigh](),
 	}
 	kubeController.AddObserveFilter(server.xNetDnsProxyUpstreamsObserveFilter)
 	return server

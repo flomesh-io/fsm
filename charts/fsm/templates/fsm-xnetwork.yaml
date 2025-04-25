@@ -41,6 +41,8 @@ spec:
           "--fsm-version", "{{ .Chart.AppVersion }}",
           "--fsm-namespace", "{{ include "fsm.namespace" . }}",
           "--trust-domain", "{{.Values.fsm.trustDomain}}",
+          "--enable-mesh={{.Values.fsm.fsmXnetwork.xnet.features.mesh.enable}}",
+          "--enable-e4lb={{.Values.fsm.fsmXnetwork.xnet.features.e4lb.enable}}",
           "--cni-ipv4-bridge-name", "{{ include "fsmXnetwork.xnet.cni.bridge4.name" . }}",
           "--cni-ipv6-bridge-name", "{{ include "fsmXnetwork.xnet.cni.bridge6.name" . }}",
         ]

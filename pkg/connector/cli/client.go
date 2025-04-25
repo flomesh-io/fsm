@@ -20,6 +20,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/messaging"
+	"github.com/flomesh-io/fsm/pkg/utils/chm"
 	"github.com/flomesh-io/fsm/pkg/workerpool"
 )
 
@@ -85,8 +86,8 @@ func newClient(provider, connectorNamespace, connectorName string,
 		limiter: rate.NewLimiter(0, 0),
 
 		cache: cache{
-			catalogInstances:    connector.NewConcurrentMap[*catalogTimeScale](),
-			registeredInstances: connector.NewConcurrentMap[*registerTimeScale](),
+			catalogInstances:    chm.NewConcurrentMap[*catalogTimeScale](),
+			registeredInstances: chm.NewConcurrentMap[*registerTimeScale](),
 		},
 	}
 

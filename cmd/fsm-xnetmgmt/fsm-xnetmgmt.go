@@ -48,6 +48,8 @@ var (
 	trustDomain       string
 	nodeName          string
 
+	enableMesh        bool
+	enableE4lb        bool
 	cniIPv4BridgeName string
 	cniIPv6BridgeName string
 
@@ -66,6 +68,8 @@ func init() {
 	flags.StringVar(&fsmVersion, "fsm-version", "", "Version of FSM")
 	flags.StringVar(&trustDomain, "trust-domain", "cluster.local", "The trust domain to use as part of the common name when requesting new certificates")
 	flags.StringVar(&nodeName, "node-name", os.Getenv("NODE_NAME"), "name of this Kubernetes node (spec.nodeName)")
+	flags.BoolVar(&enableMesh, "enable-mesh", true, "Enable service mesh")
+	flags.BoolVar(&enableE4lb, "enable-e4lb", false, "Enable 4-layer load balance")
 	flags.StringVar(&cniIPv4BridgeName, "cni-ipv4-bridge-name", "", "cni ipv4 bridge name")
 	flags.StringVar(&cniIPv6BridgeName, "cni-ipv6-bridge-name", "", "cni ipv6 bridge name")
 	_ = clientgoscheme.AddToScheme(scheme)
@@ -141,7 +145,8 @@ func main() {
 
 	xnetworkController := xnetwork.NewXNetworkController(informerCollection, kubeClient, kubeController, msgBroker)
 
-	server := sidecarv2.NewXNetConfigServer(ctx, cfg, xnetworkController, kubeClient, kubeController, xnetworkClient, msgBroker, nodeName, cniIPv4BridgeName, cniIPv6BridgeName)
+	server := sidecarv2.NewXNetConfigServer(ctx, cfg, xnetworkController, kubeClient, kubeController, xnetworkClient,
+		msgBroker, enableMesh, enableE4lb, nodeName, cniIPv4BridgeName, cniIPv6BridgeName)
 	server.Start()
 
 	lock := &resourcelock.LeaseLock{

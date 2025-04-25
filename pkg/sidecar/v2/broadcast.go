@@ -10,14 +10,27 @@ import (
 func (s *Server) BroadcastListener(stopCh <-chan struct{}) {
 	xnetworkUpdatePubSub := s.msgBroker.GetXNetworkUpdatePubSub()
 	xnetworkUpdateChan := xnetworkUpdatePubSub.Sub(announcements.XNetworkUpdate.String())
-	defer s.msgBroker.Unsub(xnetworkUpdatePubSub, xnetworkUpdateChan)
 
 	// Wait for one informer synchronization periods
-	slidingTimer := time.NewTimer(time.Second * 10)
-	defer slidingTimer.Stop()
+	meshSlidingTimer := time.NewTimer(time.Second * 10)
 
-	scheduleTimer := time.NewTimer(time.Second * 5)
-	defer scheduleTimer.Stop()
+	if !s.enableMesh {
+		s.msgBroker.Unsub(xnetworkUpdatePubSub, xnetworkUpdateChan)
+		meshSlidingTimer.Stop()
+	} else {
+		defer s.msgBroker.Unsub(xnetworkUpdatePubSub, xnetworkUpdateChan)
+		defer meshSlidingTimer.Stop()
+	}
+
+	e4lbScheduleTimer := time.NewTimer(time.Second * 5)
+	eipScheduleTimer := time.NewTimer(time.Second * 2)
+	if !s.enableE4lb {
+		e4lbScheduleTimer.Stop()
+		eipScheduleTimer.Stop()
+	} else {
+		defer e4lbScheduleTimer.Stop()
+		defer eipScheduleTimer.Stop()
+	}
 
 	reconfirm := true
 
@@ -26,32 +39,48 @@ func (s *Server) BroadcastListener(stopCh <-chan struct{}) {
 		case <-stopCh:
 			return
 		case <-xnetworkUpdateChan:
-			// Wait for an informer synchronization period
-			slidingTimer.Reset(time.Second * 10)
-			// Avoid data omission
-			reconfirm = true
-		case <-slidingTimer.C:
-			newJob := func() *xnetworkMeshJob {
-				return &xnetworkMeshJob{
-					done:   make(chan struct{}),
-					server: s,
-				}
+			if !reconfirm {
+				// Wait for an informer synchronization period
+				meshSlidingTimer.Reset(time.Second * 10)
+				// Avoid data omission
+				reconfirm = true
 			}
-			<-s.workQueues.AddJob(newJob())
-
+		case <-meshSlidingTimer.C:
+			if s.enableMesh {
+				newJob := func() *xnetworkMeshJob {
+					return &xnetworkMeshJob{
+						done:   make(chan struct{}),
+						server: s,
+					}
+				}
+				<-s.workQueues.AddJob(newJob())
+			}
 			if reconfirm {
 				reconfirm = false
-				slidingTimer.Reset(time.Second * 10)
+				meshSlidingTimer.Reset(time.Second * 10)
 			}
-		case <-scheduleTimer.C:
-			newJob := func() *xnetworkE4lbJob {
-				return &xnetworkE4lbJob{
-					done:   make(chan struct{}),
-					server: s,
+		case <-e4lbScheduleTimer.C:
+			if s.enableE4lb {
+				newJob := func() *xnetworkE4lbJob {
+					return &xnetworkE4lbJob{
+						done:   make(chan struct{}),
+						server: s,
+					}
 				}
+				<-s.workQueues.AddJob(newJob())
 			}
-			<-s.workQueues.AddJob(newJob())
-			scheduleTimer.Reset(time.Second * 5)
+			e4lbScheduleTimer.Reset(time.Second * 5)
+		case <-eipScheduleTimer.C:
+			if s.enableE4lb {
+				newJob := func() *xnetworkEIPJob {
+					return &xnetworkEIPJob{
+						done:   make(chan struct{}),
+						server: s,
+					}
+				}
+				<-s.workQueues.AddJob(newJob())
+			}
+			eipScheduleTimer.Reset(time.Second * 2)
 		}
 	}
 }
