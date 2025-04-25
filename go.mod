@@ -8,7 +8,7 @@ require (
 	github.com/axw/gocov v1.2.1
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/briandowns/spinner v1.23.2
-	github.com/cert-manager/cert-manager v1.17.1
+	github.com/cert-manager/cert-manager v1.17.2
 	github.com/cilium/ebpf v0.18.0
 	github.com/cskr/pubsub v1.0.2
 	github.com/deckarep/golang-set v1.8.0
@@ -624,7 +624,7 @@ require (
 	golang.org/x/exp/typeparams v0.0.0-20250210185358-939b2ce775ac // indirect
 	golang.org/x/image v0.21.0 // indirect
 	golang.org/x/mod v0.24.0 // indirect
-	golang.org/x/oauth2 v0.27.0 // indirect
+	golang.org/x/oauth2 v0.28.0 // indirect
 	golang.org/x/term v0.31.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 	golang.org/x/tools v0.31.0 // indirect
