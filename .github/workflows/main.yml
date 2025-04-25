@@ -203,12 +203,12 @@ jobs:
           retention-days: 1
           overwrite: true
       - name: Build fsm CLI
-        run: make build-fsm
+        run: make build-cross
       - name: Upload fsm CLI
         uses: actions/upload-artifact@v4
         with:
           name: fsm-cli
-          path: ./bin/fsm
+          path: ./bin
           retention-days: 1
           overwrite: true
 
@@ -401,7 +401,11 @@ jobs:
           path: ./bin
       - name: Grant execute permission to fsm CLI
         run: |
-          chmod a+x ./bin/fsm
+          export OS=$(uname -s)
+          export OS=$(echo "${OS,}")
+          export ARCH=$(uname -m)
+          chmod a+x ./bin/${OS}-${ARCH}/fsm
+          ln -s ./bin/${OS}-${ARCH}/fsm ./bin/fsm
           ls -l ./bin/fsm
       - name: Run Simulation w/ Tresor, SMI policies, egress disabled and reconciler disabled
         env:

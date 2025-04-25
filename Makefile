@@ -59,6 +59,11 @@ ifndef CTR_TAG
 	$(error CTR_TAG environment variable is not defined; see the .env.example file for more information; then source .env)
 endif
 
+## Location to install dependencies to
+LOCALBIN ?= $(shell pwd)/bin
+$(LOCALBIN):
+	mkdir -p $(LOCALBIN)
+
 ##@ Development
 
 .PHONY: manifests
@@ -420,8 +425,8 @@ install-git-pre-push-hook:
 generate-cli-chart: helm-update-dep cmd/cli/chart.tgz
 
 .PHONY: build-cross
-build-cross: helm-update-dep cmd/cli/chart.tgz
-	GO111MODULE=on CGO_ENABLED=0 $(GOX) -ldflags $(LDFLAGS) -parallel=5 -output="_dist/{{.OS}}-{{.Arch}}/$(BINNAME)" -osarch='$(TARGETS)' ./cmd/cli
+build-cross: $(LOCALBIN) helm-update-dep cmd/cli/chart.tgz
+	GO111MODULE=on CGO_ENABLED=0 $(GOX) -ldflags $(LDFLAGS) -parallel=5 -output="$(LOCALBIN)/{{.OS}}-{{.Arch}}/$(BINNAME)" -osarch='$(TARGETS)' ./cmd/cli
 
 .PHONY: dist
 dist:
@@ -454,11 +459,6 @@ endif
 #  Build Dependencies below
 # -------------------------------------------
 ##@ Build Dependencies
-
-## Location to install dependencies to
-LOCALBIN ?= $(shell pwd)/bin
-$(LOCALBIN):
-	mkdir -p $(LOCALBIN)
 
 ## Tool Binaries
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
