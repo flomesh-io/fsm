@@ -76,6 +76,11 @@ jobs:
         if: inputs.install_grpcurl
         run: |
           go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
+      - name: Setup docker
+        if: startsWith(inputs.os, 'macos')
+        run: |
+          brew install docker
+          colima start
       - name: Download fsm image artifacts
         uses: actions/download-artifact@v4
         with:
