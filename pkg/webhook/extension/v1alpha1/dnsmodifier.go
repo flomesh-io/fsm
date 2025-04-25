@@ -121,7 +121,6 @@ func (r *DNSModifierWebhook) validateSpec(ctx context.Context, spec extv1alpha1.
 					default:
 						errs = append(errs, field.Invalid(p.Child("type"), rType, "invalid RType"))
 					}
-
 				}
 			}
 		}
