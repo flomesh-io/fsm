@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/netip"
 
+	"k8s.io/utils/ptr"
+
 	"github.com/flomesh-io/fsm/pkg/utils"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -83,14 +85,42 @@ func (r *DNSModifierWebhook) validateSpec(ctx context.Context, spec extv1alpha1.
 	for z, cfg := range spec.Zones {
 		p := path.Child("zones").Key(z)
 
-		if len(cfg.Domains) == 0 && len(cfg.BlacklistDomains) == 0 {
-			errs = append(errs, field.Invalid(p.Child("domains"), cfg.Domains, "at least one of domains or blacklistDomains must be set for zone"))
+		if len(cfg.Domains) == 0 {
+			errs = append(errs, field.Invalid(p.Child("domains"), cfg.Domains, "domains must not be empty"))
 		}
 
 		if len(cfg.Domains) > 0 {
 			for i, domain := range cfg.Domains {
-				if _, err := netip.ParseAddr(domain.Answer.RData); err != nil {
-					errs = append(errs, field.Invalid(p.Child("domains").Index(i).Child("answer").Child("rdata"), domain.Answer.RData, "invalid IP address"))
+				p := p.Child("domains").Index(i)
+
+				for j, answer := range domain.Answer {
+					p := p.Child("answer").Index(j)
+
+					rType := answer.RType
+					if rType == nil {
+						rType = ptr.To("A")
+					}
+
+					switch *rType {
+					case "A":
+						if ip, err := netip.ParseAddr(answer.RData); err != nil {
+							errs = append(errs, field.Invalid(p.Child("rdata"), answer.RData, "invalid IP address"))
+						} else {
+							if !ip.Is4() {
+								errs = append(errs, field.Invalid(p.Child("rdata"), answer.RData, "invalid IPv4 address for type A"))
+							}
+						}
+					case "AAAA":
+						if ip, err := netip.ParseAddr(answer.RData); err != nil {
+							errs = append(errs, field.Invalid(p.Child("rdata"), answer.RData, "invalid IP address"))
+						} else {
+							if !ip.Is6() {
+								errs = append(errs, field.Invalid(p.Child("rdata"), answer.RData, "invalid IPv6 address for type AAAA"))
+							}
+						}
+					default:
+						errs = append(errs, field.Invalid(p.Child("type"), rType, "invalid RType"))
+					}
 				}
 			}
 		}
