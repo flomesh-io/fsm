@@ -16,11 +16,6 @@ type DNSZoneConfig struct {
 	// +listMapKey=name
 	// Domains is the list of whitelist domains to be resolved by the DNS modifier
 	Domains []DNSDomain `json:"domains,omitempty"`
-
-	// +optional
-	// +listType=set
-	// BlacklistDomains is the list of blacklist domains to be blocked by the DNS modifier
-	BlacklistDomains []gwv1.Hostname `json:"blacklistDomains,omitempty"`
 }
 
 type DNSDomain struct {
@@ -29,11 +24,19 @@ type DNSDomain struct {
 	// numeric IP addresses are not allowed.
 	Name gwv1.PreciseHostname `json:"name"`
 
+	// +optional
+	// +kubebuilder:validation:MaxItems=16
 	// Answer is the DNS answer to be returned for the domain Name
-	Answer DNSAnswer `json:"answer"`
+	Answer []DNSAnswer `json:"answer,omitempty"`
 }
 
 type DNSAnswer struct {
+	// +optional
+	// +kubebuilder:validation:Enum=A;AAAA
+	// +kubebuilder:default=A
+	// RType is the type of the DNS record, either A or AAAA, default is A
+	RType *string `json:"type"`
+
 	// +kubebuilder:validation:MinLength=1
 	// RData is the resource record data to be returned for the domain Name
 	// it should be a valid IP address, either IPv4 or IPv6

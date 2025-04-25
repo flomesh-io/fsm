@@ -58,12 +58,12 @@ export default function (config) {
               rd: 1,
               ra: 1,
               question: $question.question,
-              answer: [{
+              answer: shuffle($answer.map(a => ({
                 name: $name,
                 type: 'A',
                 ttl: 3600,
-                ...$answer,
-              }]
+                ...a,
+              })))
             }))
           )
         ),
@@ -75,4 +75,16 @@ export default function (config) {
     )
     .replaceMessage(msg => msg.body)
   )
+}
+
+function shuffle(a) {
+  var s = [...a]
+  var n = s.length
+  for (var i = 0; i < n; i++) {
+    var j = (Math.random() * n) % (n - i) + i
+    var e = s[j]
+    s[j] = s[i]
+    s[i] = e
+  }
+  return s
 }

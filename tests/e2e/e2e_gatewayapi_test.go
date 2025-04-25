@@ -1383,6 +1383,10 @@ func testFSMGatewayDNSTraffic() {
 
 func testFSMGatewayDNSModifierFilterTraffic() {
 	By("Creating DNSModifier configuration for modifying DNS response")
+
+	ipv4 := "1.11.11.111"
+	ipv6 := "aac6:19b8:d12f:f792:d39f:788b:f9e3:000b"
+
 	dnsModifier := extv1alpha1.DNSModifier{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: nsKubeSystem,
@@ -1395,8 +1399,8 @@ func testFSMGatewayDNSModifierFilterTraffic() {
 					Domains: []extv1alpha1.DNSDomain{
 						{
 							Name: gwv1.PreciseHostname("test.flomesh.io"),
-							Answer: extv1alpha1.DNSAnswer{
-								RData: "1.11.11.111",
+							Answer: []extv1alpha1.DNSAnswer{
+								{RData: ipv4},
 							},
 						},
 					},
@@ -1405,8 +1409,8 @@ func testFSMGatewayDNSModifierFilterTraffic() {
 					Domains: []extv1alpha1.DNSDomain{
 						{
 							Name: gwv1.PreciseHostname("test.io"),
-							Answer: extv1alpha1.DNSAnswer{
-								RData: "12.12.12.12",
+							Answer: []extv1alpha1.DNSAnswer{
+								{RType: ptr.To("AAAA"), RData: ipv6},
 							},
 						},
 					},
@@ -1468,33 +1472,61 @@ func testFSMGatewayDNSModifierFilterTraffic() {
 	_, err = Td.CreateGatewayAPIRouteRuleFilterPolicy(nsKubeSystem, policy)
 	Expect(err).NotTo(HaveOccurred())
 
-	By("Testing UDPRoute - DIG DNS query")
-	dnsReq := DNSRequestDef{
+	By("Testing UDPRoute - DIG DNS query(A record)")
+	dnsIPv4Req := DNSRequestDef{
 		DNSServer: "udptest.localhost",
 		DNSPort:   5053,
 		QueryHost: "test.flomesh.io",
 	}
-	srcToDestStr := fmt.Sprintf("%s -> %s:%d", "client", dnsReq.DNSServer, dnsReq.DNSPort)
+	ipv4SrcToDestStr := fmt.Sprintf("%s -> %s:%d", "client", dnsIPv4Req.DNSServer, dnsIPv4Req.DNSPort)
 
-	cond := Td.WaitForRepeatedSuccess(func() bool {
-		result := Td.LocalDIGDNSRequest(dnsReq)
+	ipv4Cond := Td.WaitForRepeatedSuccess(func() bool {
+		result := Td.LocalDIGDNSRequest(dnsIPv4Req)
 
 		response := strings.TrimSpace(result.Response)
 		if result.Err != nil {
-			Td.T.Logf("> (%s) DNS req failed, response: %s, err: %s", srcToDestStr, response, result.Err)
+			Td.T.Logf("> (%s) DNS req failed, response: %s, err: %s", ipv4SrcToDestStr, response, result.Err)
 			return false
 		}
 
-		if response == "1.11.11.111" {
-			Td.T.Logf("> (%s) DNS req succeeded, response: %s", srcToDestStr, response)
+		if response == ipv4 {
+			Td.T.Logf("> (%s) DNS req succeeded, response: %s", ipv4SrcToDestStr, response)
 			return true
 		}
 
-		Td.T.Logf("> (%s) DNS req failed, expect: 1.11.11.111, response: %q", srcToDestStr, response)
+		Td.T.Logf("> (%s) DNS req failed, expect: %s, response: %q", ipv4SrcToDestStr, ipv4, response)
 		return false
 	}, 5, Td.ReqSuccessTimeout)
 
-	Expect(cond).To(BeTrue(), "Failed testing DNS traffic from dig(localhost) to destination %s:%d", dnsReq.DNSServer, dnsReq.DNSPort)
+	Expect(ipv4Cond).To(BeTrue(), "Failed testing DNS traffic from dig(localhost) to destination %s:%d", dnsIPv4Req.DNSServer, dnsIPv4Req.DNSPort)
+
+	By("Testing UDPRoute - DIG DNS query(AAAA record)")
+	dnsIPv6Req := DNSRequestDef{
+		DNSServer: "udptest.localhost",
+		DNSPort:   5053,
+		QueryHost: "test.io",
+	}
+	ipv6SrcToDestStr := fmt.Sprintf("%s -> %s:%d", "client", dnsIPv6Req.DNSServer, dnsIPv6Req.DNSPort)
+
+	ipv6Cond := Td.WaitForRepeatedSuccess(func() bool {
+		result := Td.LocalDIGDNSRequest(dnsIPv6Req)
+
+		response := strings.TrimSpace(result.Response)
+		if result.Err != nil {
+			Td.T.Logf("> (%s) DNS req failed, response: %s, err: %s", ipv6SrcToDestStr, response, result.Err)
+			return false
+		}
+
+		if response == ipv6 {
+			Td.T.Logf("> (%s) DNS req succeeded, response: %s", ipv6SrcToDestStr, response)
+			return true
+		}
+
+		Td.T.Logf("> (%s) DNS req failed, expect: %s, response: %q", ipv6SrcToDestStr, ipv6, response)
+		return false
+	}, 5, Td.ReqSuccessTimeout)
+
+	Expect(ipv6Cond).To(BeTrue(), "Failed testing DNS traffic from dig(localhost) to destination %s:%d", dnsIPv6Req.DNSServer, dnsIPv6Req.DNSPort)
 }
 
 func testFSMGatewayUDPTrafficCrossNamespace() {

@@ -202,16 +202,13 @@ func (c *ConfigGenerator) resolveFilterConfig(ns string, ref *gwv1.LocalObjectRe
 		}
 
 		result := struct {
-			Domains          []extv1alpha1.DNSDomain `json:"domains,omitempty"`
-			BlacklistDomains []gwv1.Hostname         `json:"blacklistDomains,omitempty"`
+			Domains []extv1alpha1.DNSDomain `json:"domains,omitempty"`
 		}{
-			Domains:          []extv1alpha1.DNSDomain{},
-			BlacklistDomains: []gwv1.Hostname{},
+			Domains: []extv1alpha1.DNSDomain{},
 		}
 
 		for _, zone := range obj.Spec.Zones {
 			result.Domains = append(result.Domains, zone.Domains...)
-			result.BlacklistDomains = append(result.BlacklistDomains, zone.BlacklistDomains...)
 		}
 
 		return toMap(k, &result)
