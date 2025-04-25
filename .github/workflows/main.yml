@@ -401,9 +401,28 @@ jobs:
           path: ./bin
       - name: Grant execute permission to fsm CLI
         run: |
-          export OS=$(uname -s)
-          export OS=$(echo "${OS,}")
-          export ARCH=$(uname -m)
+          os=$(uname -s)
+          if [[ "${os}" = "Darwin" ]]; then
+            export OS="darwin"
+          elif [[ "${os}" = "Linux" ]]; then
+            export OS="linux"
+          else
+            echo "Unsupported OS: ${OS}"
+            exit 1
+          fi
+          
+          arch=$(uname -m)
+          if [[ "${arch}" = "x86_64" ]; then
+            export ARCH="amd64"
+          elif [[ "${arch}" = "aarch64" ]]; then
+            export ARCH="arm64"
+          elif [[ "${arch}" = "arm64" ]]; then
+            export ARCH="arm64"
+          else
+            echo "Unsupported architecture: ${arch}"
+            exit 1
+          fi
+          
           chmod a+x ./bin/${OS}-${ARCH}/fsm
           ln -s ./bin/${OS}-${ARCH}/fsm ./bin/fsm
           ls -l ./bin/fsm
