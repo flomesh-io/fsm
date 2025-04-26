@@ -80,6 +80,8 @@ jobs:
       - name: Setup docker(macOS)
         if: inputs.os == 'macos-13'
         uses: docker/setup-docker-action@v4
+        env:
+          LIMA_START_ARGS: template://ubuntu-20.04
       - name: Download fsm image artifacts
         uses: actions/download-artifact@v4
         with:
