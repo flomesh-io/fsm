@@ -11,11 +11,11 @@ on:
         type: string
 
 jobs:
-  grant-execute-permission:
+  grant-and-symlink:
     name: fsm-cli
     runs-on: ${{ inputs.os }}
     steps:
-      - name: Checkout
+      - name: Grant permission and symlink fsm CLI
         run: |
           os=$(uname -s)
           if [[ "${os}" = "Darwin" ]]; then

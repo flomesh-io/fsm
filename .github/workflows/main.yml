@@ -400,10 +400,32 @@ jobs:
           name: ${{ env.FSM_CLI_ARTIFACTS_NAME }}
           path: ./bin
       - name: Grant execute permission to fsm CLI
-        uses: ./.github/workflows/cli.yml
-        with:
-          os: ${{ inputs.os }}
-          bin_path: ./bin
+        run: |
+          os=$(uname -s)
+          if [[ "${os}" = "Darwin" ]]; then
+            export OS="darwin"
+          elif [[ "${os}" = "Linux" ]]; then
+            export OS="linux"
+          else
+            echo "Unsupported OS: ${OS}"
+            exit 1
+          fi
+          
+          arch=$(uname -m)
+          if [[ "${arch}" = "x86_64" ]; then
+            export ARCH="amd64"
+          elif [[ "${arch}" = "aarch64" ]]; then
+            export ARCH="arm64"
+          elif [[ "${arch}" = "arm64" ]]; then
+            export ARCH="arm64"
+          else
+            echo "Unsupported architecture: ${arch}"
+            exit 1
+          fi
+          
+          chmod a+x ${{ inputs.bin_path }}/${OS}-${ARCH}/fsm
+          ln -s ${{ inputs.bin_path }}/${OS}-${ARCH}/fsm ${{ inputs.bin_path }}/fsm
+          ls -l ${{ inputs.bin_path }}/fsm
       - name: Run Simulation w/ Tresor, SMI policies, egress disabled and reconciler disabled
         env:
           CERT_MANAGER: "tresor"
