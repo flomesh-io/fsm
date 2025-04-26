@@ -230,7 +230,7 @@ jobs:
       - name: Scan docker images for vulnerabilities
         run: |
           ls -1 ${{ env.FSM_IMAGES_DOWNLOAD_PATH }}/*.tar | \
-          xargs --no-run-if-empty -L 1 \
+          xargs -r -L 1 \
             trivy image --exit-code 1 \
               --ignore-unfixed \
               --severity HIGH,CRITICAL \
@@ -386,7 +386,7 @@ jobs:
           path: ${{ env.FSM_IMAGES_DOWNLOAD_PATH }}
       - name: Load fsm images
         run: |
-          ls -1 ${{ env.FSM_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
+          ls -1 ${{ env.FSM_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs -r -L 1 docker load -i
           docker image ls -a
       - name: Download fsm demo image artifacts
         uses: actions/download-artifact@v4
@@ -395,7 +395,7 @@ jobs:
           path: ${{ env.FSM_DEMO_IMAGES_DOWNLOAD_PATH }}
       - name: Load fsm demo images
         run: |
-          ls -1 ${{ env.FSM_DEMO_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
+          ls -1 ${{ env.FSM_DEMO_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs -r -L 1 docker load -i
           docker image ls -a
       - name: Download fsm CLI
         uses: actions/download-artifact@v4
@@ -449,7 +449,7 @@ jobs:
         run: |
           touch .env
           make k3d-up
-          docker image list --format "{{.Repository}}:{{.Tag}}" | grep "^localhost" | xargs --no-run-if-empty -L 1 docker push
+          docker image list --format "{{.Repository}}:{{.Tag}}" | grep "^localhost" | xargs -r -L 1 docker push
           ./demo/run-fsm-demo.sh
           go run ./ci/cmd/maestro.go
 
