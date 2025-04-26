@@ -81,7 +81,7 @@ jobs:
         if: startsWith(inputs.os, 'macos')
         run: |
           brew install docker qemu colima
-          colima start -f
+          colima start
       - name: Download fsm image artifacts
         uses: actions/download-artifact@v4
         with:
