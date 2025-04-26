@@ -410,12 +410,12 @@ jobs:
           elif [[ "${os}" = "Linux" ]]; then
             export OS="linux"
           else
-            echo "Unsupported OS: ${OS}"
+            echo "Unsupported OS: ${os}"
             exit 1
           fi
           
           arch=$(uname -m)
-          if [[ "${arch}" = "x86_64" ]; then
+          if [[ "${arch}" = "x86_64" ]]; then
             export ARCH="amd64"
           elif [[ "${arch}" = "aarch64" ]]; then
             export ARCH="arm64"
