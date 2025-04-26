@@ -41,6 +41,7 @@ env:
   FSM_CLI_ARTIFACTS_NAME: ${{ vars.FSM_CLI_ARTIFACTS_NAME || 'fsm-cli' }}
   CTR_REGISTRY: ${{ vars.CI_CTR_REGISTRY || 'localhost:5000' }}
   CTR_TAG: ${{ github.sha }}
+  FSM_LOCAL_BIN_PATH: ${{ github.workspace }}/bin
 
 jobs:
   e2e-test:
@@ -94,7 +95,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.FSM_CLI_ARTIFACTS_NAME }}
-          path: ./bin
+          path: ${{ env.FSM_LOCAL_BIN_PATH }}
       - name: Grant execute permission to fsm CLI
         run: |
           os=$(uname -s)
@@ -119,9 +120,9 @@ jobs:
             exit 1
           fi
           
-          chmod a+x ${{ inputs.bin_path }}/${OS}-${ARCH}/fsm
-          ln -s ${{ inputs.bin_path }}/${OS}-${ARCH}/fsm ${{ inputs.bin_path }}/fsm
-          ls -l ${{ inputs.bin_path }}/fsm
+          chmod a+x ${{ env.FSM_LOCAL_BIN_PATH }}/${OS}-${ARCH}/fsm
+          ln -s ${{ env.FSM_LOCAL_BIN_PATH }}/${OS}-${ARCH}/fsm ${{ env.FSM_LOCAL_BIN_PATH }}/fsm
+          ls -l ${{ env.FSM_LOCAL_BIN_PATH }}/fsm
       - name: Run tests
         id: test
         env:

@@ -37,6 +37,7 @@ env:
   FSM_DEMO_IMAGES_DOWNLOAD_PATH: ${{ vars.FSM_DEMO_IMAGES_DOWNLOAD_PATH || '/tmp/fsm-demo-images' }}
   FSM_DEMO_IMAGE_ARTIFACTS_NAME: ${{ vars.FSM_DEMO_IMAGE_ARTIFACTS_NAME || 'fsm-demo-images' }}
   FSM_CLI_ARTIFACTS_NAME: ${{ vars.FSM_CLI_ARTIFACTS_NAME || 'fsm-cli' }}
+  FSM_LOCAL_BIN_PATH: ${{ github.workspace }}/bin
 
 jobs:
   shellcheck:
@@ -204,11 +205,13 @@ jobs:
           overwrite: true
       - name: Build fsm CLI
         run: make build-cross
+        env:
+          LOCALBIN: ${{ env.FSM_LOCAL_BIN_PATH }}
       - name: Upload fsm CLI
         uses: actions/upload-artifact@v4
         with:
           name: fsm-cli
-          path: ./bin
+          path: ${{ env.FSM_LOCAL_BIN_PATH }}
           retention-days: 1
           overwrite: true
 
@@ -398,7 +401,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.FSM_CLI_ARTIFACTS_NAME }}
-          path: ./bin
+          path: ${{ env.FSM_LOCAL_BIN_PATH }}
       - name: Grant execute permission to fsm CLI
         run: |
           os=$(uname -s)
@@ -423,9 +426,9 @@ jobs:
             exit 1
           fi
           
-          chmod a+x ${{ inputs.bin_path }}/${OS}-${ARCH}/fsm
-          ln -s ${{ inputs.bin_path }}/${OS}-${ARCH}/fsm ${{ inputs.bin_path }}/fsm
-          ls -l ${{ inputs.bin_path }}/fsm
+          chmod a+x ${{ env.FSM_LOCAL_BIN_PATH }}/${OS}-${ARCH}/fsm
+          ln -s ${{ env.FSM_LOCAL_BIN_PATH }}/${OS}-${ARCH}/fsm ${{ env.FSM_LOCAL_BIN_PATH }}/fsm
+          ls -l ${{ env.FSM_LOCAL_BIN_PATH }}/fsm
       - name: Run Simulation w/ Tresor, SMI policies, egress disabled and reconciler disabled
         env:
           CERT_MANAGER: "tresor"
