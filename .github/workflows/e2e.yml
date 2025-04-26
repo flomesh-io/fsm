@@ -78,7 +78,7 @@ jobs:
         run: |
           go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
       - name: Setup docker(macOS)
-        if: startsWith(inputs.os, 'macos')
+        if: inputs.os == 'macos-13'
         uses: docker/setup-docker-action@v4
       - name: Download fsm image artifacts
         uses: actions/download-artifact@v4
