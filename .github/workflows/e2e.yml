@@ -81,11 +81,11 @@ jobs:
         if: startsWith(inputs.os, 'macos')
         run: |
           brew install docker qemu lima
-          # download binary
+          
           curl -LO https://github.com/abiosoft/colima/releases/download/v0.5.6/colima-$(uname -s)-$(uname -m)
-          # install in $PATH
           sudo install colima-$(uname -s)-$(uname -m) /usr/local/bin/colima
-          sudo chmod +x /usr/local/bin/colima
+          sudo chmod a+x /usr/local/bin/colima
+          
           colima start
           colima status
       - name: Download fsm image artifacts

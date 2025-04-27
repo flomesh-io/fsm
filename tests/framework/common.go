@@ -313,6 +313,8 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 			k3dNodes := make(map[string]struct{})
 
 			checkLogs := func() {
+				defer GinkgoRecover()
+
 				td.T.Logf("Checking k3d logs")
 				containers, err := docker.ContainerList(context.Background(), container.ListOptions{All: true})
 				if err != nil {
