@@ -78,10 +78,23 @@ jobs:
         run: |
           go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
       - name: Setup docker(macOS)
-        if: inputs.os == 'macos-13'
-        uses: docker/setup-docker-action@v4
-        with:
-          version: type=archive,version=24.0.9
+        if: startsWith(inputs.os, 'macos')
+        run: |
+          brew install docker
+      - name: Set up QEMU
+        if: startsWith(inputs.os, 'macos')
+        uses: docker/setup-qemu-action@v3.6.0
+      - name: Setup colima(macOS)
+        if: startsWith(inputs.os, 'macos')
+        run: |
+          brew install lima
+          # download binary
+          curl -LO https://github.com/abiosoft/colima/releases/download/v0.5.6/colima-$(uname -s)-$(uname -m)
+          # install in $PATH
+          sudo install colima-$(uname -s)-$(uname -m) /usr/local/bin/colima
+          sudo chmod +x /usr/local/bin/colima
+          colima start
+          colima status
       - name: Download fsm image artifacts
         uses: actions/download-artifact@v4
         with:
