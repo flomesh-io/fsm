@@ -81,7 +81,7 @@ jobs:
         if: inputs.os == 'macos-13'
         uses: docker/setup-docker-action@v4
         with:
-          version: type=image,tag=24.0.9
+          version: type=archive,version=24.0.9
       - name: Download fsm image artifacts
         uses: actions/download-artifact@v4
         with:
