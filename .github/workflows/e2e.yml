@@ -88,7 +88,7 @@ jobs:
           
           colima start
           echo "DOCKER_HOST=unix://${HOME}/.colima/default/docker.sock" >> $GITHUB_ENV
-          echo "DOCKER_HOST=${{ env.DOCKER_HOST }}" 
+          echo "DOCKER_SOCK=unix://${HOME}/.colima/default/docker.sock" >> $GITHUB_ENV
           colima status
       - name: Download fsm image artifacts
         uses: actions/download-artifact@v4
