@@ -87,7 +87,8 @@ jobs:
           sudo chmod a+x /usr/local/bin/colima
           
           colima start
-          echo "DOCKER_HOST=unix://${COLIMA_HOME}/default/docker.sock" >> $GITHUB_ENV
+          echo "DOCKER_HOST=unix://${HOME}/.colima/default/docker.sock" >> $GITHUB_ENV
+          echo "DOCKER_HOST=${{ env.DOCKER_HOST }}" 
           colima status
       - name: Download fsm image artifacts
         uses: actions/download-artifact@v4
