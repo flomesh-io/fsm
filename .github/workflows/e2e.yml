@@ -80,15 +80,15 @@ jobs:
       - name: Setup docker(macOS)
         if: inputs.os == 'macos-13'
         run: |
-          curl -LO https://download.docker.com/mac/static/stable/$(uname -m)/docker-24.0.9.tgz
-          tar xzvf docker-24.0.9.tgz
+          curl -LO https://download.docker.com/mac/static/stable/$(uname -m)/docker-26.1.4.tgz
+          tar xzvf docker-26.1.4.tgz
           sudo xattr -rc docker
           sudo install docker/docker /usr/local/bin/docker
           chmod a+x /usr/local/bin/docker
           
           brew install qemu lima
           
-          curl -LO https://github.com/abiosoft/colima/releases/download/v0.5.6/colima-$(uname -s)-$(uname -m)
+          curl -LO https://github.com/abiosoft/colima/releases/download/v0.6.10/colima-$(uname -s)-$(uname -m)
           sudo install colima-$(uname -s)-$(uname -m) /usr/local/bin/colima
           sudo chmod a+x /usr/local/bin/colima
           
