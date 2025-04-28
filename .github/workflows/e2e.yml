@@ -80,8 +80,8 @@ jobs:
       - name: Setup docker(macOS)
         if: inputs.os == 'macos-13'
         run: |
-          curl -LO https://download.docker.com/mac/static/stable/$(uname -m)/docker-20.10.9.tgz
-          tar xzvf docker-20.10.9.tgz
+          curl -LO https://download.docker.com/mac/static/stable/$(uname -m)/docker-24.0.9.tgz
+          tar xzvf docker-24.0.9.tgz
           sudo xattr -rc docker
           sudo install docker/docker /usr/local/bin/docker
           chmod a+x /usr/local/bin/docker
@@ -92,7 +92,7 @@ jobs:
           sudo install colima-$(uname -s)-$(uname -m) /usr/local/bin/colima
           sudo chmod a+x /usr/local/bin/colima
           
-          colima start
+          colima start --layer --verbose
           sudo ln -sf ${HOME}/.colima/default/docker.sock /var/run/docker.sock
           colima status
       - name: Download fsm image artifacts
