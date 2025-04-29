@@ -304,7 +304,7 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 
 		if td.K3dNodeLogs {
 			td.T.Logf("Starting k3d log consumer")
-			docker, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation())
+			docker, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation(), client.WithHostFromEnv())
 			if err != nil {
 				td.T.Errorf("failed to create docker client: %v", err)
 				return err
@@ -313,6 +313,8 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 			k3dNodes := make(map[string]struct{})
 
 			checkLogs := func() {
+				defer GinkgoRecover()
+
 				td.T.Logf("Checking k3d logs")
 				containers, err := docker.ContainerList(context.Background(), container.ListOptions{All: true})
 				if err != nil {
