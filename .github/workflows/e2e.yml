@@ -4,8 +4,9 @@ on:
   workflow_call:
     inputs:
       os:
-        required: true
+        required: false
         type: string
+        default: ubuntu-24.04
       k8s_version:
         required: true
         type: string
