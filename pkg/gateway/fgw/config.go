@@ -90,10 +90,10 @@ type Gateway struct {
 }
 
 type GatewaySpec struct {
-	GatewayClassName gwv1.ObjectName       `json:"gatewayClassName"`
-	Listeners        []Listener            `json:"listeners,omitempty" copier:"-" hash:"set"`
-	Addresses        []gwv1.GatewayAddress `json:"addresses,omitempty"`
-	BackendTLS       *GatewayBackendTLS    `json:"backendTLS,omitempty" copier:"-"`
+	GatewayClassName gwv1.ObjectName           `json:"gatewayClassName"`
+	Listeners        []Listener                `json:"listeners,omitempty" copier:"-" hash:"set"`
+	Addresses        []gwv1.GatewaySpecAddress `json:"addresses,omitempty"`
+	BackendTLS       *GatewayBackendTLS        `json:"backendTLS,omitempty" copier:"-"`
 }
 
 type Listener struct {
