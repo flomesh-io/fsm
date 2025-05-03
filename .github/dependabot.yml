@@ -15,8 +15,8 @@ updates:
       - "change/github-actions"
       - "priority/P2"
       - "size/XS"
-    # Milestone v1.5.0
-    milestone: 22
+    # Milestone v1.6.0
+    milestone: 29
     groups:
       actions-deps:
         patterns:
@@ -36,8 +36,8 @@ updates:
       - "change/dependencies"
       - "priority/P2"
       - "size/XS"
-    # Milestone v1.5.0
-    milestone: 22
+    # Milestone v1.6.0
+    milestone: 29
     groups:
       k8s:
         patterns:
@@ -50,9 +50,6 @@ updates:
         update-types:
           - "version-update:semver-major"
           - "version-update:semver-minor"
-      - dependency-name: "github.com/docker/docker"
-        update-types:
-          - "version-update:semver-major"
       - dependency-name: "github.com/norwoodj/helm-docs"
         update-types:
           - "version-update:semver-major"
