@@ -166,7 +166,7 @@ func validateHostnameProtocolPort(listeners []gatewayv1.Listener, path *field.Pa
 
 // validateGatewayAddresses validates whether fields of addresses are set according
 // to the Gateway API specification.
-func validateGatewayAddresses(addresses []gatewayv1.GatewayAddress, path *field.Path) field.ErrorList {
+func validateGatewayAddresses(addresses []gatewayv1.GatewaySpecAddress, path *field.Path) field.ErrorList {
 	var errs field.ErrorList
 	ipAddrSet, hostnameAddrSet := sets.Set[string]{}, sets.Set[string]{}
 	for i, address := range addresses {
