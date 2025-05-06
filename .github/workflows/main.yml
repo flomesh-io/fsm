@@ -62,7 +62,7 @@ jobs:
       - name: go build deps
         run: make embed-files-test
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@v8
         with:
           version: latest
           args: --allow-parallel-runners=true --tests=false --timeout=5m
