@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 
 	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/connector/ctok"
 	"github.com/flomesh-io/fsm/pkg/k8s"
@@ -31,6 +32,7 @@ func (e ExplicitProxyServiceMapper) ListProxyServices(p *pipy.Proxy) ([]service.
 // KubeProxyServiceMapper maps an Sidecar instance to services in a Kubernetes cluster.
 type KubeProxyServiceMapper struct {
 	KubeController k8s.Controller
+	Configurator   configurator.Configurator
 }
 
 // ListProxyServices maps an Pipy instance to a number of Kubernetes services.
@@ -51,7 +53,7 @@ func (k *KubeProxyServiceMapper) ListProxyServices(p *pipy.Proxy) ([]service.Mes
 			}
 		}
 
-		meshServices = listServicesForVm(vm, k.KubeController)
+		meshServices = listServicesForVm(vm, k.KubeController, k.Configurator)
 
 		servicesForPod := strings.Join(listServiceNames(meshServices), ",")
 		log.Trace().Msgf("Services associated with VM with UID=%s Name=%s/%s: %+v",
@@ -62,7 +64,7 @@ func (k *KubeProxyServiceMapper) ListProxyServices(p *pipy.Proxy) ([]service.Mes
 			return nil, err
 		}
 
-		meshServices = listServicesForPod(pod, k.KubeController)
+		meshServices = listServicesForPod(pod, k.KubeController, k.Configurator)
 
 		servicesForPod := strings.Join(listServiceNames(meshServices), ",")
 		log.Trace().Msgf("Services associated with Pod with UID=%s Name=%s/%s: %+v",
@@ -72,10 +74,10 @@ func (k *KubeProxyServiceMapper) ListProxyServices(p *pipy.Proxy) ([]service.Mes
 	return meshServices, nil
 }
 
-func kubernetesServicesToMeshServices(kubeController k8s.Controller, kubernetesServices []v1.Service, subdomainFilter string) (meshServices []service.MeshService) {
+func kubernetesServicesToMeshServices(kubeController k8s.Controller, cfg configurator.Configurator, kubernetesServices []v1.Service, subdomainFilter string) (meshServices []service.MeshService) {
 	for _, svc := range kubernetesServices {
 		svc := svc
-		for _, meshSvc := range k8s.ServiceToMeshServices(kubeController, &svc) {
+		for _, meshSvc := range k8s.ServiceToMeshServices(kubeController, cfg.GetMeshConfig().Spec.Connector.Lb, &svc) {
 			if meshSvc.Subdomain() == subdomainFilter || meshSvc.Subdomain() == "" {
 				meshServices = append(meshServices, meshSvc)
 			}
@@ -92,22 +94,29 @@ func listServiceNames(meshServices []service.MeshService) (serviceNames []string
 }
 
 // listServicesForPod lists Kubernetes services whose selectors match pod labels
-func listServicesForPod(pod *v1.Pod, kubeController k8s.Controller) []service.MeshService {
+func listServicesForPod(pod *v1.Pod, kubeController k8s.Controller, cfg configurator.Configurator) []service.MeshService {
 	var serviceList []v1.Service
 	svcList := kubeController.ListServices()
 
 	var attachedFromServiceList []*v1.Service
 	attachedToServices := make(map[string]string)
 
+	lb := cfg.GetMeshConfig().Spec.Connector.Lb
+
 	for _, svc := range svcList {
 		ns := kubeController.GetNamespace(svc.Namespace)
 		if ctok.IsSyncCloudNamespace(ns) {
-			if len(ns.Annotations) > 0 {
-				if _, exists := ns.Annotations[connector.AnnotationCloudServiceAttachedTo]; exists {
-					svc := svc
-					attachedFromServiceList = append(attachedFromServiceList, svc)
+			isSlaveNamespace := lb.IsSlaveNamespace(ns.Name)
+			if !isSlaveNamespace {
+				if len(ns.Annotations) > 0 {
+					_, isSlaveNamespace = ns.Annotations[connector.AnnotationCloudServiceAttachedTo]
 				}
 			}
+			if isSlaveNamespace {
+				svc := svc
+				attachedFromServiceList = append(attachedFromServiceList, svc)
+			}
+
 			if len(svc.Annotations) > 0 {
 				if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
 					svcMeta := connector.Decode(svc, v)
@@ -139,14 +148,16 @@ func listServicesForPod(pod *v1.Pod, kubeController k8s.Controller) []service.Me
 			if !existsSvc {
 				continue
 			}
-			ns := kubeController.GetNamespace(svc.Namespace)
-			if len(ns.Annotations) > 0 {
-				nsAttachedToNs, existsNs := ns.Annotations[connector.AnnotationCloudServiceAttachedTo]
-				if !existsNs {
-					continue
-				}
-				if strings.EqualFold(svcAttachedToNs, nsAttachedToNs) {
-					serviceList = append(serviceList, *svc)
+			if lb.IsSlaveNamespace(svc.Namespace) && lb.IsMasterNamespace(svcAttachedToNs) {
+				serviceList = append(serviceList, *svc)
+			} else {
+				ns := kubeController.GetNamespace(svc.Namespace)
+				if len(ns.Annotations) > 0 {
+					if nsAttachedToNs, existsNs := ns.Annotations[connector.AnnotationCloudServiceAttachedTo]; existsNs {
+						if strings.EqualFold(svcAttachedToNs, nsAttachedToNs) {
+							serviceList = append(serviceList, *svc)
+						}
+					}
 				}
 			}
 		}
@@ -156,13 +167,13 @@ func listServicesForPod(pod *v1.Pod, kubeController k8s.Controller) []service.Me
 		return nil
 	}
 
-	meshServices := kubernetesServicesToMeshServices(kubeController, serviceList, pod.GetName())
+	meshServices := kubernetesServicesToMeshServices(kubeController, cfg, serviceList, pod.GetName())
 
 	return meshServices
 }
 
 // listServicesForVm lists Kubernetes services whose selectors match vm labels
-func listServicesForVm(vm *machinev1alpha1.VirtualMachine, kubeController k8s.Controller) []service.MeshService {
+func listServicesForVm(vm *machinev1alpha1.VirtualMachine, kubeController k8s.Controller, cfg configurator.Configurator) []service.MeshService {
 	var serviceList []v1.Service
 	svcList := kubeController.ListServices()
 
@@ -197,7 +208,7 @@ func listServicesForVm(vm *machinev1alpha1.VirtualMachine, kubeController k8s.Co
 		return nil
 	}
 
-	meshServices := kubernetesServicesToMeshServices(kubeController, serviceList, vm.GetName())
+	meshServices := kubernetesServicesToMeshServices(kubeController, cfg, serviceList, vm.GetName())
 
 	return meshServices
 }

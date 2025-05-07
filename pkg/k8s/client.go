@@ -14,14 +14,15 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
 	pluginv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
 	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/connector"
 	pluginv1alpha1Client "github.com/flomesh-io/fsm/pkg/gen/client/plugin/clientset/versioned"
 	policyv1alpha1Client "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
+	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/errcode"
 	"github.com/flomesh-io/fsm/pkg/identity"
@@ -361,7 +362,7 @@ func (c *client) UpdateStatus(resource interface{}) (metav1.Object, error) {
 
 // ServiceToMeshServices translates a k8s service with one or more ports to one or more
 // MeshService objects per port.
-func ServiceToMeshServices(c Controller, svc *corev1.Service) []service.MeshService {
+func ServiceToMeshServices(c Controller, lb configv1alpha3.LoadBalancer, svc *corev1.Service) []service.MeshService {
 	var meshServices []service.MeshService
 	var svcMeta *connector.MicroSvcMeta
 	var cloudInheritedFrom string
@@ -374,10 +375,15 @@ func ServiceToMeshServices(c Controller, svc *corev1.Service) []service.MeshServ
 			if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
 				svcMeta = connector.Decode(svc, v)
 			}
-			ns := c.GetNamespace(svc.Namespace)
-			if len(ns.Annotations) > 0 {
-				if attachedNs, exists := ns.Annotations[connector.AnnotationCloudServiceAttachedTo]; exists {
-					cloudAttachedTo = attachedNs
+
+			if lb.IsSlaveNamespace(svc.Namespace) {
+				cloudAttachedTo = lb.MasterNamespace
+			} else {
+				ns := c.GetNamespace(svc.Namespace)
+				if len(ns.Annotations) > 0 {
+					if attachedNs, exists := ns.Annotations[connector.AnnotationCloudServiceAttachedTo]; exists {
+						cloudAttachedTo = attachedNs
+					}
 				}
 			}
 		}
