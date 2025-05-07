@@ -34,7 +34,7 @@ func (sd PipySidecarDriver) Start(ctx context.Context) (health.Probes, error) {
 	proxyServerPort := ctrlCtx.ProxyServerPort
 	proxyServiceCert := ctrlCtx.ProxyServiceCert
 
-	proxyMapper := &registry2.KubeProxyServiceMapper{KubeController: k8sClient}
+	proxyMapper := &registry2.KubeProxyServiceMapper{KubeController: k8sClient, Configurator: cfg}
 	proxyRegistry := registry2.NewProxyRegistry(proxyMapper, ctrlCtx.MsgBroker)
 	go proxyRegistry.ReleaseCertificateHandler(certManager, ctrlCtx.Stop)
 	// Create and start the pipy repo http service
