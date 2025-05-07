@@ -393,14 +393,25 @@ func TestGetServicesForServiceIdentity(t *testing.T) {
 			defer mockCtrl.Finish()
 
 			mockKubeController := k8s.NewMockController(mockCtrl)
+			mockConfigurator := configurator.NewMockConfigurator(mockCtrl)
+
 			c := &client{
-				kubeController: mockKubeController,
+				kubeController:   mockKubeController,
+				meshConfigurator: mockConfigurator,
 			}
 
 			mockKubeController.EXPECT().ListVms().Return(nil)
 			mockKubeController.EXPECT().ListPods().Return(tc.pods)
 			mockKubeController.EXPECT().ListServices().Return(tc.services)
 			mockKubeController.EXPECT().GetEndpoints(gomock.Any()).Return(nil, nil).AnyTimes()
+
+			mockConfigurator.EXPECT().GetMeshConfig().Return(configv1alpha3.MeshConfig{
+				Spec: configv1alpha3.MeshConfigSpec{
+					Sidecar: configv1alpha3.SidecarSpec{
+						LocalProxyMode: configv1alpha3.LocalProxyModeLocalhost,
+					},
+				},
+			}).AnyTimes()
 
 			actual := c.GetServicesForServiceIdentity(tc.svcIdentity)
 			assert.ElementsMatch(tc.expected, actual)
