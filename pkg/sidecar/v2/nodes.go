@@ -28,7 +28,8 @@ func ConditionStatus(n *corev1.Node, ct corev1.NodeConditionType) corev1.Conditi
 
 // isNetworkUnavailable returns true if the given node NodeNetworkUnavailable condition status is true.
 func isNetworkUnavailable(n *corev1.Node) bool {
-	return ConditionStatus(n, corev1.NodeNetworkUnavailable) == corev1.ConditionTrue
+	return ConditionStatus(n, corev1.NodeNetworkUnavailable) == corev1.ConditionTrue ||
+		ConditionStatus(n, corev1.NodeReady) != corev1.ConditionTrue
 }
 
 func availableNetworkNodes(kubeClient kubernetes.Interface, topo *e4lbTopo) {
