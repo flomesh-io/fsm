@@ -18,6 +18,7 @@ import (
 	testclient "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/utils/pointer"
 
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	fakePolicyClient "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned/fake"
 	"github.com/flomesh-io/fsm/pkg/messaging"
@@ -1096,7 +1097,7 @@ func TestK8sServicesToMeshServices(t *testing.T) {
 			kubeController := NewKubernetesController(ic, nil, nil, nil)
 			assert.NotNil(kubeController)
 
-			actual := ServiceToMeshServices(kubeController, &tc.svc)
+			actual := ServiceToMeshServices(kubeController, configv1alpha3.LoadBalancer{}, &tc.svc)
 			assert.ElementsMatch(tc.expected, actual)
 		})
 	}
