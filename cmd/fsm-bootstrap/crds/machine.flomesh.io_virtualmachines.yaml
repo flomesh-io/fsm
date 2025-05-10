@@ -16,6 +16,7 @@ spec:
     shortNames:
     - vm
     singular: virtualmachine
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - name: v1alpha1

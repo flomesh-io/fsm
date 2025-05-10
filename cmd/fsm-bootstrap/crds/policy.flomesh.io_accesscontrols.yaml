@@ -16,6 +16,7 @@ spec:
     shortNames:
     - accesscontrol
     singular: accesscontrol
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - name: v1alpha1

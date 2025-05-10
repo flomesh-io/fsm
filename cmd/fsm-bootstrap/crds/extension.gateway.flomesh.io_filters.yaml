@@ -17,6 +17,7 @@ spec:
     listKind: FilterList
     plural: filters
     singular: filter
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

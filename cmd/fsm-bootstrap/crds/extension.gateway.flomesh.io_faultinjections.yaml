@@ -17,6 +17,7 @@ spec:
     listKind: FaultInjectionList
     plural: faultinjections
     singular: faultinjection
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

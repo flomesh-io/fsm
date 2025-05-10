@@ -17,6 +17,7 @@ spec:
     listKind: MetricsList
     plural: metrics
     singular: metrics
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

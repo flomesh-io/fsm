@@ -16,6 +16,7 @@ spec:
     shortNames:
     - consulconnector
     singular: consulconnector
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

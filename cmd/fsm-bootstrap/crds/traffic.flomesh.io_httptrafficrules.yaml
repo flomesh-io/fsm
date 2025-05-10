@@ -14,6 +14,7 @@ spec:
     listKind: HTTPTrafficRuleList
     plural: httptrafficrules
     singular: httptrafficrule
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

@@ -17,6 +17,7 @@ spec:
     listKind: HTTPLogList
     plural: httplogs
     singular: httplog
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

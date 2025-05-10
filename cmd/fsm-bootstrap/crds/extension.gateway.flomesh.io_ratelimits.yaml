@@ -17,6 +17,7 @@ spec:
     listKind: RateLimitList
     plural: ratelimits
     singular: ratelimit
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

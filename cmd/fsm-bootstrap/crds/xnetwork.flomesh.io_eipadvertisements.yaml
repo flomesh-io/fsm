@@ -16,6 +16,7 @@ spec:
     shortNames:
     - eipadvertisement
     singular: eipadvertisement
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - name: v1alpha1

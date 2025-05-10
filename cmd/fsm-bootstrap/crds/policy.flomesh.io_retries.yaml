@@ -16,6 +16,7 @@ spec:
     shortNames:
     - retry
     singular: retry
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - name: v1alpha1

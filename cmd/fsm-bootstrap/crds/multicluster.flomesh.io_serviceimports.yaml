@@ -16,6 +16,7 @@ spec:
     shortNames:
     - simp
     singular: serviceimport
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

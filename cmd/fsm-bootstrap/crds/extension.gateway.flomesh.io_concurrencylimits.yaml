@@ -17,6 +17,7 @@ spec:
     listKind: ConcurrencyLimitList
     plural: concurrencylimits
     singular: concurrencylimit
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

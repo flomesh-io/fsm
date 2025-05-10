@@ -17,6 +17,7 @@ spec:
     listKind: CircuitBreakerList
     plural: circuitbreakers
     singular: circuitbreaker
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

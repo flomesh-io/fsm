@@ -16,6 +16,7 @@ spec:
     shortNames:
     - egress
     singular: egress
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - name: v1alpha1

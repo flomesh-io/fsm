@@ -19,6 +19,7 @@ spec:
     shortNames:
     - rfpolicy
     singular: routerulefilterpolicy
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

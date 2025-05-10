@@ -16,6 +16,7 @@ spec:
     shortNames:
     - pichn
     singular: pluginchain
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - name: v1alpha1

@@ -17,6 +17,7 @@ spec:
     listKind: RequestTerminationList
     plural: requestterminations
     singular: requesttermination
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

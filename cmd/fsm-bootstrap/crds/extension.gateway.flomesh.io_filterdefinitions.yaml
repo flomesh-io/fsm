@@ -17,6 +17,7 @@ spec:
     listKind: FilterDefinitionList
     plural: filterdefinitions
     singular: filterdefinition
+  preserveUnknownFields: false
   scope: Cluster
   versions:
   - additionalPrinterColumns:
