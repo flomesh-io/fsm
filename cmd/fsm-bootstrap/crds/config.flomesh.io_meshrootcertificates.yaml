@@ -16,6 +16,7 @@ spec:
     shortNames:
     - mrc
     singular: meshrootcertificate
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - deprecated: true

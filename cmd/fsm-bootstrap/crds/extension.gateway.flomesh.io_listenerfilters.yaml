@@ -17,6 +17,7 @@ spec:
     listKind: ListenerFilterList
     plural: listenerfilters
     singular: listenerfilter
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

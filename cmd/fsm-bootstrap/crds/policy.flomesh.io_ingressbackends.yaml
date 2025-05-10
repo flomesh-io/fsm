@@ -16,6 +16,7 @@ spec:
     shortNames:
     - ingressbackend
     singular: ingressbackend
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - name: v1alpha1

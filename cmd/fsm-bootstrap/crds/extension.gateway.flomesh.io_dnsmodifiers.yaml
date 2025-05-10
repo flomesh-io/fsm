@@ -17,6 +17,7 @@ spec:
     listKind: DNSModifierList
     plural: dnsmodifiers
     singular: dnsmodifier
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
