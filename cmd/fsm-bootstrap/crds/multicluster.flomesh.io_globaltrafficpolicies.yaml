@@ -16,6 +16,7 @@ spec:
     shortNames:
     - gtp
     singular: globaltrafficpolicy
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

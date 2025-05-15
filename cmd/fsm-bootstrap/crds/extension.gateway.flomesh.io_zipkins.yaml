@@ -17,6 +17,7 @@ spec:
     listKind: ZipkinList
     plural: zipkins
     singular: zipkin
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

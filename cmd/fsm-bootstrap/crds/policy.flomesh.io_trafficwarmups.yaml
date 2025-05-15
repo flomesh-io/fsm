@@ -16,6 +16,7 @@ spec:
     shortNames:
     - trafficwarmup
     singular: trafficwarmup
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - name: v1alpha1

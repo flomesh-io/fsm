@@ -16,6 +16,7 @@ spec:
     shortNames:
     - nsig
     singular: namespacedingress
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

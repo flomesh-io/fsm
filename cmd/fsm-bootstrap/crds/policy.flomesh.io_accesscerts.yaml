@@ -16,6 +16,7 @@ spec:
     shortNames:
     - acct
     singular: accesscert
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - name: v1alpha1
