@@ -17,6 +17,7 @@ spec:
     listKind: ProxyTagList
     plural: proxytags
     singular: proxytag
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

@@ -16,6 +16,7 @@ spec:
     shortNames:
     - sexp
     singular: serviceexport
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

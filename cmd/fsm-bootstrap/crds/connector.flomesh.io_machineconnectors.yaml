@@ -16,6 +16,7 @@ spec:
     shortNames:
     - machineconnector
     singular: machineconnector
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

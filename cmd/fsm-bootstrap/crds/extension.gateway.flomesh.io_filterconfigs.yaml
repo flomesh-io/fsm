@@ -17,6 +17,7 @@ spec:
     listKind: FilterConfigList
     plural: filterconfigs
     singular: filterconfig
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
