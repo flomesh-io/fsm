@@ -14,19 +14,19 @@ pull_request_rules:
       - check-success=Go test
       - check-success=Scan images for security vulnerabilities
       - check-success=Integration Test with Tresor, SMI traffic policies, and egress disabled
-      - check-success=Go mesh test (1) / e2e
-      - check-success=Go mesh test (2) / e2e
-      - check-success=Go mesh test (3) / e2e
-      - check-success=Go mesh test (4) / e2e
-      - check-success=Go mesh test (5) / e2e
-      - check-success=Go mesh test (v1.20.15-k3s1, Test traffic flowing from client to server with a Kubernetes Service... / e2e
+      - check-success=Go mesh test (v1.32.4-k3s1, 1) / e2e
+      - check-success=Go mesh test (v1.32.4-k3s1, 2) / e2e
+      - check-success=Go mesh test (v1.32.4-k3s1, 3) / e2e
+      - check-success=Go mesh test (v1.32.4-k3s1, 4) / e2e
+      - check-success=Go mesh test (v1.32.4-k3s1, 5) / e2e
+      - check-success=Go mesh test (v1.21.14-k3s1, Test traffic flowing from client to server with a Kubernetes Service... / e2e
       - check-success=Go mesh test (v1.27.16-k3s1, Test traffic flowing from client to server with a Kubernetes Service... / e2e
       - check-success=Go gateway test (6, latest) / e2e
-      - check-success=Go gateway test (6, v1.20.15-k3s1) / e2e
       - check-success=Go gateway test (6, v1.21.14-k3s1) / e2e
       - check-success=Go gateway test (6, v1.23.17-k3s1) / e2e
+      - check-success=Go gateway test (6, v1.25.16-k3s4) / e2e
       - check-success=Go gateway test (7, latest) / e2e
-      - check-success=Go gateway test (7, v1.20.15-k3s1) / e2e
+      - check-success=Go gateway test (7, v1.21.14-k3s1) / e2e
       - check-success=Go statefulset test (8) / e2e
       - check-success=Go retry test (9) / e2e
       - check-success=Go ingress test (10) / e2e
@@ -41,6 +41,17 @@ pull_request_rules:
     actions:
       merge:
         method: squash
+  - name: Backport features/patches to the release/v1.5 branch
+    conditions:
+      - base=main
+      - label = backport/v1.5
+    actions:
+      backport:
+        branches:
+          - "release/v1.5"
+        title: "[backport] {{ title }} (#{{ number }})"
+        assignees:
+          - "{{ author }}"
   - name: Backport features/patches to the release/v1.4 branch
     conditions:
       - base=main

@@ -16,6 +16,7 @@ spec:
     shortNames:
     - nacosconnector
     singular: nacosconnector
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

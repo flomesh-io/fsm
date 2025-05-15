@@ -17,6 +17,7 @@ spec:
     listKind: ExternalRateLimitList
     plural: externalratelimits
     singular: externalratelimit
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

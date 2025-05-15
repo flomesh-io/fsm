@@ -16,6 +16,7 @@ spec:
     shortNames:
     - eurekaconnector
     singular: eurekaconnector
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

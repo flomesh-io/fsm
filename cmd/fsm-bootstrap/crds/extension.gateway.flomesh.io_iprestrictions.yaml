@@ -17,6 +17,7 @@ spec:
     listKind: IPRestrictionList
     plural: iprestrictions
     singular: iprestriction
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

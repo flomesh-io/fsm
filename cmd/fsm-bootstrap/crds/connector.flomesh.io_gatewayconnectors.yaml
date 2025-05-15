@@ -16,6 +16,7 @@ spec:
     shortNames:
     - gatewayconnector
     singular: gatewayconnector
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

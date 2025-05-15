@@ -16,6 +16,7 @@ spec:
     shortNames:
     - meshconfig
     singular: meshconfig
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - deprecated: true
