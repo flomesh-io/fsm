@@ -87,7 +87,7 @@ jobs:
           echo "GIT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
       - name: Build and Push - ${{ inputs.id }}
-        uses: docker/build-push-action@v6.16.0
+        uses: docker/build-push-action@v6.17.0
         with:
           context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile }}
