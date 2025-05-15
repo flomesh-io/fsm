@@ -787,7 +787,8 @@ func (t *KtoCSource) registerServiceInstance(
 		// as a separate service instance.
 		httpPort := baseService.HTTPPort
 		grpcPort := baseService.GRPCPort
-		httpPort, grpcPort = t.choosePorts(subset, overridePortName, overridePortNumber, httpPort, grpcPort)
+		httpPort = t.chooseHTTPPorts(subset, overridePortName, overridePortNumber, httpPort)
+		grpcPort = t.chooseGRPCPorts(subset, "", 0, grpcPort)
 		for _, subsetAddr := range subset.Addresses {
 			var addr string
 			var viaAddr string
@@ -860,8 +861,37 @@ func (t *KtoCSource) registerServiceInstance(
 	}
 }
 
-func (t *KtoCSource) choosePorts(subset corev1.EndpointSubset, overridePortName string, overridePortNumber int, httpPort, grpcPort int) (int, int) {
-	if overridePortName != "" {
+func (t *KtoCSource) chooseGRPCPorts(subset corev1.EndpointSubset, overridePortName string, overridePortNumber, grpcPort int) int {
+	if len(overridePortName) > 0 {
+		// If we're supposed to use a specific named port, find it.
+		for _, p := range subset.Ports {
+			if overridePortName == p.Name {
+				grpcPort = int(p.Port)
+				break
+			}
+		}
+	} else if overridePortNumber == 0 {
+		// Otherwise we'll just use the first port in the list
+		// (unless the port number was overridden by an annotation).
+		for _, p := range subset.Ports {
+			if grpcPort == 0 &&
+				strings.EqualFold(string(p.Protocol), strings.ToUpper(constants.ProtocolTCP)) &&
+				p.AppProtocol != nil &&
+				strings.EqualFold(*p.AppProtocol, strings.ToUpper(constants.ProtocolGRPC)) {
+				grpcPort = int(p.Port)
+			}
+			if grpcPort > 0 {
+				break
+			}
+		}
+	} else if grpcPort == 0 {
+		grpcPort = overridePortNumber
+	}
+	return grpcPort
+}
+
+func (t *KtoCSource) chooseHTTPPorts(subset corev1.EndpointSubset, overridePortName string, overridePortNumber, httpPort int) int {
+	if len(overridePortName) > 0 {
 		// If we're supposed to use a specific named port, find it.
 		for _, p := range subset.Ports {
 			if overridePortName == p.Name {
@@ -879,18 +909,14 @@ func (t *KtoCSource) choosePorts(subset corev1.EndpointSubset, overridePortName 
 				strings.EqualFold(*p.AppProtocol, strings.ToUpper(constants.ProtocolHTTP)) {
 				httpPort = int(p.Port)
 			}
-			if grpcPort == 0 &&
-				strings.EqualFold(string(p.Protocol), strings.ToUpper(constants.ProtocolTCP)) &&
-				p.AppProtocol != nil &&
-				strings.EqualFold(*p.AppProtocol, strings.ToUpper(constants.ProtocolGRPC)) {
-				grpcPort = int(p.Port)
-			}
-			if httpPort > 0 && grpcPort > 0 {
+			if httpPort > 0 {
 				break
 			}
 		}
+	} else if httpPort == 0 {
+		httpPort = overridePortNumber
 	}
-	return httpPort, grpcPort
+	return httpPort
 }
 
 func (t *KtoCSource) excludeIPRanges(addr string) (exclude bool) {
