@@ -48,7 +48,7 @@ require (
 	github.com/libp2p/go-netroute v0.2.2
 	github.com/matm/gocov-html v1.4.0
 	github.com/mholt/archiver/v3 v3.5.1
-	github.com/miekg/dns v1.1.65
+	github.com/miekg/dns v1.1.66
 	github.com/mitchellh/gox v1.0.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/nacos-group/nacos-sdk-go/v2 v2.2.9
