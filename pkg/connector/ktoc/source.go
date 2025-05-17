@@ -885,7 +885,7 @@ func (t *KtoCSource) choosePorts(subset corev1.EndpointSubset,
 	overridePortNumber int32,
 	protocol *connector.MicroServiceProtocol,
 	port *connector.MicroServicePort) {
-	if overridePortName != "" {
+	if len(overridePortName) == 0 {
 		// If we're supposed to use a specific named port, find it.
 		for _, p := range subset.Ports {
 			if overridePortName == p.Name {
@@ -913,6 +913,8 @@ func (t *KtoCSource) choosePorts(subset corev1.EndpointSubset,
 				break
 			}
 		}
+	} else if port.Get() == 0 {
+		port.Set(overridePortNumber)
 	}
 }
 
