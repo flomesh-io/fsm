@@ -85,16 +85,16 @@ require (
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.26.0
 	helm.sh/helm/v3 v3.17.3
-	k8s.io/api v0.32.4
+	k8s.io/api v0.32.5
 	k8s.io/apiextensions-apiserver v0.32.4
-	k8s.io/apimachinery v0.32.4
-	k8s.io/cli-runtime v0.32.4
-	k8s.io/client-go v0.32.4
-	k8s.io/code-generator v0.32.4
+	k8s.io/apimachinery v0.32.5
+	k8s.io/cli-runtime v0.32.5
+	k8s.io/client-go v0.32.5
+	k8s.io/code-generator v0.32.5
 	k8s.io/gengo/v2 v2.0.0-20250207200755-1244d31929d7
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/kubectl v0.32.4
-	k8s.io/kubernetes v1.32.4
+	k8s.io/kubectl v0.32.5
+	k8s.io/kubernetes v1.32.5
 	k8s.io/utils v0.0.0-20250502105355-0f33e8f1c979
 	sigs.k8s.io/controller-runtime v0.20.4
 	sigs.k8s.io/gateway-api v1.3.0
@@ -646,8 +646,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	honnef.co/go/tools v0.6.1 // indirect
 	k8s.io/apiserver v0.32.4 // indirect
-	k8s.io/component-base v0.32.4 // indirect
-	k8s.io/component-helpers v0.32.4 // indirect
+	k8s.io/component-base v0.32.5 // indirect
+	k8s.io/component-helpers v0.32.5 // indirect
 	k8s.io/controller-manager v0.0.0 // indirect
 	k8s.io/helm v2.14.3+incompatible // indirect
 	k8s.io/kube-openapi v0.0.0-20241212222426-2c72e554b1e7 // indirect
