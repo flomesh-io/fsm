@@ -53,7 +53,7 @@ require (
 	github.com/miekg/dns v1.1.66
 	github.com/mitchellh/gox v1.0.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
-	github.com/nacos-group/nacos-sdk-go/v2 v2.3.0
+	github.com/nacos-group/nacos-sdk-go/v2 v2.3.1
 	github.com/norwoodj/helm-docs v1.4.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.16.5
