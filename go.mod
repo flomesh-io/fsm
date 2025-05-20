@@ -40,7 +40,7 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/hashicorp/vault v1.19.3
 	github.com/hashicorp/vault/api v1.16.0
-	github.com/hashicorp/vault/sdk v0.15.2
+	github.com/hashicorp/vault/sdk v0.16.0
 	github.com/hudl/fargo v1.4.0
 	github.com/jinzhu/copier v0.4.0
 	github.com/jonboulle/clockwork v0.5.0
