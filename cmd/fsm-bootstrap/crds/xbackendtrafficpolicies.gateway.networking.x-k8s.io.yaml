@@ -9,30 +9,30 @@ metadata:
   labels:
     app.kubernetes.io/name: flomesh.io
     gateway.networking.k8s.io/policy: Direct
-  name: backendtlspolicies.gateway.networking.k8s.io
+  name: xbackendtrafficpolicies.gateway.networking.x-k8s.io
 spec:
-  group: gateway.networking.k8s.io
+  group: gateway.networking.x-k8s.io
   names:
     categories:
     - gateway-api
-    kind: BackendTLSPolicy
-    listKind: BackendTLSPolicyList
-    plural: backendtlspolicies
+    kind: XBackendTrafficPolicy
+    listKind: XBackendTrafficPolicyList
+    plural: xbackendtrafficpolicies
     shortNames:
-    - btlspolicy
-    singular: backendtlspolicy
+    - xbtrafficpolicy
+    singular: xbackendtrafficpolicy
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
-    name: v1alpha3
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: |-
-          BackendTLSPolicy provides a way to configure how a Gateway
-          connects to a Backend via TLS.
+          XBackendTrafficPolicy defines the configuration for how traffic to a
+          target backend should be handled.
         properties:
           apiVersion:
             description: |-
@@ -52,62 +52,216 @@ spec:
           metadata:
             type: object
           spec:
-            description: Spec defines the desired state of BackendTLSPolicy.
+            description: Spec defines the desired state of BackendTrafficPolicy.
             properties:
-              options:
-                additionalProperties:
-                  description: |-
-                    AnnotationValue is the value of an annotation in Gateway API. This is used
-                    for validation of maps such as TLS options. This roughly matches Kubernetes
-                    annotation validation, although the length validation in that case is based
-                    on the entire size of the annotations struct.
-                  maxLength: 4096
-                  minLength: 0
-                  type: string
+              retryConstraint:
                 description: |-
-                  Options are a list of key/value pairs to enable extended TLS
-                  configuration for each implementation. For example, configuring the
-                  minimum TLS version or supported cipher suites.
+                  RetryConstraint defines the configuration for when to allow or prevent
+                  further retries to a target backend, by dynamically calculating a 'retry
+                  budget'. This budget is calculated based on the percentage of incoming
+                  traffic composed of retries over a given time interval. Once the budget
+                  is exceeded, additional retries will be rejected.
 
-                  A set of common keys MAY be defined by the API in the future. To avoid
-                  any ambiguity, implementation-specific definitions MUST use
-                  domain-prefixed names, such as `example.com/my-custom-option`.
-                  Un-prefixed names are reserved for key names defined by Gateway API.
+                  For example, if the retry budget interval is 10 seconds, there have been
+                  1000 active requests in the past 10 seconds, and the allowed percentage
+                  of requests that can be retried is 20% (the default), then 200 of those
+                  requests may be composed of retries. Active requests will only be
+                  considered for the duration of the interval when calculating the retry
+                  budget. Retrying the same original request multiple times within the
+                  retry budget interval will lead to each retry being counted towards
+                  calculating the budget.
 
-                  Support: Implementation-specific
-                maxProperties: 16
+                  Configuring a RetryConstraint in BackendTrafficPolicy is compatible with
+                  HTTPRoute Retry settings for each HTTPRouteRule that targets the same
+                  backend. While the HTTPRouteRule Retry stanza can specify whether a
+                  request will be retried, and the number of retry attempts each client
+                  may perform, RetryConstraint helps prevent cascading failures such as
+                  retry storms during periods of consistent failures.
+
+                  After the retry budget has been exceeded, additional retries to the
+                  backend MUST return a 503 response to the client.
+
+                  Additional configurations for defining a constraint on retries MAY be
+                  defined in the future.
+
+                  Support: Extended
+                properties:
+                  budget:
+                    default:
+                      interval: 10s
+                      percent: 20
+                    description: Budget holds the details of the retry budget configuration.
+                    properties:
+                      interval:
+                        default: 10s
+                        description: |-
+                          Interval defines the duration in which requests will be considered
+                          for calculating the budget for retries.
+
+                          Support: Extended
+                        pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
+                        type: string
+                        x-kubernetes-validations:
+                        - message: interval can not be greater than one hour or less
+                            than one second
+                          rule: '!(duration(self) < duration(''1s'') || duration(self)
+                            > duration(''1h''))'
+                      percent:
+                        default: 20
+                        description: |-
+                          Percent defines the maximum percentage of active requests that may
+                          be made up of retries.
+
+                          Support: Extended
+                        maximum: 100
+                        minimum: 0
+                        type: integer
+                    type: object
+                  minRetryRate:
+                    default:
+                      count: 10
+                      interval: 1s
+                    description: |-
+                      MinRetryRate defines the minimum rate of retries that will be allowable
+                      over a specified duration of time.
+
+                      The effective overall minimum rate of retries targeting the backend
+                      service may be much higher, as there can be any number of clients which
+                      are applying this setting locally.
+
+                      This ensures that requests can still be retried during periods of low
+                      traffic, where the budget for retries may be calculated as a very low
+                      value.
+
+                      Support: Extended
+                    properties:
+                      count:
+                        description: |-
+                          Count specifies the number of requests per time interval.
+
+                          Support: Extended
+                        maximum: 1000000
+                        minimum: 1
+                        type: integer
+                      interval:
+                        description: |-
+                          Interval specifies the divisor of the rate of requests, the amount of
+                          time during which the given count of requests occur.
+
+                          Support: Extended
+                        pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
+                        type: string
+                        x-kubernetes-validations:
+                        - message: interval can not be greater than one hour
+                          rule: '!(duration(self) == duration(''0s'') || duration(self)
+                            > duration(''1h''))'
+                    type: object
                 type: object
+              sessionPersistence:
+                description: |-
+                  SessionPersistence defines and configures session persistence
+                  for the backend.
+
+                  Support: Extended
+                properties:
+                  absoluteTimeout:
+                    description: |-
+                      AbsoluteTimeout defines the absolute timeout of the persistent
+                      session. Once the AbsoluteTimeout duration has elapsed, the
+                      session becomes invalid.
+
+                      Support: Extended
+                    pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
+                    type: string
+                  cookieConfig:
+                    description: |-
+                      CookieConfig provides configuration settings that are specific
+                      to cookie-based session persistence.
+
+                      Support: Core
+                    properties:
+                      lifetimeType:
+                        default: Session
+                        description: |-
+                          LifetimeType specifies whether the cookie has a permanent or
+                          session-based lifetime. A permanent cookie persists until its
+                          specified expiry time, defined by the Expires or Max-Age cookie
+                          attributes, while a session cookie is deleted when the current
+                          session ends.
+
+                          When set to "Permanent", AbsoluteTimeout indicates the
+                          cookie's lifetime via the Expires or Max-Age cookie attributes
+                          and is required.
+
+                          When set to "Session", AbsoluteTimeout indicates the
+                          absolute lifetime of the cookie tracked by the gateway and
+                          is optional.
+
+                          Defaults to "Session".
+
+                          Support: Core for "Session" type
+
+                          Support: Extended for "Permanent" type
+                        enum:
+                        - Permanent
+                        - Session
+                        type: string
+                    type: object
+                  idleTimeout:
+                    description: |-
+                      IdleTimeout defines the idle timeout of the persistent session.
+                      Once the session has been idle for more than the specified
+                      IdleTimeout duration, the session becomes invalid.
+
+                      Support: Extended
+                    pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
+                    type: string
+                  sessionName:
+                    description: |-
+                      SessionName defines the name of the persistent session token
+                      which may be reflected in the cookie or the header. Users
+                      should avoid reusing session names to prevent unintended
+                      consequences, such as rejection or unpredictable behavior.
+
+                      Support: Implementation-specific
+                    maxLength: 128
+                    type: string
+                  type:
+                    default: Cookie
+                    description: |-
+                      Type defines the type of session persistence such as through
+                      the use a header or cookie. Defaults to cookie based session
+                      persistence.
+
+                      Support: Core for "Cookie" type
+
+                      Support: Extended for "Header" type
+                    enum:
+                    - Cookie
+                    - Header
+                    type: string
+                type: object
+                x-kubernetes-validations:
+                - message: AbsoluteTimeout must be specified when cookie lifetimeType
+                    is Permanent
+                  rule: '!has(self.cookieConfig) || !has(self.cookieConfig.lifetimeType)
+                    || self.cookieConfig.lifetimeType != ''Permanent'' || has(self.absoluteTimeout)'
               targetRefs:
                 description: |-
-                  TargetRefs identifies an API object to apply the policy to.
-                  Only Services have Extended support. Implementations MAY support
-                  additional objects, with Implementation Specific support.
-                  Note that this config applies to the entire referenced resource
-                  by default, but this default may change in the future to provide
-                  a more granular application of the policy.
+                  TargetRefs identifies API object(s) to apply this policy to.
+                  Currently, Backends (A grouping of like endpoints such as Service,
+                  ServiceImport, or any implementation-specific backendRef) are the only
+                  valid API target references.
 
-                  TargetRefs must be _distinct_. This means either that:
-
-                  * They select different targets. If this is the case, then targetRef
-                    entries are distinct. In terms of fields, this means that the
-                    multi-part key defined by `group`, `kind`, and `name` must
-                    be unique across all targetRef entries in the BackendTLSPolicy.
-                  * They select different sectionNames in the same target.
-
-                  Support: Extended for Kubernetes Service
-
-                  Support: Implementation-specific for any other resource
+                  Currently, a TargetRef can not be scoped to a specific port on a
+                  Service.
                 items:
                   description: |-
-                    LocalPolicyTargetReferenceWithSectionName identifies an API object to apply a
-                    direct policy to. This should be used as part of Policy resources that can
-                    target single resources. For more information on how this policy attachment
-                    mode works, and a sample Policy resource, refer to the policy attachment
-                    documentation for Gateway API.
-
-                    Note: This should only be used for direct policy attachment when references
-                    to SectionName are actually needed. In all other cases,
-                    LocalPolicyTargetReference should be used.
+                    LocalPolicyTargetReference identifies an API object to apply a direct or
+                    inherited policy to. This should be used as part of Policy resources
+                    that can target Gateway API resources. For more information on how this
+                    policy attachment model works, and a sample Policy resource, refer to
+                    the policy attachment documentation for Gateway API.
                   properties:
                     group:
                       description: Group is the group of the target resource.
@@ -125,23 +279,6 @@ spec:
                       maxLength: 253
                       minLength: 1
                       type: string
-                    sectionName:
-                      description: |-
-                        SectionName is the name of a section within the target resource. When
-                        unspecified, this targetRef targets the entire resource. In the following
-                        resources, SectionName is interpreted as the following:
-
-                        * Gateway: Listener name
-                        * HTTPRoute: HTTPRouteRule name
-                        * Service: Port name
-
-                        If a SectionName is specified, but does not exist on the targeted object,
-                        the Policy must fail to attach, and the policy implementation should record
-                        a `ResolvedRefs` or similar Condition in the Policy's status.
-                      maxLength: 253
-                      minLength: 1
-                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
-                      type: string
                   required:
                   - group
                   - kind
@@ -150,195 +287,16 @@ spec:
                 maxItems: 16
                 minItems: 1
                 type: array
-                x-kubernetes-validations:
-                - message: sectionName must be specified when targetRefs includes
-                    2 or more references to the same target
-                  rule: 'self.all(p1, self.all(p2, p1.group == p2.group && p1.kind
-                    == p2.kind && p1.name == p2.name ? ((!has(p1.sectionName) || p1.sectionName
-                    == '''') == (!has(p2.sectionName) || p2.sectionName == ''''))
-                    : true))'
-                - message: sectionName must be unique when targetRefs includes 2 or
-                    more references to the same target
-                  rule: self.all(p1, self.exists_one(p2, p1.group == p2.group && p1.kind
-                    == p2.kind && p1.name == p2.name && (((!has(p1.sectionName) ||
-                    p1.sectionName == '') && (!has(p2.sectionName) || p2.sectionName
-                    == '')) || (has(p1.sectionName) && has(p2.sectionName) && p1.sectionName
-                    == p2.sectionName))))
-              validation:
-                description: Validation contains backend TLS validation configuration.
-                properties:
-                  caCertificateRefs:
-                    description: |-
-                      CACertificateRefs contains one or more references to Kubernetes objects that
-                      contain a PEM-encoded TLS CA certificate bundle, which is used to
-                      validate a TLS handshake between the Gateway and backend Pod.
-
-                      If CACertificateRefs is empty or unspecified, then WellKnownCACertificates must be
-                      specified. Only one of CACertificateRefs or WellKnownCACertificates may be specified,
-                      not both. If CACertificateRefs is empty or unspecified, the configuration for
-                      WellKnownCACertificates MUST be honored instead if supported by the implementation.
-
-                      References to a resource in a different namespace are invalid for the
-                      moment, although we will revisit this in the future.
-
-                      A single CACertificateRef to a Kubernetes ConfigMap kind has "Core" support.
-                      Implementations MAY choose to support attaching multiple certificates to
-                      a backend, but this behavior is implementation-specific.
-
-                      Support: Core - An optional single reference to a Kubernetes ConfigMap,
-                      with the CA certificate in a key named `ca.crt`.
-
-                      Support: Implementation-specific (More than one reference, or other kinds
-                      of resources).
-                    items:
-                      description: |-
-                        LocalObjectReference identifies an API object within the namespace of the
-                        referrer.
-                        The API object must be valid in the cluster; the Group and Kind must
-                        be registered in the cluster for this reference to be valid.
-
-                        References to objects with invalid Group and Kind are not valid, and must
-                        be rejected by the implementation, with appropriate Conditions set
-                        on the containing object.
-                      properties:
-                        group:
-                          description: |-
-                            Group is the group of the referent. For example, "gateway.networking.k8s.io".
-                            When unspecified or empty string, core API group is inferred.
-                          maxLength: 253
-                          pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
-                          type: string
-                        kind:
-                          description: Kind is kind of the referent. For example "HTTPRoute"
-                            or "Service".
-                          maxLength: 63
-                          minLength: 1
-                          pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
-                          type: string
-                        name:
-                          description: Name is the name of the referent.
-                          maxLength: 253
-                          minLength: 1
-                          type: string
-                      required:
-                      - group
-                      - kind
-                      - name
-                      type: object
-                    maxItems: 8
-                    type: array
-                  hostname:
-                    description: |-
-                      Hostname is used for two purposes in the connection between Gateways and
-                      backends:
-
-                      1. Hostname MUST be used as the SNI to connect to the backend (RFC 6066).
-                      2. Hostname MUST be used for authentication and MUST match the certificate served by the matching backend, unless SubjectAltNames is specified.
-                         authentication and MUST match the certificate served by the matching
-                         backend.
-
-                      Support: Core
-                    maxLength: 253
-                    minLength: 1
-                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
-                    type: string
-                  subjectAltNames:
-                    description: |-
-                      SubjectAltNames contains one or more Subject Alternative Names.
-                      When specified the certificate served from the backend MUST
-                      have at least one Subject Alternate Name matching one of the specified SubjectAltNames.
-
-                      Support: Extended
-                    items:
-                      description: SubjectAltName represents Subject Alternative Name.
-                      properties:
-                        hostname:
-                          description: |-
-                            Hostname contains Subject Alternative Name specified in DNS name format.
-                            Required when Type is set to Hostname, ignored otherwise.
-
-                            Support: Core
-                          maxLength: 253
-                          minLength: 1
-                          pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
-                          type: string
-                        type:
-                          description: |-
-                            Type determines the format of the Subject Alternative Name. Always required.
-
-                            Support: Core
-                          enum:
-                          - Hostname
-                          - URI
-                          type: string
-                        uri:
-                          description: |-
-                            URI contains Subject Alternative Name specified in a full URI format.
-                            It MUST include both a scheme (e.g., "http" or "ftp") and a scheme-specific-part.
-                            Common values include SPIFFE IDs like "spiffe://mycluster.example.com/ns/myns/sa/svc1sa".
-                            Required when Type is set to URI, ignored otherwise.
-
-                            Support: Core
-                          maxLength: 253
-                          minLength: 1
-                          pattern: ^(([^:/?#]+):)(//([^/?#]*))([^?#]*)(\?([^#]*))?(#(.*))?
-                          type: string
-                      required:
-                      - type
-                      type: object
-                      x-kubernetes-validations:
-                      - message: SubjectAltName element must contain Hostname, if
-                          Type is set to Hostname
-                        rule: '!(self.type == "Hostname" && (!has(self.hostname) ||
-                          self.hostname == ""))'
-                      - message: SubjectAltName element must not contain Hostname,
-                          if Type is not set to Hostname
-                        rule: '!(self.type != "Hostname" && has(self.hostname) &&
-                          self.hostname != "")'
-                      - message: SubjectAltName element must contain URI, if Type
-                          is set to URI
-                        rule: '!(self.type == "URI" && (!has(self.uri) || self.uri
-                          == ""))'
-                      - message: SubjectAltName element must not contain URI, if Type
-                          is not set to URI
-                        rule: '!(self.type != "URI" && has(self.uri) && self.uri !=
-                          "")'
-                    maxItems: 5
-                    type: array
-                  wellKnownCACertificates:
-                    description: |-
-                      WellKnownCACertificates specifies whether system CA certificates may be used in
-                      the TLS handshake between the gateway and backend pod.
-
-                      If WellKnownCACertificates is unspecified or empty (""), then CACertificateRefs
-                      must be specified with at least one entry for a valid configuration. Only one of
-                      CACertificateRefs or WellKnownCACertificates may be specified, not both. If an
-                      implementation does not support the WellKnownCACertificates field or the value
-                      supplied is not supported, the Status Conditions on the Policy MUST be
-                      updated to include an Accepted: False Condition with Reason: Invalid.
-
-                      Support: Implementation-specific
-                    enum:
-                    - System
-                    type: string
-                required:
-                - hostname
-                type: object
-                x-kubernetes-validations:
-                - message: must not contain both CACertificateRefs and WellKnownCACertificates
-                  rule: '!(has(self.caCertificateRefs) && size(self.caCertificateRefs)
-                    > 0 && has(self.wellKnownCACertificates) && self.wellKnownCACertificates
-                    != "")'
-                - message: must specify either CACertificateRefs or WellKnownCACertificates
-                  rule: (has(self.caCertificateRefs) && size(self.caCertificateRefs)
-                    > 0 || has(self.wellKnownCACertificates) && self.wellKnownCACertificates
-                    != "")
+                x-kubernetes-list-map-keys:
+                - group
+                - kind
+                - name
+                x-kubernetes-list-type: map
             required:
             - targetRefs
-            - validation
             type: object
           status:
-            description: Status defines the current state of BackendTLSPolicy.
+            description: Status defines the current state of BackendTrafficPolicy.
             properties:
               ancestors:
                 description: |-
