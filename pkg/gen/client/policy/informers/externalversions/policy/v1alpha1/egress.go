@@ -59,13 +59,25 @@ func NewFilteredEgressInformer(client versioned.Interface, namespace string, res
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PolicyV1alpha1().Egresses(namespace).List(context.TODO(), options)
+				return client.PolicyV1alpha1().Egresses(namespace).List(context.Background(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PolicyV1alpha1().Egresses(namespace).Watch(context.TODO(), options)
+				return client.PolicyV1alpha1().Egresses(namespace).Watch(context.Background(), options)
+			},
+			ListWithContextFunc: func(ctx context.Context, options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.PolicyV1alpha1().Egresses(namespace).List(ctx, options)
+			},
+			WatchFuncWithContext: func(ctx context.Context, options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.PolicyV1alpha1().Egresses(namespace).Watch(ctx, options)
 			},
 		},
 		&apispolicyv1alpha1.Egress{},

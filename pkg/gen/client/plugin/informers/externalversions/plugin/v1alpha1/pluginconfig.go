@@ -59,13 +59,25 @@ func NewFilteredPluginConfigInformer(client versioned.Interface, namespace strin
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PluginV1alpha1().PluginConfigs(namespace).List(context.TODO(), options)
+				return client.PluginV1alpha1().PluginConfigs(namespace).List(context.Background(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PluginV1alpha1().PluginConfigs(namespace).Watch(context.TODO(), options)
+				return client.PluginV1alpha1().PluginConfigs(namespace).Watch(context.Background(), options)
+			},
+			ListWithContextFunc: func(ctx context.Context, options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.PluginV1alpha1().PluginConfigs(namespace).List(ctx, options)
+			},
+			WatchFuncWithContext: func(ctx context.Context, options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.PluginV1alpha1().PluginConfigs(namespace).Watch(ctx, options)
 			},
 		},
 		&apispluginv1alpha1.PluginConfig{},

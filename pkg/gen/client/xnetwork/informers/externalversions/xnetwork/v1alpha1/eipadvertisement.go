@@ -59,13 +59,25 @@ func NewFilteredEIPAdvertisementInformer(client versioned.Interface, namespace s
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.XnetworkV1alpha1().EIPAdvertisements(namespace).List(context.TODO(), options)
+				return client.XnetworkV1alpha1().EIPAdvertisements(namespace).List(context.Background(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.XnetworkV1alpha1().EIPAdvertisements(namespace).Watch(context.TODO(), options)
+				return client.XnetworkV1alpha1().EIPAdvertisements(namespace).Watch(context.Background(), options)
+			},
+			ListWithContextFunc: func(ctx context.Context, options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.XnetworkV1alpha1().EIPAdvertisements(namespace).List(ctx, options)
+			},
+			WatchFuncWithContext: func(ctx context.Context, options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.XnetworkV1alpha1().EIPAdvertisements(namespace).Watch(ctx, options)
 			},
 		},
 		&apisxnetworkv1alpha1.EIPAdvertisement{},
