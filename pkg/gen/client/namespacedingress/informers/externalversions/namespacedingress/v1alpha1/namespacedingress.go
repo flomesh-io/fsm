@@ -59,13 +59,25 @@ func NewFilteredNamespacedIngressInformer(client versioned.Interface, namespace 
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.NetworkingV1alpha1().NamespacedIngresses(namespace).List(context.TODO(), options)
+				return client.NetworkingV1alpha1().NamespacedIngresses(namespace).List(context.Background(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.NetworkingV1alpha1().NamespacedIngresses(namespace).Watch(context.TODO(), options)
+				return client.NetworkingV1alpha1().NamespacedIngresses(namespace).Watch(context.Background(), options)
+			},
+			ListWithContextFunc: func(ctx context.Context, options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.NetworkingV1alpha1().NamespacedIngresses(namespace).List(ctx, options)
+			},
+			WatchFuncWithContext: func(ctx context.Context, options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.NetworkingV1alpha1().NamespacedIngresses(namespace).Watch(ctx, options)
 			},
 		},
 		&apisnamespacedingressv1alpha1.NamespacedIngress{},

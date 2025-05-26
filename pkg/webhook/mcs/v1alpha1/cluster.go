@@ -76,9 +76,9 @@ func (r *ClusterWebhook) doValidation(_ context.Context, obj runtime.Object) (wa
 	//}
 
 	isDNSName := false
-	if ipErrs := validation.IsValidIPv4Address(field.NewPath(""), host); len(ipErrs) > 0 {
+	if ipErrs := validation.IsValidIP(field.NewPath(""), host); len(ipErrs) > 0 {
 		// Not IPv4 address
-		log.Warn().Msgf("%q is NOT a valid IPv4 address: %v", host, ipErrs)
+		log.Warn().Msgf("%q is NOT a valid IP address: %v", host, ipErrs)
 		if dnsErrs := validation.IsDNS1123Subdomain(host); len(dnsErrs) > 0 {
 			// Not valid DNS domain name
 			return nil, fmt.Errorf("invalid DNS name %q: %v", host, dnsErrs)
@@ -88,23 +88,23 @@ func (r *ClusterWebhook) doValidation(_ context.Context, obj runtime.Object) (wa
 		isDNSName = true
 	}
 
-	var gwIPv4 net.IP
+	var gwIP net.IP
 	if isDNSName {
-		ipAddr, err := net.ResolveIPAddr("ip4", host)
+		ipAddr, err := net.ResolveIPAddr("ip", host)
 		if err != nil {
 			return nil, fmt.Errorf("%q cannot be resolved to IP", host)
 		}
 		log.Debug().Msgf("%q is resolved to IP: %s", host, ipAddr.IP)
-		gwIPv4 = ipAddr.IP.To4()
+		gwIP = ipAddr.IP
 	} else {
-		gwIPv4 = net.ParseIP(host).To4()
+		gwIP = net.ParseIP(host)
 	}
 
-	if gwIPv4 == nil {
-		return nil, fmt.Errorf("%q cannot be resolved to a IPv4 address", host)
+	if gwIP == nil {
+		return nil, fmt.Errorf("%q cannot be resolved to an IP address", host)
 	}
 
-	if gwIPv4.IsLoopback() || gwIPv4.IsUnspecified() {
+	if gwIP.IsLoopback() || gwIP.IsUnspecified() {
 		return nil, fmt.Errorf("gateway Host %s is resolved to Loopback IP or Unspecified", host)
 	}
 

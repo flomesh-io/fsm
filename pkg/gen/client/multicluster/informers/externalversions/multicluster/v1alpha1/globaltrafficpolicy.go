@@ -59,13 +59,25 @@ func NewFilteredGlobalTrafficPolicyInformer(client versioned.Interface, namespac
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.MulticlusterV1alpha1().GlobalTrafficPolicies(namespace).List(context.TODO(), options)
+				return client.MulticlusterV1alpha1().GlobalTrafficPolicies(namespace).List(context.Background(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.MulticlusterV1alpha1().GlobalTrafficPolicies(namespace).Watch(context.TODO(), options)
+				return client.MulticlusterV1alpha1().GlobalTrafficPolicies(namespace).Watch(context.Background(), options)
+			},
+			ListWithContextFunc: func(ctx context.Context, options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.MulticlusterV1alpha1().GlobalTrafficPolicies(namespace).List(ctx, options)
+			},
+			WatchFuncWithContext: func(ctx context.Context, options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.MulticlusterV1alpha1().GlobalTrafficPolicies(namespace).Watch(ctx, options)
 			},
 		},
 		&apismulticlusterv1alpha1.GlobalTrafficPolicy{},

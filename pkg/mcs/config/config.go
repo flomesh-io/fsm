@@ -77,9 +77,9 @@ func NewConnectorConfig(
 
 	//if !inCluster {
 	isDNSName := false
-	if ipErrs := validation.IsValidIPv4Address(field.NewPath(""), gatewayHost); len(ipErrs) > 0 {
+	if ipErrs := validation.IsValidIP(field.NewPath(""), gatewayHost); len(ipErrs) > 0 {
 		// Not IPv4 address
-		log.Warn().Msgf("%q is NOT a valid IPv4 address: %v", gatewayHost, ipErrs)
+		log.Warn().Msgf("%q is NOT a valid IP address: %v", gatewayHost, ipErrs)
 		if dnsErrs := validation.IsDNS1123Subdomain(gatewayHost); len(dnsErrs) > 0 {
 			// Not valid DNS domain name
 			return nil, fmt.Errorf("invalid DNS name or IP %q: %v", gatewayHost, dnsErrs)
@@ -89,29 +89,29 @@ func NewConnectorConfig(
 		isDNSName = true
 	}
 
-	var gwIPv4 net.IP
+	var gwIP net.IP
 	if isDNSName {
-		ipAddr, err := net.ResolveIPAddr("ip4", gatewayHost)
+		ipAddr, err := net.ResolveIPAddr("ip", gatewayHost)
 		if err != nil {
 			return nil, fmt.Errorf("%q cannot be resolved to IP, %s", gatewayHost, err)
 		}
 		log.Info().Msgf("%q is resolved to IP: %s", gatewayHost, ipAddr.IP)
-		gwIPv4 = ipAddr.IP.To4()
+		gwIP = ipAddr.IP
 	} else {
-		gwIPv4 = net.ParseIP(gatewayHost).To4()
+		gwIP = net.ParseIP(gatewayHost)
 	}
 
-	if gwIPv4 == nil {
-		return nil, fmt.Errorf("%q cannot be resolved to a IPv4 address", gatewayHost)
+	if gwIP == nil {
+		return nil, fmt.Errorf("%q cannot be resolved to an IP address", gatewayHost)
 	}
 
-	if gwIPv4 != nil && (gwIPv4.IsLoopback() || gwIPv4.IsUnspecified()) {
+	if gwIP.IsLoopback() || gwIP.IsUnspecified() {
 		return nil, fmt.Errorf("gateway Host %s is resolved to Loopback IP or Unspecified", gatewayHost)
 	}
 
 	c.gatewayHost = gatewayHost
 	c.gatewayPort = gatewayPort
-	c.gatewayIP = gwIPv4
+	c.gatewayIP = gwIP
 	//}
 
 	return c, nil

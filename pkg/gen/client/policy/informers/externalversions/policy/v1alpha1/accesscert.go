@@ -59,13 +59,25 @@ func NewFilteredAccessCertInformer(client versioned.Interface, namespace string,
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PolicyV1alpha1().AccessCerts(namespace).List(context.TODO(), options)
+				return client.PolicyV1alpha1().AccessCerts(namespace).List(context.Background(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PolicyV1alpha1().AccessCerts(namespace).Watch(context.TODO(), options)
+				return client.PolicyV1alpha1().AccessCerts(namespace).Watch(context.Background(), options)
+			},
+			ListWithContextFunc: func(ctx context.Context, options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.PolicyV1alpha1().AccessCerts(namespace).List(ctx, options)
+			},
+			WatchFuncWithContext: func(ctx context.Context, options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.PolicyV1alpha1().AccessCerts(namespace).Watch(ctx, options)
 			},
 		},
 		&apispolicyv1alpha1.AccessCert{},
