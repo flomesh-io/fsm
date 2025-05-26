@@ -1185,8 +1185,8 @@ github.com/hashicorp/vault/api v1.16.0 h1:nbEYGJiAPGzT9U4oWgaaB0g+Rj8E59QuHKyA5L
 github.com/hashicorp/vault/api v1.16.0/go.mod h1:KhuUhzOD8lDSk29AtzNjgAu2kxRA9jL9NAbkFlqvkBA=
 github.com/hashicorp/vault/api/auth/userpass v0.1.0 h1:C6OdAYczMbzd1Pe1LLf2SHDulxOq/iybWV3kbgV/PS4=
 github.com/hashicorp/vault/api/auth/userpass v0.1.0/go.mod h1:0orUbtkEwbEPmaQ+wvfrOddGBimLJnuN8A/J0PNfBks=
-github.com/hashicorp/vault/sdk v0.16.0 h1:aHxyMbmIckEt1BjymvD5T71vM0dDu/3ES1cSSJ7ZLJs=
-github.com/hashicorp/vault/sdk v0.16.0/go.mod h1:LeU/f5riOSiM012EqXlU+Le++2csDwgiuWWVNH9EWFs=
+github.com/hashicorp/vault/sdk v0.17.0 h1:uqqhFs6omGUtcWg3QejPvIs2a06VfUgkUr5yHdUeTJs=
+github.com/hashicorp/vault/sdk v0.17.0/go.mod h1:LeU/f5riOSiM012EqXlU+Le++2csDwgiuWWVNH9EWFs=
 github.com/hashicorp/vic v1.5.1-0.20190403131502-bbfe86ec9443 h1:O/pT5C1Q3mVXMyuqg7yuAWUg/jMZR1/0QTzTRdNR6Uw=
 github.com/hashicorp/vic v1.5.1-0.20190403131502-bbfe86ec9443/go.mod h1:bEpDU35nTu0ey1EXjwNwPjI9xErAsoOCmcMb9GKvyxo=
 github.com/hashicorp/yamux v0.1.2 h1:XtB8kyFOyHXYVFnwT5C3+Bdo8gArse7j2AQ0DA0Uey8=
