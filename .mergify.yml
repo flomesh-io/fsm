@@ -14,11 +14,11 @@ pull_request_rules:
       - check-success=Go test
       - check-success=Scan images for security vulnerabilities
       - check-success=Integration Test with Tresor, SMI traffic policies, and egress disabled
-      - check-success=Go mesh test (v1.32.4-k3s1, 1) / e2e
-      - check-success=Go mesh test (v1.32.4-k3s1, 2) / e2e
-      - check-success=Go mesh test (v1.32.4-k3s1, 3) / e2e
-      - check-success=Go mesh test (v1.32.4-k3s1, 4) / e2e
-      - check-success=Go mesh test (v1.32.4-k3s1, 5) / e2e
+      - check-success=Go mesh test (v1.32.5-k3s1, 1) / e2e
+      - check-success=Go mesh test (v1.32.5-k3s1, 2) / e2e
+      - check-success=Go mesh test (v1.32.5-k3s1, 3) / e2e
+      - check-success=Go mesh test (v1.32.5-k3s1, 4) / e2e
+      - check-success=Go mesh test (v1.32.5-k3s1, 5) / e2e
       - check-success=Go mesh test (v1.21.14-k3s1, Test traffic flowing from client to server with a Kubernetes Service... / e2e
       - check-success=Go mesh test (v1.27.16-k3s1, Test traffic flowing from client to server with a Kubernetes Service... / e2e
       - check-success=Go gateway test (6, latest) / e2e

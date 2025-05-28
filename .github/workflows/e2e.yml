@@ -77,6 +77,10 @@ jobs:
         if: inputs.install_grpcurl
         run: |
           go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
+      - name: Install k3d CLI
+        run: |
+          curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+          k3d version
       - name: Download fsm image artifacts
         uses: actions/download-artifact@v4
         with:
@@ -95,11 +99,18 @@ jobs:
         run: |
           chmod a+x ./bin/fsm
           ls -l ./bin/fsm
+      - name: Create k3d managed local registry
+        if: ${{ env.INCREASE_K3D_CIDR_RANGE != 'true' }}
+        run: |
+          k3d registry create registry.localhost --port localhost:5000
+      - name: Push images to local registry
+        if: ${{ env.INCREASE_K3D_CIDR_RANGE != 'true' }}
+        run: |
+          docker image list --format "{{.Repository}}:{{.Tag}}" | grep "^localhost" | xargs --no-run-if-empty -L 1 docker push
       - name: Run tests
         id: test
         env:
           K8S_NAMESPACE: "fsm-system"
-          LOAD_IMAGES_INTO_CLUSTER: "true"
           INCREASE_K3D_CIDR_RANGE: ${{ inputs.increase_k3d_cidr_range }}
           NUM_K3D_SERVERS: ${{ vars.NUM_K3D_SERVERS || '1' }}
           NUM_K3D_AGENTS: ${{ vars.NUM_K3D_AGENTS || '1' }}
