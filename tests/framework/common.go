@@ -629,6 +629,18 @@ func (td *FsmTestData) k3dClusterConfig() *k3dCfg.ClusterConfig {
 		}
 	}
 
+	if !td.LoadImagesIntoCluster {
+		simpleCfg.Registries = k3dCfg.SimpleConfigRegistries{
+			Use: []string{"k3d-registry.localhost:5000"},
+			Config: `
+mirrors:
+  'localhost:5000':
+    endpoint:
+      - http://k3d-registry.localhost:5000
+`,
+		}
+	}
+
 	if err := config.ProcessSimpleConfig(&simpleCfg); err != nil {
 		td.T.Fatalf("error processing/sanitizing simple config: %v", err)
 	}
