@@ -165,7 +165,7 @@ func (td *FsmTestData) HTTPRequest(ht HTTPRequestDef) HTTPRequestResult {
 		return HTTPRequestResult{
 			0,
 			nil,
-			fmt.Errorf("Could not read status code as integer: %w", err),
+			fmt.Errorf("could not read status code as integer: %w", err),
 		}
 	}
 	delete(curlMappedReturn, StatusCodeWord)
