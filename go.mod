@@ -16,7 +16,11 @@ require (
 	github.com/deckarep/golang-set v1.8.0
 	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/distribution/reference v0.6.0
+<<<<<<< HEAD
 	github.com/docker/docker v27.5.0+incompatible
+=======
+	github.com/docker/docker v28.2.1+incompatible
+>>>>>>> 7ba5a84 (build(deps): Bump github.com/docker/docker from 28.1.1+incompatible to 28.2.1+incompatible (#902))
 	github.com/docker/go-connections v0.5.0
 	github.com/dubbogo/go-zookeeper v1.0.3
 	github.com/dustin/go-humanize v1.0.1
@@ -223,7 +227,12 @@ require (
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/containerd/containerd v1.7.27 // indirect
+<<<<<<< HEAD
 	github.com/containerd/errdefs v0.3.0 // indirect
+=======
+	github.com/containerd/errdefs v1.0.0 // indirect
+	github.com/containerd/errdefs/pkg v0.3.0 // indirect
+>>>>>>> 7ba5a84 (build(deps): Bump github.com/docker/docker from 28.1.1+incompatible to 28.2.1+incompatible (#902))
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
