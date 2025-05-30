@@ -56,7 +56,8 @@ var _ = FSMDescribe("Test Retry Policy",
 							Image:     "mccutchen/go-httpbin",
 							Ports:     []int{80},
 							OS:        Td.ClusterOS,
-							Args:      []string{"--port", "80"},
+							Command:   []string{"/bin/go-httpbin"},
+							Args:      []string{"-port", "80"},
 						})
 					Expect(err).NotTo(HaveOccurred())
 
