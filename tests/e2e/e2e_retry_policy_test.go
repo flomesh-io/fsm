@@ -53,9 +53,10 @@ var _ = FSMDescribe("Test Retry Policy",
 						SimplePodAppDef{
 							PodName:   server,
 							Namespace: server,
-							Image:     "flomesh/httpbin:ken",
+							Image:     "mccutchen/go-httpbin",
 							Ports:     []int{80},
 							OS:        Td.ClusterOS,
+							Args:      []string{"--port", "80"},
 						})
 					Expect(err).NotTo(HaveOccurred())
 
