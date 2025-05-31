@@ -53,9 +53,11 @@ var _ = FSMDescribe("Test Retry Policy",
 						SimplePodAppDef{
 							PodName:   server,
 							Namespace: server,
-							Image:     "flomesh/httpbin:ken",
+							Image:     "mccutchen/go-httpbin",
 							Ports:     []int{80},
 							OS:        Td.ClusterOS,
+							Command:   []string{"/bin/go-httpbin"},
+							Args:      []string{"-port", "80"},
 						})
 					Expect(err).NotTo(HaveOccurred())
 
@@ -115,7 +117,7 @@ var _ = FSMDescribe("Test Retry Policy",
 						},
 					}
 					_, err = Td.PolicyClient.PolicyV1alpha1().Retries(client).Create(context.TODO(), retry, metav1.CreateOptions{})
-					Expect(err).ToNot((HaveOccurred()))
+					Expect(err).ToNot(HaveOccurred())
 
 					time.Sleep(90 * time.Second)
 
@@ -127,9 +129,12 @@ var _ = FSMDescribe("Test Retry Policy",
 					}
 
 					By("A request that will be retried NumRetries times then fail")
-					err = wait.Poll(time.Second*30, time.Second*30, func() (bool, error) {
+					err = wait.PollUntilContextTimeout(context.Background(), time.Second*30, time.Second*30, true, func(ctx context.Context) (bool, error) {
 						defer GinkgoRecover()
 						result := Td.HTTPRequest(req)
+						if result.Err != nil {
+							Td.T.Logf("Error making HTTP request: %v, status code: %d", result.Err, result.StatusCode)
+						}
 
 						stdout, stderr, err := Td.RunLocal(filepath.FromSlash("../../bin/fsm"), "proxy", "get", "stats", clientPod.Name, "--namespace", client)
 						if err != nil {
@@ -137,7 +142,7 @@ var _ = FSMDescribe("Test Retry Policy",
 						}
 
 						metrics, err := findRetryStats(stdout.String(), serverSvc.Name+"|80", retryStats)
-						Expect(err).ToNot((HaveOccurred()))
+						Expect(err).ToNot(HaveOccurred())
 
 						return Expect(result.StatusCode).To(Equal(503)) &&
 							// upstream_rq_retry: Total request retries
@@ -147,7 +152,7 @@ var _ = FSMDescribe("Test Retry Policy",
 							// upstream_rq_retry_backoff_exponential: Total retries using the exponential backoff strategy
 							Expect(metrics["upstream_rq_retry_backoff_exponential"]).To(Equal("5")), nil
 					})
-					Expect(err).ToNot((HaveOccurred()))
+					Expect(err).ToNot(HaveOccurred())
 
 				})
 		})
@@ -239,7 +244,7 @@ var _ = FSMDescribe("Test Retry Policy",
 							},
 						}
 						_, err = Td.PolicyClient.PolicyV1alpha1().Retries(client).Create(context.TODO(), retry, metav1.CreateOptions{})
-						Expect(err).ToNot((HaveOccurred()))
+						Expect(err).ToNot(HaveOccurred())
 
 						time.Sleep(30 * time.Second)
 
@@ -271,7 +276,7 @@ var _ = FSMDescribe("Test Retry Policy",
 								// upstream_rq_retry_backoff_exponential: Total retries using the exponential backoff strategy
 								Expect(metrics["upstream_rq_retry_backoff_exponential"]).To(Equal("0")), nil
 						})
-						Expect(err).ToNot((HaveOccurred()))
+						Expect(err).ToNot(HaveOccurred())
 					})
 			})
 		}
