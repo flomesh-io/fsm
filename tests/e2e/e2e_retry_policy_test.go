@@ -129,7 +129,7 @@ var _ = FSMDescribe("Test Retry Policy",
 					}
 
 					By("A request that will be retried NumRetries times then fail")
-					err = wait.Poll(time.Second*30, time.Second*30, func() (bool, error) {
+					err = wait.PollUntilContextTimeout(context.Background(), time.Second*30, time.Second*30, true, func(ctx context.Context) (bool, error) {
 						defer GinkgoRecover()
 						result := Td.HTTPRequest(req)
 						if result.Err != nil {
