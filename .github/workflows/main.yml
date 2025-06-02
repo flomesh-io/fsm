@@ -41,7 +41,7 @@ env:
 jobs:
   shellcheck:
     name: Shellcheck
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -50,7 +50,7 @@ jobs:
 
   lint:
     name: Lint
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -69,7 +69,7 @@ jobs:
 
   codegen:
     name: Codegen
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -91,7 +91,7 @@ jobs:
 
   mocks:
     name: Mocks
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -107,7 +107,7 @@ jobs:
 
   charts:
     name: Chart checks
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -121,7 +121,7 @@ jobs:
 
   build:
     name: Go build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -137,7 +137,7 @@ jobs:
 
   unittest:
     name: Go test
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     needs: build
     steps:
       - name: Checkout
@@ -159,7 +159,7 @@ jobs:
 
   fsm-artifacts:
     name: FSM artifacts(images, cli...)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     needs: build
     env:
       CTR_REGISTRY: ${{ vars.CI_CTR_REGISTRY || 'localhost:5000' }}
@@ -167,6 +167,7 @@ jobs:
       DOCKER_BUILDX_OUTPUT: type=docker
       FSM_TAR_PATH: /tmp/fsm-images/${{ github.sha }}
       FSM_DEMO_TAR_PATH: /tmp/fsm-demo-images/${{ github.sha }}
+      DOCKER_BUILDX_PLATFORM: linux/arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -214,7 +215,7 @@ jobs:
 
   image-scan:
     name: Scan images for security vulnerabilities
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     needs: fsm-artifacts
     steps:
       - name: Setup Trivy
@@ -292,7 +293,6 @@ jobs:
         bucket: [ 10 ]
     uses: ./.github/workflows/e2e.yml
     with:
-      os: ubuntu-24.04
       k8s_version: ${{ matrix.k8s_version }}
       bucket: ${{ matrix.bucket }}
       focus: ${{ matrix.focus }}
@@ -310,7 +310,6 @@ jobs:
         bucket: [9]
     uses: ./.github/workflows/e2e.yml
     with:
-      os: ubuntu-24.04
       k8s_version: ${{ matrix.k8s_version }}
       bucket: ${{ matrix.bucket }}
       focus: ${{ matrix.focus }}
@@ -326,7 +325,6 @@ jobs:
         bucket: [8]
     uses: ./.github/workflows/e2e.yml
     with:
-      os: ubuntu-24.04
       k8s_version: ${{ matrix.k8s_version }}
       bucket: ${{ matrix.bucket }}
       focus: ${{ matrix.focus }}
@@ -334,7 +332,7 @@ jobs:
 
   integration-tresor:
     name: Integration Test with Tresor, SMI traffic policies, and egress disabled
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     needs: fsm-artifacts
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -412,7 +410,7 @@ jobs:
 
   images:
     name: Docker Images
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-')) && github.event_name == 'push' }}
     env:
       DOCKER_USER: ${{ secrets.RELEASE_DOCKER_USER }}
