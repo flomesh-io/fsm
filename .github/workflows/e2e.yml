@@ -42,6 +42,7 @@ env:
   FSM_CLI_ARTIFACTS_NAME: ${{ vars.FSM_CLI_ARTIFACTS_NAME || 'fsm-cli' }}
   CTR_REGISTRY: ${{ vars.CI_CTR_REGISTRY || 'localhost:5000' }}
   CTR_TAG: ${{ github.sha }}
+  LOAD_IMAGES_INTO_CLUSTER: ${{ vars.LOAD_IMAGES_INTO_CLUSTER || 'false' }}
 
 jobs:
   e2e-test:
@@ -100,11 +101,11 @@ jobs:
           chmod a+x ./bin/fsm
           ls -l ./bin/fsm
       - name: Create k3d managed local registry
-        if: ${{ env.INCREASE_K3D_CIDR_RANGE != 'true' }}
+        if: ${{ env.LOAD_IMAGES_INTO_CLUSTER != 'true' }}
         run: |
           k3d registry create registry.localhost --port localhost:5000
       - name: Push images to local registry
-        if: ${{ env.INCREASE_K3D_CIDR_RANGE != 'true' }}
+        if: ${{ env.LOAD_IMAGES_INTO_CLUSTER != 'true' }}
         run: |
           docker image list --format "{{.Repository}}:{{.Tag}}" | grep "^localhost" | xargs --no-run-if-empty -L 1 docker push
       - name: Run tests
