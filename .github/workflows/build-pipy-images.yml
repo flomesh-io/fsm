@@ -8,6 +8,10 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   debian:
     name: Build pipy debian images
