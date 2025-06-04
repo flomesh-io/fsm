@@ -53,7 +53,7 @@ var _ = FSMDescribe("Test Retry Policy",
 						SimplePodAppDef{
 							PodName:   server,
 							Namespace: server,
-							Image:     "mccutchen/go-httpbin",
+							Image:     "ghcr.io/mccutchen/go-httpbin",
 							Ports:     []int{80},
 							OS:        Td.ClusterOS,
 							Command:   []string{"/bin/go-httpbin"},
