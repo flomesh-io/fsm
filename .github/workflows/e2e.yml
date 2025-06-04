@@ -134,6 +134,7 @@ jobs:
         with:
           name: ${{ env.ARTIFACT_NAME }}
           path: /tmp/test**/*
+          if-no-files-found: ignore
       - name: Check continue tests
         if: ${{ steps.test.conclusion != 'skipped' && steps.test.outcome == 'failure'}}
         run: exit 1
