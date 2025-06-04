@@ -43,6 +43,10 @@ env:
   CTR_REGISTRY: ${{ vars.CI_CTR_REGISTRY || 'localhost:5000' }}
   CTR_TAG: ${{ github.sha }}
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   e2e-test:
     name: e2e
