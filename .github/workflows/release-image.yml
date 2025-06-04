@@ -32,6 +32,10 @@ on:
         type: string
         default: nonroot
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     runs-on: ubuntu-24.04

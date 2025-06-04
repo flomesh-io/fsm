@@ -44,6 +44,10 @@ env:
   CTR_TAG: ${{ github.sha }}
   LOAD_IMAGES_INTO_CLUSTER: ${{ vars.LOAD_IMAGES_INTO_CLUSTER || 'false' }}
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   e2e-test:
     name: e2e
