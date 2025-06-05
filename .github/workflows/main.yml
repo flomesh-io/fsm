@@ -22,6 +22,7 @@ on:
       - "scripts/cleanup/**"
       - "CODEOWNERS"
       - "OWNERS"
+
 env:
   CI_WAIT_FOR_OK_SECONDS: 180
   CI_MAX_ITERATIONS_THRESHOLD: 0 #unlimited
@@ -37,6 +38,11 @@ env:
   FSM_DEMO_IMAGES_DOWNLOAD_PATH: ${{ vars.FSM_DEMO_IMAGES_DOWNLOAD_PATH || '/tmp/fsm-demo-images' }}
   FSM_DEMO_IMAGE_ARTIFACTS_NAME: ${{ vars.FSM_DEMO_IMAGE_ARTIFACTS_NAME || 'fsm-demo-images' }}
   FSM_CLI_ARTIFACTS_NAME: ${{ vars.FSM_CLI_ARTIFACTS_NAME || 'fsm-cli' }}
+
+permissions:
+  contents: read
+  packages: write
+  actions: read
 
 jobs:
   shellcheck:
