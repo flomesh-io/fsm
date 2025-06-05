@@ -1101,8 +1101,8 @@ github.com/hashicorp/golang-lru/arc/v2 v2.0.5/go.mod h1:ny6zBSQZi2JxIeYcv7kt2sH2
 github.com/hashicorp/golang-lru/v2 v2.0.7 h1:a+bsQ5rvGLjzHuww6tVxozPZFVghXaHOwFs4luLUK2k=
 github.com/hashicorp/golang-lru/v2 v2.0.7/go.mod h1:QeFd9opnmA6QUJc5vARoKUSoFhyfM2/ZepoAG6RGpeM=
 github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T20WEQ=
-github.com/hashicorp/hcl v1.0.1-vault-5 h1:kI3hhbbyzr4dldA8UdTb7ZlVVlI2DACdCfz31RPDgJM=
-github.com/hashicorp/hcl v1.0.1-vault-5/go.mod h1:XYhtn6ijBSAj6n4YqAaf7RBPS4I06AItNorpy+MoQNM=
+github.com/hashicorp/hcl v1.0.1-vault-7 h1:ag5OxFVy3QYTFTJODRzTKVZ6xvdfLLCA1cy/Y6xGI0I=
+github.com/hashicorp/hcl v1.0.1-vault-7/go.mod h1:XYhtn6ijBSAj6n4YqAaf7RBPS4I06AItNorpy+MoQNM=
 github.com/hashicorp/hcp-sdk-go v0.138.0 h1:AYK2N28zJjHlqzkYVAamwtikTpIMNdl+5ZyBBuuQGDY=
 github.com/hashicorp/hcp-sdk-go v0.138.0/go.mod h1:1HCJgX11KAIccfyKxwqFOMNbCRMaSvCB68EkOnOTRUM=
 github.com/hashicorp/jsonapi v1.3.2 h1:gP3fX2ZT7qXi+PbwieptzkspIohO2kCSiBUvUTBAbMs=
@@ -1183,8 +1183,8 @@ github.com/hashicorp/vault-plugin-secrets-openldap v0.15.4 h1:hIzo90tKFGCF6smDwA
 github.com/hashicorp/vault-plugin-secrets-openldap v0.15.4/go.mod h1:pRXM0xkUe8B7Y8Seb7TQr9GuL70sovCB7gY5UbxXlsA=
 github.com/hashicorp/vault-plugin-secrets-terraform v0.11.0 h1:dIOJ7VKyYU8o9xH1DuD61Fsfl6uSPHy6OrYdEjp4Ku0=
 github.com/hashicorp/vault-plugin-secrets-terraform v0.11.0/go.mod h1:6FNbBAQvISpPqLXdvhV8MvxXKWG9iS+D+spzIGU2WuI=
-github.com/hashicorp/vault/api v1.16.0 h1:nbEYGJiAPGzT9U4oWgaaB0g+Rj8E59QuHKyA5LhwQN4=
-github.com/hashicorp/vault/api v1.16.0/go.mod h1:KhuUhzOD8lDSk29AtzNjgAu2kxRA9jL9NAbkFlqvkBA=
+github.com/hashicorp/vault/api v1.20.0 h1:KQMHElgudOsr+IbJgmbjHnCTxEpKs9LnozA1D3nozU4=
+github.com/hashicorp/vault/api v1.20.0/go.mod h1:GZ4pcjfzoOWpkJ3ijHNpEoAxKEsBJnVljyTe3jM2Sms=
 github.com/hashicorp/vault/api/auth/userpass v0.1.0 h1:C6OdAYczMbzd1Pe1LLf2SHDulxOq/iybWV3kbgV/PS4=
 github.com/hashicorp/vault/api/auth/userpass v0.1.0/go.mod h1:0orUbtkEwbEPmaQ+wvfrOddGBimLJnuN8A/J0PNfBks=
 github.com/hashicorp/vault/sdk v0.17.0 h1:uqqhFs6omGUtcWg3QejPvIs2a06VfUgkUr5yHdUeTJs=
