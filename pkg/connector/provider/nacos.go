@@ -440,7 +440,7 @@ func (dc *NacosDiscoveryClient) Deregister(dereg *connector.CatalogDeregistratio
 		return nil
 	}
 	parsedPort, err := strconv.ParseInt(fmt.Sprintf("%d", ins.Port), 10, 32)
-	if err != nil || parsedPort < 0 || parsedPort > math.MaxInt32 {
+	if err != nil || parsedPort <= 0 || parsedPort > 65535 {
 		return fmt.Errorf("invalid port value: %v", ins.Port)
 	}
 	port := int32(parsedPort)
@@ -466,7 +466,7 @@ func (dc *NacosDiscoveryClient) Register(reg *connector.CatalogRegistration) err
 	}
 	ins := reg.ToNacos(k2cClusterId, k2cGroupId, float64(1))
 	parsedPort, err := strconv.ParseInt(fmt.Sprintf("%d", ins.Port), 10, 32)
-	if err != nil || parsedPort < 0 || parsedPort > math.MaxInt32 {
+	if err != nil || parsedPort <= 0 || parsedPort > 65535 {
 		return fmt.Errorf("invalid port value: %v", ins.Port)
 	}
 	port := int32(parsedPort)
