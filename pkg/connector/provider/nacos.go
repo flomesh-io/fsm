@@ -439,7 +439,11 @@ func (dc *NacosDiscoveryClient) Deregister(dereg *connector.CatalogDeregistratio
 	if ins == nil {
 		return nil
 	}
-	port, _ := strconv.Atoi(fmt.Sprintf("%d", ins.Port))
+	parsedPort, err := strconv.ParseInt(fmt.Sprintf("%d", ins.Port), 10, 32)
+	if err != nil || parsedPort < 0 || parsedPort > math.MaxInt32 {
+		return fmt.Errorf("invalid port value: %v", ins.Port)
+	}
+	port := int32(parsedPort)
 	instanceId := dc.getServiceInstanceID(ins.ServiceName, ins.Ip, connector.MicroServicePort(port), connector.ProtocolHTTP)
 	return dc.connectController.CacheDeregisterInstance(instanceId, func() error {
 		conn := dc.nacosClient(instanceId)
@@ -461,7 +465,11 @@ func (dc *NacosDiscoveryClient) Register(reg *connector.CatalogRegistration) err
 		k2cClusterId = connector.NACOS_DEFAULT_CLUSTER
 	}
 	ins := reg.ToNacos(k2cClusterId, k2cGroupId, float64(1))
-	port, _ := strconv.Atoi(fmt.Sprintf("%d", ins.Port))
+	parsedPort, err := strconv.ParseInt(fmt.Sprintf("%d", ins.Port), 10, 32)
+	if err != nil || parsedPort < 0 || parsedPort > math.MaxInt32 {
+		return fmt.Errorf("invalid port value: %v", ins.Port)
+	}
+	port := int32(parsedPort)
 	instanceId := dc.getServiceInstanceID(ins.ServiceName, ins.Ip, connector.MicroServicePort(port), connector.ProtocolHTTP)
 	return dc.connectController.CacheRegisterInstance(instanceId, ins, func() error {
 		_, err := dc.nacosClient(instanceId).RegisterInstance(*ins)
