@@ -78,7 +78,7 @@ require (
 	golang.org/x/net v0.41.0
 	golang.org/x/sync v0.15.0
 	golang.org/x/sys v0.33.0
-	golang.org/x/time v0.11.0
+	golang.org/x/time v0.12.0
 	gomodules.xyz/jsonpatch/v2 v2.5.0
 	google.golang.org/grpc v1.72.2
 	gopkg.in/yaml.v2 v2.4.0
