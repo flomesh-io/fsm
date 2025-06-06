@@ -507,7 +507,7 @@ func (t *KtoCSource) determinePortAnnotations(svc *corev1.Service, baseService c
 		// If a specific port is specified, then use that port value
 		portAnnotation, ok := svc.Annotations[connector.AnnotationServicePort]
 		if ok {
-			if v, err := strconv.ParseInt(portAnnotation, 0, 0); err == nil {
+			if v, err := strconv.ParseInt(portAnnotation, 0, 32); err == nil {
 				port = int32(v)
 				overridePortNumber = port
 			} else {
