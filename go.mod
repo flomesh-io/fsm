@@ -73,17 +73,10 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
-<<<<<<< HEAD
-	github.com/vishvananda/netlink v1.3.1-0.20250206174618-62fb240731fa
-	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0
-	golang.org/x/net v0.40.0
-	golang.org/x/sync v0.14.0
-=======
 	github.com/vishvananda/netlink v1.3.1
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6
 	golang.org/x/net v0.41.0
 	golang.org/x/sync v0.15.0
->>>>>>> edbd5d2 (build(deps): Bump golang.org/x/net from 0.40.0 to 0.41.0 (#919))
 	golang.org/x/sys v0.33.0
 	golang.org/x/time v0.11.0
 	gomodules.xyz/jsonpatch/v2 v2.5.0
@@ -592,7 +585,7 @@ require (
 	github.com/uudashr/gocognit v1.2.0 // indirect
 	github.com/uudashr/iface v1.3.1 // indirect
 	github.com/vbatts/tar-split v0.11.3 // indirect
-	github.com/vishvananda/netns v0.0.4 // indirect
+	github.com/vishvananda/netns v0.0.5 // indirect
 	github.com/vmware/govmomi v0.30.6 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
@@ -635,13 +628,8 @@ require (
 	golang.org/x/mod v0.25.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
-<<<<<<< HEAD
-	golang.org/x/text v0.25.0 // indirect
-	golang.org/x/tools v0.32.0 // indirect
-=======
 	golang.org/x/text v0.26.0 // indirect
 	golang.org/x/tools v0.33.0 // indirect
->>>>>>> edbd5d2 (build(deps): Bump golang.org/x/net from 0.40.0 to 0.41.0 (#919))
 	google.golang.org/api v0.223.0 // indirect
 	google.golang.org/genproto v0.0.0-20241118233622-e639e219e697 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250218202821-56aae31c358a // indirect
