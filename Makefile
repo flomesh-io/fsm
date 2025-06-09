@@ -468,8 +468,13 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.4.3
+<<<<<<< HEAD
 HELM_VERSION ?= v3.17.2
 CONTROLLER_TOOLS_VERSION ?= v0.17.2
+=======
+HELM_VERSION ?= v3.18.2
+CONTROLLER_TOOLS_VERSION ?= v0.18.0
+>>>>>>> 21a3d91 (build(deps): update helm dependencies to latest version (#929))
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize

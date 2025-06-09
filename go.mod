@@ -82,6 +82,7 @@ require (
 	gomodules.xyz/jsonpatch/v2 v2.5.0
 	google.golang.org/grpc v1.73.0
 	gopkg.in/yaml.v2 v2.4.0
+<<<<<<< HEAD
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.26.0
 	helm.sh/helm/v3 v3.17.3
@@ -98,6 +99,24 @@ require (
 	k8s.io/utils v0.0.0-20250502105355-0f33e8f1c979
 	sigs.k8s.io/controller-runtime v0.20.4
 	sigs.k8s.io/gateway-api v1.2.1
+=======
+	gorm.io/driver/mysql v1.6.0
+	gorm.io/gorm v1.30.0
+	helm.sh/helm/v3 v3.18.2
+	k8s.io/api v0.33.1
+	k8s.io/apiextensions-apiserver v0.33.1
+	k8s.io/apimachinery v0.33.1
+	k8s.io/cli-runtime v0.33.1
+	k8s.io/client-go v0.33.1
+	k8s.io/code-generator v0.33.1
+	k8s.io/gengo/v2 v2.0.0-20250604051438-85fd79dbfd9f
+	k8s.io/klog/v2 v2.130.1
+	k8s.io/kubectl v0.33.1
+	k8s.io/kubernetes v1.33.1
+	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
+	sigs.k8s.io/controller-runtime v0.21.0
+	sigs.k8s.io/gateway-api v1.3.0
+>>>>>>> 21a3d91 (build(deps): update helm dependencies to latest version (#929))
 	sigs.k8s.io/gwctl v0.1.0
 	sigs.k8s.io/kind v0.29.0
 	sigs.k8s.io/yaml v1.4.0
