@@ -10,7 +10,7 @@ require (
 	github.com/axw/gocov v1.2.1
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/briandowns/spinner v1.23.2
-	github.com/cert-manager/cert-manager v1.17.2
+	github.com/cert-manager/cert-manager v1.18.0
 	github.com/cilium/ebpf v0.18.0
 	github.com/cskr/pubsub v1.0.2
 	github.com/deckarep/golang-set v1.8.0
