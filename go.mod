@@ -218,7 +218,7 @@ require (
 	github.com/ckaznocha/intrange v0.3.0 // indirect
 	github.com/clbanning/mxj v1.8.4 // indirect
 	github.com/clbanning/mxj/v2 v2.5.5 // indirect
-	github.com/cloudflare/circl v1.6.0 // indirect
+	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/containerd/containerd v1.7.27 // indirect
