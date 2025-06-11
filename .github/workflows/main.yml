@@ -44,6 +44,10 @@ permissions:
   packages: write
   actions: read
 
+concurrency:
+  group: ci-main-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   shellcheck:
     name: Shellcheck
