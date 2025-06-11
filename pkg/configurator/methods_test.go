@@ -55,7 +55,7 @@ func TestCreateUpdateConfig(t *testing.T) {
 					LogLevel:                      "error",
 					MaxDataPlaneConnections:       0,
 					ConfigResyncInterval:          "2m",
-					SidecarImage:                  "flomesh/pipy:latest",
+					SidecarImage:                  "flomesh/pipy:1.5.12",
 				},
 				Traffic: configv1alpha3.TrafficSpec{
 					EnablePermissiveTrafficPolicyMode: false,
@@ -78,7 +78,7 @@ func TestCreateUpdateConfig(t *testing.T) {
 						LogLevel:                      "error",
 						MaxDataPlaneConnections:       0,
 						ConfigResyncInterval:          "2m",
-						SidecarImage:                  "flomesh/pipy:latest",
+						SidecarImage:                  "flomesh/pipy:1.5.12",
 					},
 					Traffic: configv1alpha3.TrafficSpec{
 						EnablePermissiveTrafficPolicyMode: false,
@@ -195,11 +195,11 @@ func TestCreateUpdateConfig(t *testing.T) {
 			},
 			updatedMeshConfigData: &configv1alpha3.MeshConfigSpec{
 				Sidecar: configv1alpha3.SidecarSpec{
-					SidecarImage: "flomesh/pipy:latest",
+					SidecarImage: "flomesh/pipy:1.5.12",
 				},
 			},
 			checkUpdate: func(assert *tassert.Assertions, cfg Configurator) {
-				assert.Equal("flomesh/pipy:latest", cfg.GetSidecarImage())
+				assert.Equal("flomesh/pipy:1.5.12", cfg.GetSidecarImage())
 			},
 		},
 		{
@@ -210,7 +210,7 @@ func TestCreateUpdateConfig(t *testing.T) {
 			},
 			updatedMeshConfigData: &configv1alpha3.MeshConfigSpec{
 				Sidecar: configv1alpha3.SidecarSpec{
-					SidecarImage: "flomesh/pipy:latest",
+					SidecarImage: "flomesh/pipy:1.5.12",
 				},
 			},
 			checkUpdate: func(assert *tassert.Assertions, cfg Configurator) {
