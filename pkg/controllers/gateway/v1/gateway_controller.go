@@ -501,7 +501,7 @@ func (r *gatewayReconciler) computeGatewayProgrammedCondition(ctx context.Contex
 			return
 		}
 
-		if daemonSet.Status.DesiredNumberScheduled == 0 {
+		if daemonSet.Status.CurrentNumberScheduled == 0 {
 			addNotProgrammedCondition(gwv1.GatewayReasonNoResources, "No nodes to schedule Gateway DaemonSet")
 			return
 		}
