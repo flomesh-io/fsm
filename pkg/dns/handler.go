@@ -198,6 +198,23 @@ func (h *DNSHandler) do(cfg *Config) {
 				return
 			}
 
+			if len(origQuestions) > 0 && len(origQuestions) >= len(resp.Answer) {
+				for idx, rr := range resp.Answer {
+					header := rr.Header()
+					switch header.Rrtype {
+					case dns.TypeA:
+						a := rr.(*dns.A)
+						a.Hdr.Name = origQuestions[idx].Name
+						resp.Answer[idx] = a
+					case dns.TypeAAAA:
+						resp.Answer = nil
+						aaaa := rr.(*dns.AAAA)
+						aaaa.Hdr.Name = origQuestions[idx].Name
+						resp.Answer[idx] = aaaa
+					}
+				}
+			}
+
 			if dbs := cfg.GetWildcardResolveDB(); cfg.IsWildcard() && len(dbs) > 0 {
 				los := cfg.GetLoopbackResolveDB()
 				for idx, rr := range resp.Answer {
