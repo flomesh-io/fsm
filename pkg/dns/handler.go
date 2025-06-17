@@ -207,7 +207,6 @@ func (h *DNSHandler) do(cfg *Config) {
 						a.Hdr.Name = origQuestions[idx].Name
 						resp.Answer[idx] = a
 					case dns.TypeAAAA:
-						resp.Answer = nil
 						aaaa := rr.(*dns.AAAA)
 						aaaa.Hdr.Name = origQuestions[idx].Name
 						resp.Answer[idx] = aaaa
