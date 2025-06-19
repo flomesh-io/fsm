@@ -70,7 +70,7 @@ func IsListenerValid(s gwv1.ListenerStatus) bool {
 func GetGateways(cache cache.Cache, filterFn func(*gwv1.Gateway) bool) []*gwv1.Gateway {
 	classes, err := findFSMGatewayClasses(cache)
 	if err != nil {
-		log.Error().Msgf("Failed to find GatewayClass: %v", err)
+		log.Error().Msgf("[GW] Failed to find GatewayClass: %v", err)
 		return nil
 	}
 
@@ -80,7 +80,7 @@ func GetGateways(cache cache.Cache, filterFn func(*gwv1.Gateway) bool) []*gwv1.G
 		if err := cache.List(context.Background(), list, &client.ListOptions{
 			FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, cls.Name),
 		}); err != nil {
-			log.Error().Msgf("Failed to list Gateways: %v", err)
+			log.Error().Msgf("[GW] Failed to list Gateways: %v", err)
 			continue
 		}
 
@@ -198,13 +198,13 @@ func NamespaceMatches(client cache.Cache, namespaces *gwv1.RouteNamespaces, gate
 	case gwv1.NamespacesFromSelector:
 		namespaceSelector, err := metav1.LabelSelectorAsSelector(namespaces.Selector)
 		if err != nil {
-			log.Error().Msgf("failed to convert namespace selector: %v", err)
+			log.Error().Msgf("[GW] failed to convert namespace selector: %v", err)
 			return false
 		}
 
 		ns := &corev1.Namespace{}
 		if err := client.Get(context.Background(), types.NamespacedName{Name: routeNamespace}, ns); err != nil {
-			log.Error().Msgf("failed to get namespace %s: %v", routeNamespace, err)
+			log.Error().Msgf("[GW] failed to get namespace %s: %v", routeNamespace, err)
 			return false
 		}
 

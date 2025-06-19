@@ -65,7 +65,7 @@ func (p *HealthCheckPolicyProcessor) Process(route client.Object, routeParentRef
 
 	port2 := &gwpav1alpha2.PortHealthCheck{}
 	if err := gwutils.DeepCopy(port2, port); err != nil {
-		log.Error().Err(err).Msgf("Failed to copy PortHealthCheck: %s", err)
+		log.Error().Err(err).Msgf("[GW] Failed to copy PortHealthCheck: %s", err)
 		return
 	}
 
@@ -83,7 +83,7 @@ func (p *HealthCheckPolicyProcessor) getOrCreateHealthCheckPolicy(policy *gwpav1
 
 	p2 = &fgwv2.HealthCheckPolicy{}
 	if err := gwutils.DeepCopy(p2, policy); err != nil {
-		log.Error().Err(err).Msgf("Failed to copy HealthCheckPolicy %s", key)
+		log.Error().Err(err).Msgf("[GW] Failed to copy HealthCheckPolicy %s", key)
 		return nil
 	}
 

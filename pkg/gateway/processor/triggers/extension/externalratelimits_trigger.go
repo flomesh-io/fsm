@@ -15,7 +15,7 @@ type ExternalRateLimitTrigger struct{}
 func (p *ExternalRateLimitTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	config, ok := obj.(*extv1alpha1.ExternalRateLimit)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -26,7 +26,7 @@ func (p *ExternalRateLimitTrigger) Insert(obj interface{}, processor processor.P
 func (p *ExternalRateLimitTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	config, ok := obj.(*extv1alpha1.ExternalRateLimit)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

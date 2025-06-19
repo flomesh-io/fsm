@@ -15,7 +15,7 @@ type RateLimitTrigger struct{}
 func (p *RateLimitTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	config, ok := obj.(*extv1alpha1.RateLimit)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -26,7 +26,7 @@ func (p *RateLimitTrigger) Insert(obj interface{}, processor processor.Processor
 func (p *RateLimitTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	config, ok := obj.(*extv1alpha1.RateLimit)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

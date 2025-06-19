@@ -66,7 +66,7 @@ func newClient(ctx *cctx.ControllerContext) *client {
 	if _, err := gatewayAPIClient.GatewayV1().
 		GatewayClasses().
 		Create(context.TODO(), fsmGatewayClass, metav1.CreateOptions{}); err != nil {
-		log.Warn().Msgf("Failed to create FSM GatewayClass: %s", err)
+		log.Warn().Msgf("[GW] Failed to create FSM GatewayClass: %s", err)
 	}
 
 	c := &client{
@@ -251,12 +251,12 @@ func logResourceEvent(parent zerolog.Logger, event announcements.Kind, obj inter
 	log := parent.With().Str("event", event.String()).Logger()
 	o, err := meta.Accessor(obj)
 	if err != nil {
-		log.Error().Err(err).Msg("error parsing object, ignoring")
+		log.Error().Err(err).Msg("[GW] error parsing object, ignoring")
 		return
 	}
 	name := o.GetName()
 	if o.GetNamespace() != "" {
 		name = o.GetNamespace() + "/" + name
 	}
-	log.Debug().Str("resource_name", name).Msg("received kubernetes resource event")
+	log.Debug().Str("resource_name", name).Msg("[GW] received kubernetes resource event")
 }

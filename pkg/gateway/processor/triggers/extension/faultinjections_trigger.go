@@ -15,7 +15,7 @@ type FaultInjectionTrigger struct{}
 func (p *FaultInjectionTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	config, ok := obj.(*extv1alpha1.FaultInjection)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -26,7 +26,7 @@ func (p *FaultInjectionTrigger) Insert(obj interface{}, processor processor.Proc
 func (p *FaultInjectionTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	config, ok := obj.(*extv1alpha1.FaultInjection)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

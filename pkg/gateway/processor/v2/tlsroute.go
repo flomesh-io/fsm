@@ -23,7 +23,7 @@ func (c *ConfigGenerator) processTLSRoutes() []fgwv2.Resource {
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.GatewayTLSRouteIndex, client.ObjectKeyFromObject(c.gateway).String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list TLSRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list TLSRoutes: %v", err)
 		return nil
 	}
 
@@ -55,7 +55,7 @@ func (c *ConfigGenerator) processTLSRoutes() []fgwv2.Resource {
 func (c *ConfigGenerator) toV2TLSRoute(tlsRoute *gwv1alpha2.TLSRoute, holder status.RouteParentStatusObject) (*fgwv2.TLSRoute, []fgwv2.Resource) {
 	t2 := &fgwv2.TLSRoute{}
 	if err := gwutils.DeepCopy(t2, tlsRoute); err != nil {
-		log.Error().Msgf("Failed to copy TLSRoute: %v", err)
+		log.Error().Msgf("[GW] Failed to copy TLSRoute: %v", err)
 		return nil, nil
 	}
 
@@ -80,7 +80,7 @@ func (c *ConfigGenerator) toV2TLSRoute(tlsRoute *gwv1alpha2.TLSRoute, holder sta
 func (c *ConfigGenerator) toV2TLSRouteRule(tlsRoute *gwv1alpha2.TLSRoute, rule gwv1alpha2.TLSRouteRule, holder status.RouteParentStatusObject) (*fgwv2.TLSRouteRule, []fgwv2.Resource) {
 	r2 := &fgwv2.TLSRouteRule{}
 	if err := gwutils.DeepCopy(r2, &rule); err != nil {
-		log.Error().Msgf("Failed to copy TCPRouteRule: %v", err)
+		log.Error().Msgf("[GW] Failed to copy TCPRouteRule: %v", err)
 		return nil, nil
 	}
 

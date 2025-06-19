@@ -152,7 +152,7 @@ func (r *grpcRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *grpcRouteReconciler) gatewayToGRPCRoutes(ctx context.Context, object client.Object) []reconcile.Request {
 	gateway, ok := object.(*gwv1.Gateway)
 	if !ok {
-		log.Error().Msgf("Unexpected type %T", object)
+		log.Error().Msgf("[GW] Unexpected type %T", object)
 		return nil
 	}
 
@@ -162,7 +162,7 @@ func (r *grpcRouteReconciler) gatewayToGRPCRoutes(ctx context.Context, object cl
 	if err := r.fctx.Manager.GetCache().List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.GatewayGRPCRouteIndex, client.ObjectKeyFromObject(gateway).String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list GRPCRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list GRPCRoutes: %v", err)
 		return nil
 	}
 
@@ -181,7 +181,7 @@ func (r *grpcRouteReconciler) gatewayToGRPCRoutes(ctx context.Context, object cl
 func (r *grpcRouteReconciler) serviceToGRPCRoutes(ctx context.Context, object client.Object) []reconcile.Request {
 	service, ok := object.(*corev1.Service)
 	if !ok {
-		log.Error().Msgf("Unexpected type %T", object)
+		log.Error().Msgf("[GW] Unexpected type %T", object)
 		return nil
 	}
 
@@ -191,7 +191,7 @@ func (r *grpcRouteReconciler) serviceToGRPCRoutes(ctx context.Context, object cl
 	if err := r.fctx.Manager.GetCache().List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.BackendGRPCRouteIndex, client.ObjectKeyFromObject(service).String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list GRPCRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list GRPCRoutes: %v", err)
 		return nil
 	}
 
@@ -210,7 +210,7 @@ func (r *grpcRouteReconciler) serviceToGRPCRoutes(ctx context.Context, object cl
 func (r *grpcRouteReconciler) backendTLSToGRPCRoutes(ctx context.Context, object client.Object) []reconcile.Request {
 	policy, ok := object.(*gwv1alpha3.BackendTLSPolicy)
 	if !ok {
-		log.Error().Msgf("Unexpected type %T", object)
+		log.Error().Msgf("[GW] Unexpected type %T", object)
 		return nil
 	}
 
@@ -230,7 +230,7 @@ func (r *grpcRouteReconciler) backendTLSToGRPCRoutes(ctx context.Context, object
 func (r *grpcRouteReconciler) backendLBToGRPCRoutes(ctx context.Context, object client.Object) []reconcile.Request {
 	policy, ok := object.(*gwpav1alpha2.BackendLBPolicy)
 	if !ok {
-		log.Error().Msgf("Unexpected type %T", object)
+		log.Error().Msgf("[GW] Unexpected type %T", object)
 		return nil
 	}
 
@@ -266,7 +266,7 @@ func (r *grpcRouteReconciler) policyToGRPCRoutes(ctx context.Context, policy cli
 				Name:      string(targetRef.Name),
 			}.String()),
 		}); err != nil {
-			log.Error().Msgf("Failed to list GRPCRoutes: %v", err)
+			log.Error().Msgf("[GW] Failed to list GRPCRoutes: %v", err)
 			continue
 		}
 
@@ -286,7 +286,7 @@ func (r *grpcRouteReconciler) policyToGRPCRoutes(ctx context.Context, policy cli
 func (r *grpcRouteReconciler) referenceGrantToGRPCRoutes(ctx context.Context, obj client.Object) []reconcile.Request {
 	refGrant, ok := obj.(*gwv1beta1.ReferenceGrant)
 	if !ok {
-		log.Error().Msgf("unexpected object type: %T", obj)
+		log.Error().Msgf("[GW] unexpected object type: %T", obj)
 		return nil
 	}
 
@@ -319,7 +319,7 @@ func (r *grpcRouteReconciler) referenceGrantToGRPCRoutes(ctx context.Context, ob
 		// This index implies that the GRPCRoute has a backend of type Service in the same namespace as the ReferenceGrant
 		FieldSelector: fields.OneTermEqualSelector(constants.CrossNamespaceBackendNamespaceGRPCRouteIndex, refGrant.Namespace),
 	}); err != nil {
-		log.Error().Msgf("Failed to list GRPCRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list GRPCRoutes: %v", err)
 		return nil
 	}
 

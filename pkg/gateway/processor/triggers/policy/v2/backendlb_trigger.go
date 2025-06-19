@@ -12,7 +12,7 @@ type BackendLBPoliciesTrigger struct{}
 func (p *BackendLBPoliciesTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	policy, ok := obj.(*gwpav1alpha2.BackendLBPolicy)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -23,7 +23,7 @@ func (p *BackendLBPoliciesTrigger) Insert(obj interface{}, processor processor.P
 func (p *BackendLBPoliciesTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	policy, ok := obj.(*gwpav1alpha2.BackendLBPolicy)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

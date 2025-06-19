@@ -15,7 +15,7 @@ type EndpointSlicesTrigger struct{}
 func (p *EndpointSlicesTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	eps, ok := obj.(*discoveryv1.EndpointSlice)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -37,7 +37,7 @@ func (p *EndpointSlicesTrigger) Insert(obj interface{}, processor processor.Proc
 func (p *EndpointSlicesTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	eps, ok := obj.(*discoveryv1.EndpointSlice)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

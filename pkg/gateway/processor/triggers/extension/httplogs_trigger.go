@@ -15,7 +15,7 @@ type HTTPLogTrigger struct{}
 func (p *HTTPLogTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	config, ok := obj.(*extv1alpha1.HTTPLog)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -26,7 +26,7 @@ func (p *HTTPLogTrigger) Insert(obj interface{}, processor processor.Processor) 
 func (p *HTTPLogTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	config, ok := obj.(*extv1alpha1.HTTPLog)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

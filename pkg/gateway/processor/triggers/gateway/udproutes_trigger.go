@@ -13,7 +13,7 @@ type UDPRoutesTrigger struct{}
 func (p *UDPRoutesTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	route, ok := obj.(*gwv1alpha2.UDPRoute)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -24,7 +24,7 @@ func (p *UDPRoutesTrigger) Insert(obj interface{}, processor processor.Processor
 func (p *UDPRoutesTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	route, ok := obj.(*gwv1alpha2.UDPRoute)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

@@ -67,7 +67,7 @@ func (p *BackendTLSPolicyProcessor) getOrCreateBackendTLSPolicy(policy *gwv1alph
 
 	p2 = &fgwv2.BackendTLSPolicy{}
 	if err := gwutils.DeepCopy(p2, policy); err != nil {
-		log.Error().Err(err).Msgf("Failed to copy BackendTLSPolicy %s", key)
+		log.Error().Err(err).Msgf("[GW] Failed to copy BackendTLSPolicy %s", key)
 		return nil
 	}
 
