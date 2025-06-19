@@ -12,7 +12,7 @@ type RouteRuleFilterPoliciesTrigger struct{}
 func (p *RouteRuleFilterPoliciesTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	policy, ok := obj.(*gwpav1alpha2.RouteRuleFilterPolicy)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -23,7 +23,7 @@ func (p *RouteRuleFilterPoliciesTrigger) Insert(obj interface{}, processor proce
 func (p *RouteRuleFilterPoliciesTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	policy, ok := obj.(*gwpav1alpha2.RouteRuleFilterPolicy)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

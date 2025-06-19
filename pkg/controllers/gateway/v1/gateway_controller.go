@@ -137,7 +137,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			log.Info().Msgf("Gateway resource not found. Ignoring since object must be deleted")
+			log.Info().Msgf("[GW] Gateway resource not found. Ignoring since object must be deleted")
 			r.fctx.GatewayEventHandler.OnDelete(&gwv1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: req.Namespace,
@@ -152,13 +152,13 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			r.mutex.Unlock()
 
 			if _, err := r.fctx.RepoClient.DeleteCodebase(utils.GatewayCodebasePath(req.Namespace, req.Name)); err != nil {
-				log.Warn().Msgf("Failed to delete codebase of gateway %s/%s: %s", req.Namespace, req.Name, err)
+				log.Warn().Msgf("[GW] Failed to delete codebase of gateway %s/%s: %s", req.Namespace, req.Name, err)
 			}
 
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		log.Error().Msgf("Failed to get Gateway, %v", err)
+		log.Error().Msgf("[GW] Failed to get Gateway, %v", err)
 		return ctrl.Result{}, err
 	}
 
@@ -170,7 +170,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		r.mutex.Unlock()
 
 		if _, err := r.fctx.RepoClient.DeleteCodebase(utils.GatewayCodebasePath(gateway.Namespace, gateway.Name)); err != nil {
-			log.Warn().Msgf("Failed to delete codebase of gateway %s/%s: %s", gateway.Namespace, gateway.Name, err)
+			log.Warn().Msgf("[GW] Failed to delete codebase of gateway %s/%s: %s", gateway.Namespace, gateway.Name, err)
 		}
 
 		return ctrl.Result{}, nil
@@ -179,7 +179,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	gatewayClass, err := gwutils.FindGatewayClassByName(r.fctx.Manager.GetCache(), string(gateway.Spec.GatewayClassName))
 	if err != nil {
 		if errors.IsNotFound(err) {
-			log.Warn().Msgf("GatewayClass %s not found, ignore processing Gateway resource %s.", gateway.Spec.GatewayClassName, req.String())
+			log.Warn().Msgf("[GW] GatewayClass %s not found, ignore processing Gateway resource %s.", gateway.Spec.GatewayClassName, req.String())
 			return ctrl.Result{}, nil
 		}
 
@@ -187,7 +187,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if gatewayClass == nil {
-		log.Warn().Msgf("No effective GatewayClass, ignore processing Gateway resource %s.", req.NamespacedName)
+		log.Warn().Msgf("[GW] No effective GatewayClass, ignore processing Gateway resource %s.", req.NamespacedName)
 		return ctrl.Result{}, nil
 	}
 
@@ -225,7 +225,7 @@ func (r *gatewayReconciler) compute(gateway *gwv1.Gateway) bool {
 
 	values, err := r.resolveValues(gateway, r.fctx.Configurator, nil)
 	if err != nil {
-		log.Error().Msgf("Failed to resolve values for Gateway %s/%s: %s", gateway.Namespace, gateway.Name, err)
+		log.Error().Msgf("[GW] Failed to resolve values for Gateway %s/%s: %s", gateway.Namespace, gateway.Name, err)
 		return false
 	}
 
@@ -449,7 +449,7 @@ func (r *gatewayReconciler) computeGatewayProgrammedCondition(ctx context.Contex
 
 	svc, err := r.gatewayService(ctx, gw)
 	if err != nil {
-		log.Error().Msgf("Failed to get Gateway service: %s", err)
+		log.Error().Msgf("[GW] Failed to get Gateway service: %s", err)
 		addNotProgrammedCondition(gwv1.GatewayReasonInvalid, fmt.Sprintf("Failed to get Gateway service: %s", err))
 
 		return
@@ -558,11 +558,11 @@ func (r *gatewayReconciler) gatewayDeployment(ctx context.Context, gw *gwv1.Gate
 
 	if err := r.fctx.Get(ctx, key, deployment); err != nil {
 		if errors.IsNotFound(err) {
-			log.Warn().Msgf("Deployment %s not found", key.String())
+			log.Warn().Msgf("[GW] Deployment %s not found", key.String())
 			return nil
 		}
 
-		log.Error().Msgf("Failed to get deployment %s: %s", key.String(), err)
+		log.Error().Msgf("[GW] Failed to get deployment %s: %s", key.String(), err)
 		return nil
 	}
 
@@ -578,11 +578,11 @@ func (r *gatewayReconciler) gatewayDaemonSet(ctx context.Context, gw *gwv1.Gatew
 
 	if err := r.fctx.Get(ctx, key, daemonSet); err != nil {
 		if errors.IsNotFound(err) {
-			log.Warn().Msgf("DaemonSet %s not found", key.String())
+			log.Warn().Msgf("[GW] DaemonSet %s not found", key.String())
 			return nil
 		}
 
-		log.Error().Msgf("Failed to get daemonset %s: %s", key.String(), err)
+		log.Error().Msgf("[GW] Failed to get daemonset %s: %s", key.String(), err)
 		return nil
 	}
 
@@ -661,7 +661,7 @@ func (r *gatewayReconciler) resolveValues(gw *gwv1.Gateway, mc configurator.Conf
 
 	parameterValues, err := r.resolveParameterValues(gw, gsu)
 	if err != nil {
-		log.Error().Msgf("Failed to resolve parameter values from ParametersRef: %s, it doesn't take effect", err)
+		log.Error().Msgf("[GW] Failed to resolve parameter values from ParametersRef: %s, it doesn't take effect", err)
 		return gatewayValues, nil
 	}
 
@@ -925,7 +925,7 @@ func (r *gatewayReconciler) getNodeIPs(svc *corev1.Service) []string {
 			Selector: labels.SelectorFromSet(svc.Spec.Selector),
 		},
 	); err != nil {
-		log.Error().Msgf("Failed to get pods: %s", err)
+		log.Error().Msgf("[GW] Failed to get pods: %s", err)
 		return nil
 	}
 
@@ -947,7 +947,7 @@ func (r *gatewayReconciler) getNodeIPs(svc *corev1.Service) []string {
 				continue
 			}
 
-			log.Error().Msgf("Failed to get node %q: %s", pod.Spec.NodeName, err)
+			log.Error().Msgf("[GW] Failed to get node %q: %s", pod.Spec.NodeName, err)
 			return nil
 		}
 
@@ -997,19 +997,19 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&gwv1.Gateway{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
 			gateway, ok := obj.(*gwv1.Gateway)
 			if !ok {
-				log.Error().Msgf("unexpected object type %T", obj)
+				log.Error().Msgf("[GW] unexpected object type %T", obj)
 				return false
 			}
 
 			gatewayClass := &gwv1.GatewayClass{}
 			key := types.NamespacedName{Name: string(gateway.Spec.GatewayClassName)}
 			if err := r.fctx.Get(context.TODO(), key, gatewayClass); err != nil {
-				log.Error().Msgf("failed to get gatewayclass %s", gateway.Spec.GatewayClassName)
+				log.Error().Msgf("[GW] failed to get gatewayclass %s", gateway.Spec.GatewayClassName)
 				return false
 			}
 
 			if gatewayClass.Spec.ControllerName != constants.GatewayController {
-				log.Warn().Msgf("class controller of Gateway %s/%s is not %s", gateway.Namespace, gateway.Name, constants.GatewayController)
+				log.Warn().Msgf("[GW] class controller of Gateway %s/%s is not %s", gateway.Namespace, gateway.Name, constants.GatewayController)
 				return false
 			}
 
@@ -1021,7 +1021,7 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
 				gatewayClass, ok := obj.(*gwv1.GatewayClass)
 				if !ok {
-					log.Error().Msgf("unexpected object type: %T", obj)
+					log.Error().Msgf("[GW] unexpected object type: %T", obj)
 					return false
 				}
 
@@ -1042,7 +1042,7 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
 				service, ok := obj.(*corev1.Service)
 				if !ok {
-					log.Error().Msgf("unexpected object type: %T", obj)
+					log.Error().Msgf("[GW] unexpected object type: %T", obj)
 					return false
 				}
 
@@ -1074,7 +1074,7 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
 				daemonSet, ok := obj.(*appsv1.DaemonSet)
 				if !ok {
-					log.Error().Msgf("unexpected object type: %T", obj)
+					log.Error().Msgf("[GW] unexpected object type: %T", obj)
 					return false
 				}
 
@@ -1097,7 +1097,7 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
 				deployment, ok := obj.(*appsv1.Deployment)
 				if !ok {
-					log.Error().Msgf("unexpected object type: %T", obj)
+					log.Error().Msgf("[GW] unexpected object type: %T", obj)
 					return false
 				}
 
@@ -1125,7 +1125,7 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *gatewayReconciler) gatewayClassToGateways(ctx context.Context, obj client.Object) []reconcile.Request {
 	gatewayClass, ok := obj.(*gwv1.GatewayClass)
 	if !ok {
-		log.Error().Msgf("unexpected object type: %T", obj)
+		log.Error().Msgf("[GW] unexpected object type: %T", obj)
 		return nil
 	}
 
@@ -1135,7 +1135,7 @@ func (r *gatewayReconciler) gatewayClassToGateways(ctx context.Context, obj clie
 		if err := c.List(ctx, gateways, &client.ListOptions{
 			FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, gatewayClass.Name),
 		}); err != nil {
-			log.Error().Msgf("error listing gateways: %s", err)
+			log.Error().Msgf("[GW] error listing gateways: %s", err)
 			return nil
 		}
 
@@ -1161,7 +1161,7 @@ func (r *gatewayReconciler) gatewayClassToGateways(ctx context.Context, obj clie
 func (r *gatewayReconciler) configMapToGateways(ctx context.Context, object client.Object) []reconcile.Request {
 	cm, ok := object.(*corev1.ConfigMap)
 	if !ok {
-		log.Error().Msgf("unexpected object type: %T", object)
+		log.Error().Msgf("[GW] unexpected object type: %T", object)
 		return nil
 	}
 
@@ -1171,7 +1171,7 @@ func (r *gatewayReconciler) configMapToGateways(ctx context.Context, object clie
 		FieldSelector: fields.OneTermEqualSelector(constants.ConfigMapGatewayIndex, client.ObjectKeyFromObject(cm).String()),
 		Namespace:     cm.Namespace,
 	}); err != nil {
-		log.Error().Msgf("error listing gateways: %s", err)
+		log.Error().Msgf("[GW] error listing gateways: %s", err)
 		return nil
 	}
 
@@ -1198,7 +1198,7 @@ func (r *gatewayReconciler) configMapToGateways(ctx context.Context, object clie
 func (r *gatewayReconciler) secretToGateways(ctx context.Context, object client.Object) []reconcile.Request {
 	secret, ok := object.(*corev1.Secret)
 	if !ok {
-		log.Error().Msgf("unexpected object type: %T", object)
+		log.Error().Msgf("[GW] unexpected object type: %T", object)
 		return nil
 	}
 
@@ -1207,7 +1207,7 @@ func (r *gatewayReconciler) secretToGateways(ctx context.Context, object client.
 	if err := c.List(ctx, gateways, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.SecretGatewayIndex, client.ObjectKeyFromObject(secret).String()),
 	}); err != nil {
-		log.Error().Msgf("error listing gateways: %s", err)
+		log.Error().Msgf("[GW] error listing gateways: %s", err)
 		return nil
 	}
 
@@ -1234,7 +1234,7 @@ func (r *gatewayReconciler) secretToGateways(ctx context.Context, object client.
 func (r *gatewayReconciler) serviceToGateways(_ context.Context, object client.Object) []reconcile.Request {
 	svc, ok := object.(*corev1.Service)
 	if !ok {
-		log.Error().Msgf("unexpected object type: %T", object)
+		log.Error().Msgf("[GW] unexpected object type: %T", object)
 		return nil
 	}
 
@@ -1267,7 +1267,7 @@ func (r *gatewayReconciler) serviceToGateways(_ context.Context, object client.O
 func (r *gatewayReconciler) deploymentToGateways(_ context.Context, object client.Object) []reconcile.Request {
 	deployment, ok := object.(*appsv1.Deployment)
 	if !ok {
-		log.Error().Msgf("unexpected object type: %T", object)
+		log.Error().Msgf("[GW] unexpected object type: %T", object)
 		return nil
 	}
 
@@ -1301,7 +1301,7 @@ func (r *gatewayReconciler) deploymentToGateways(_ context.Context, object clien
 func (r *gatewayReconciler) daemonSetToGateways(_ context.Context, object client.Object) []reconcile.Request {
 	daemonSet, ok := object.(*appsv1.DaemonSet)
 	if !ok {
-		log.Error().Msgf("unexpected object type: %T", object)
+		log.Error().Msgf("[GW] unexpected object type: %T", object)
 		return nil
 	}
 
@@ -1335,7 +1335,7 @@ func (r *gatewayReconciler) daemonSetToGateways(_ context.Context, object client
 func (r *gatewayReconciler) referenceGrantToGateways(ctx context.Context, obj client.Object) []reconcile.Request {
 	refGrant, ok := obj.(*gwv1beta1.ReferenceGrant)
 	if !ok {
-		log.Error().Msgf("unexpected object type: %T", obj)
+		log.Error().Msgf("[GW] unexpected object type: %T", obj)
 		return nil
 	}
 
@@ -1371,7 +1371,7 @@ func (r *gatewayReconciler) referenceGrantToGateways(ctx context.Context, obj cl
 			fields.OneTermEqualSelector(constants.CrossNamespaceConfigMapNamespaceGatewayIndex, refGrant.Namespace),
 		),
 	}); err != nil {
-		log.Error().Msgf("Failed to list Gateways: %v", err)
+		log.Error().Msgf("[GW] Failed to list Gateways: %v", err)
 		return nil
 	}
 
@@ -1402,7 +1402,7 @@ func (r *gatewayReconciler) referenceGrantToGateways(ctx context.Context, obj cl
 func (r *gatewayReconciler) filterToGateways(ctx context.Context, obj client.Object) []reconcile.Request {
 	filter, ok := obj.(*extv1alpha1.ListenerFilter)
 	if !ok {
-		log.Error().Msgf("unexpected object type: %T", obj)
+		log.Error().Msgf("[GW] unexpected object type: %T", obj)
 		return nil
 	}
 
@@ -1425,7 +1425,7 @@ func (r *gatewayReconciler) listGateways(ctx context.Context, obj client.Object)
 
 	list := &gwv1.GatewayList{}
 	if err := r.fctx.Manager.GetCache().List(ctx, list); err != nil {
-		log.Error().Msgf("Failed to list Gateways: %v", err)
+		log.Error().Msgf("[GW] Failed to list Gateways: %v", err)
 		return nil
 	}
 
@@ -1627,7 +1627,7 @@ func (r *gatewayReconciler) listenerFilterGatewayIndexFunc(obj client.Object) []
 
 	list := &extv1alpha1.ListenerFilterList{}
 	if err := r.fctx.List(context.TODO(), list, &client.ListOptions{Namespace: gateway.Namespace}); err != nil {
-		log.Error().Msgf("Failed to list ListenerFilters: %v", err)
+		log.Error().Msgf("[GW] Failed to list ListenerFilters: %v", err)
 		return nil
 	}
 

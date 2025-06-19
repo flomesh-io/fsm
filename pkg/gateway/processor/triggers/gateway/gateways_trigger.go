@@ -14,7 +14,7 @@ type GatewaysTrigger struct{}
 func (p *GatewaysTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	gw, ok := obj.(*gwv1.Gateway)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -25,7 +25,7 @@ func (p *GatewaysTrigger) Insert(obj interface{}, processor processor.Processor)
 func (p *GatewaysTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	gw, ok := obj.(*gwv1.Gateway)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

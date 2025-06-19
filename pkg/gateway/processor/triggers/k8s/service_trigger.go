@@ -14,7 +14,7 @@ type ServicesTrigger struct{}
 func (p *ServicesTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	svc, ok := obj.(*corev1.Service)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -25,7 +25,7 @@ func (p *ServicesTrigger) Insert(obj interface{}, processor processor.Processor)
 func (p *ServicesTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	svc, ok := obj.(*corev1.Service)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

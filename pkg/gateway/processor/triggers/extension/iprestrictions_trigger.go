@@ -15,7 +15,7 @@ type IPRestrictionTrigger struct{}
 func (p *IPRestrictionTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	config, ok := obj.(*extv1alpha1.IPRestriction)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -26,7 +26,7 @@ func (p *IPRestrictionTrigger) Insert(obj interface{}, processor processor.Proce
 func (p *IPRestrictionTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	config, ok := obj.(*extv1alpha1.IPRestriction)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

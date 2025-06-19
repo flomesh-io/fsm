@@ -30,7 +30,7 @@ func (c *ConfigGenerator) processUDPRoutes() []fgwv2.Resource {
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.GatewayUDPRouteIndex, client.ObjectKeyFromObject(c.gateway).String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list UDPRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list UDPRoutes: %v", err)
 		return nil
 	}
 
@@ -60,7 +60,7 @@ func (c *ConfigGenerator) processUDPRoutes() []fgwv2.Resource {
 func (c *ConfigGenerator) toV2UDPRoute(udpRoute *gwv1alpha2.UDPRoute, holder status.RouteParentStatusObject) *fgwv2.UDPRoute {
 	u2 := &fgwv2.UDPRoute{}
 	if err := gwutils.DeepCopy(u2, udpRoute); err != nil {
-		log.Error().Msgf("Failed to copy UDPRoute: %v", err)
+		log.Error().Msgf("[GW] Failed to copy UDPRoute: %v", err)
 		return nil
 	}
 
@@ -82,7 +82,7 @@ func (c *ConfigGenerator) toV2UDPRoute(udpRoute *gwv1alpha2.UDPRoute, holder sta
 func (c *ConfigGenerator) toV2UDPRouteRule(udpRoute *gwv1alpha2.UDPRoute, rule gwv1alpha2.UDPRouteRule, ruleIndex int, holder status.RouteParentStatusObject) *fgwv2.UDPRouteRule {
 	r2 := &fgwv2.UDPRouteRule{}
 	if err := gwutils.DeepCopy(r2, &rule); err != nil {
-		log.Error().Msgf("Failed to copy UDPRouteRule: %v", err)
+		log.Error().Msgf("[GW] Failed to copy UDPRouteRule: %v", err)
 		return nil
 	}
 

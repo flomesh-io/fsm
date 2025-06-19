@@ -13,7 +13,7 @@ type GRPCRoutesTrigger struct{}
 func (p *GRPCRoutesTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	route, ok := obj.(*gwv1.GRPCRoute)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -24,7 +24,7 @@ func (p *GRPCRoutesTrigger) Insert(obj interface{}, processor processor.Processo
 func (p *GRPCRoutesTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	route, ok := obj.(*gwv1.GRPCRoute)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

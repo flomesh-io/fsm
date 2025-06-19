@@ -21,7 +21,7 @@ func ExtensionRefToFilter(client cache.Cache, route client.Object, extensionRef 
 	}
 	filter := &extv1alpha1.Filter{}
 	if err := client.Get(context.Background(), key, filter); err != nil {
-		log.Error().Err(err).Msgf("Failed to get Filter %s", key.String())
+		log.Error().Err(err).Msgf("[GW] Failed to get Filter %s", key.String())
 		return nil
 	}
 
@@ -36,7 +36,7 @@ func FilterRefToFilter(client cache.Cache, route client.Object, filterRef gwpav1
 	}
 	filter := &extv1alpha1.Filter{}
 	if err := client.Get(context.Background(), key, filter); err != nil {
-		log.Error().Err(err).Msgf("Failed to get Filter %s", key.String())
+		log.Error().Err(err).Msgf("[GW] Failed to get Filter %s", key.String())
 		return nil
 	}
 

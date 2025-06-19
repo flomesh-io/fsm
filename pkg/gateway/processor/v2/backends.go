@@ -56,12 +56,12 @@ func (c *ConfigGenerator) findFGWBackendTargets(svcPort *fgwv2.ServicePortName) 
 	svc, err := c.getServiceFromCache(svcKey)
 
 	if err != nil {
-		log.Error().Msgf("Failed to get Service %s: %s", svcKey, err)
+		log.Error().Msgf("[GW] Failed to get Service %s: %s", svcKey, err)
 		return nil
 	}
 
 	if svc.Spec.Type == corev1.ServiceTypeExternalName {
-		log.Warn().Msgf("Type of Service %s is %s, will be ignored", svcKey, corev1.ServiceTypeExternalName)
+		log.Warn().Msgf("[GW] Type of Service %s is %s, will be ignored", svcKey, corev1.ServiceTypeExternalName)
 		return nil
 	}
 
@@ -112,7 +112,7 @@ func (c *ConfigGenerator) upstreamsByEndpoints(svc *corev1.Service, port *int32)
 				if len(endpointSet) > 0 {
 					return toFGWBackendTargets(endpointSet)
 				} else {
-					log.Error().Msgf("no valid endpoints found for Service %s/%s and port %v", svc.Namespace, svc.Name, *port)
+					log.Error().Msgf("[GW] no valid endpoints found for Service %s/%s and port %v", svc.Namespace, svc.Name, *port)
 					return nil
 				}
 			}
@@ -121,7 +121,7 @@ func (c *ConfigGenerator) upstreamsByEndpoints(svc *corev1.Service, port *int32)
 
 	eps := &corev1.Endpoints{}
 	if err := c.client.Get(context.TODO(), client.ObjectKeyFromObject(svc), eps); err != nil {
-		log.Error().Msgf("Failed to get Endpoints of Service %s/%s: %s", svc.Namespace, svc.Name, err)
+		log.Error().Msgf("[GW] Failed to get Endpoints of Service %s/%s: %s", svc.Namespace, svc.Name, err)
 		return nil
 	}
 
@@ -131,7 +131,7 @@ func (c *ConfigGenerator) upstreamsByEndpoints(svc *corev1.Service, port *int32)
 
 	svcPort, err := gwutils.GetServicePort(svc, port)
 	if err != nil {
-		log.Error().Msgf("Failed to get ServicePort: %s", err)
+		log.Error().Msgf("[GW] Failed to get ServicePort: %s", err)
 		return nil
 	}
 
@@ -192,7 +192,7 @@ func (c *ConfigGenerator) upstreamsByEndpointSlices(svc *corev1.Service, port *i
 				if len(endpointSet) > 0 {
 					return toFGWBackendTargets(endpointSet)
 				} else {
-					log.Error().Msgf("no valid endpoints found for Service %s/%s and port %v", svc.Namespace, svc.Name, *port)
+					log.Error().Msgf("[GW] no valid endpoints found for Service %s/%s and port %v", svc.Namespace, svc.Name, *port)
 					return nil
 				}
 			}
@@ -206,13 +206,13 @@ func (c *ConfigGenerator) upstreamsByEndpointSlices(svc *corev1.Service, port *i
 		},
 	})
 	if err != nil {
-		log.Error().Msgf("Failed to convert LabelSelector to Selector: %s", err)
+		log.Error().Msgf("[GW] Failed to convert LabelSelector to Selector: %s", err)
 		return nil
 	}
 
 	endpointSliceList := &discoveryv1.EndpointSliceList{}
 	if err := c.client.List(context.TODO(), endpointSliceList, client.InNamespace(svc.Namespace), client.MatchingLabelsSelector{Selector: selector}); err != nil {
-		log.Error().Msgf("Failed to list EndpointSlice of Service %s/%s: %s", svc.Namespace, svc.Name, err)
+		log.Error().Msgf("[GW] Failed to list EndpointSlice of Service %s/%s: %s", svc.Namespace, svc.Name, err)
 		return nil
 	}
 
@@ -222,13 +222,13 @@ func (c *ConfigGenerator) upstreamsByEndpointSlices(svc *corev1.Service, port *i
 
 	svcPort, err := gwutils.GetServicePort(svc, port)
 	if err != nil {
-		log.Error().Msgf("Failed to get ServicePort: %s", err)
+		log.Error().Msgf("[GW] Failed to get ServicePort: %s", err)
 		return nil
 	}
 
 	filteredSlices := gwutils.FilterEndpointSliceList(endpointSliceList, svcPort)
 	if len(filteredSlices) == 0 {
-		log.Error().Msgf("no valid endpoints found for Service %s/%s and port %v", svc.Namespace, svc.Name, svcPort)
+		log.Error().Msgf("[GW] no valid endpoints found for Service %s/%s and port %v", svc.Namespace, svc.Name, svcPort)
 		return nil
 	}
 
