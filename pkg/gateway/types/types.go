@@ -54,12 +54,12 @@ type Listener struct {
 
 // AllowsKind returns true if the listener allows the given kind
 func (l *Listener) AllowsKind(gvk schema.GroupVersionKind) bool {
-	log.Debug().Msgf("[GW-CACHE] Checking if listener allows kind %s", gvk.String())
+	log.Debug().Msgf("[GW] Checking if listener allows kind %s", gvk.String())
 	kind := gvk.Kind
 	group := gvk.Group
 
 	for _, allowedKind := range l.SupportedKinds {
-		log.Debug().Msgf("[GW-CACHE] allowedKind={%s, %s}", *allowedKind.Group, allowedKind.Kind)
+		log.Debug().Msgf("[GW] allowedKind={%s, %s}", *allowedKind.Group, allowedKind.Kind)
 		if string(allowedKind.Kind) == kind &&
 			(allowedKind.Group == nil || string(*allowedKind.Group) == group) {
 			return true

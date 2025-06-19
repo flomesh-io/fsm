@@ -41,13 +41,13 @@ func (c *GatewayProcessor) BuildConfigs() {
 
 func (c *GatewayProcessor) preCheck() bool {
 	if !c.repoClient.IsRepoUp() {
-		log.Trace().Msg("Repo is not up, ignore ...")
+		log.Trace().Msg("[GW] Repo is not up, ignore ...")
 		return false
 	}
 
 	if !c.repoClient.CodebaseExists(constants.DefaultGatewayBasePath) {
 		if err := c.repoClient.BatchFullUpdate([]repo.Batch{mrepo.GatewaysBatch()}); err != nil {
-			log.Error().Msgf("Failed to write gateway scripts to repo: %s", err)
+			log.Error().Msgf("[GW] Failed to write gateway scripts to repo: %s", err)
 			return false
 		}
 	}
@@ -55,7 +55,7 @@ func (c *GatewayProcessor) preCheck() bool {
 	defaultGatewaysPath := utils.GetDefaultGatewaysPath()
 	if !c.repoClient.CodebaseExists(defaultGatewaysPath) {
 		if err := c.repoClient.DeriveCodebase(defaultGatewaysPath, constants.DefaultGatewayBasePath); err != nil {
-			log.Error().Msgf("%q failed to derive codebase %q: %s", defaultGatewaysPath, constants.DefaultGatewayBasePath, err)
+			log.Error().Msgf("[GW] %q failed to derive codebase %q: %s", defaultGatewaysPath, constants.DefaultGatewayBasePath, err)
 			return false
 		}
 	}
@@ -74,11 +74,11 @@ func (c *GatewayProcessor) preCheck() bool {
 //		return
 //	}
 //
-//	log.Debug().Msgf("jsonVersion: %q, config version: %q", jsonVersion, config.GetVersion())
+//	log.Debug().Msgf("[GW] jsonVersion: %q, config version: %q", jsonVersion, config.GetVersion())
 //
 //	if jsonVersion == config.GetVersion() {
 //		// config not changed, ignore updating
-//		log.Debug().Msgf("%s/config.json doesn't change, ignore updating...", gatewayPath)
+//		log.Debug().Msgf("[GW] %s/config.json doesn't change, ignore updating...", gatewayPath)
 //		return
 //	}
 //
@@ -92,7 +92,7 @@ func (c *GatewayProcessor) preCheck() bool {
 //	}
 //
 //	if err := c.repoClient.Batch(batches); err != nil {
-//		log.Error().Msgf("Sync config of Gateway %s/%s to repo failed: %s", gateway.Namespace, gateway.Name, err)
+//		log.Error().Msgf("[GW] Sync config of Gateway %s/%s to repo failed: %s", gateway.Namespace, gateway.Name, err)
 //		return
 //	}
 //}
@@ -109,11 +109,11 @@ func (c *GatewayProcessor) syncConfigDir(gateway *gwv1.Gateway, config fgw.Confi
 		return
 	}
 
-	log.Debug().Msgf("jsonVersion: %q, config version: %q", jsonVersion, config.GetVersion())
+	log.Debug().Msgf("[GW] jsonVersion: %q, config version: %q", jsonVersion, config.GetVersion())
 
 	if jsonVersion == config.GetVersion() {
 		// config not changed, ignore updating
-		log.Debug().Msgf("%s/config/version.json doesn't change, ignore updating...", gatewayPath)
+		log.Debug().Msgf("[GW] %s/config/version.json doesn't change, ignore updating...", gatewayPath)
 		return
 	}
 
@@ -183,28 +183,28 @@ func (c *GatewayProcessor) syncConfigDir(gateway *gwv1.Gateway, config fgw.Confi
 
 	delItems, err := c.getDelItems(gatewayPath, existFiles)
 	if err != nil {
-		log.Error().Msgf("Get del items error: %s", err)
+		log.Error().Msgf("[GW] Get del items error: %s", err)
 		return
 	}
 	batch.DelItems = delItems
 
-	log.Debug().Msgf("[GWCFG] Items length: %d， Delete Items length: %d", len(batch.Items), len(batch.DelItems))
+	log.Debug().Msgf("[GW] Items length: %d， Delete Items length: %d", len(batch.Items), len(batch.DelItems))
 
 	if len(batch.Items) == 0 && len(batch.DelItems) == 0 {
-		log.Info().Msgf("No config changes for Gateway %s/%s", gateway.Namespace, gateway.Name)
+		log.Info().Msgf("[GW] No config changes for Gateway %s/%s", gateway.Namespace, gateway.Name)
 		return
 	}
 
 	if jsonVersion == "" {
 		// Full update
 		if err := c.repoClient.BatchFullUpdate([]repo.Batch{batch}); err != nil {
-			log.Error().Msgf("Full sync config of Gateway %s/%s to repo failed: %s", gateway.Namespace, gateway.Name, err)
+			log.Error().Msgf("[GW] Full sync config of Gateway %s/%s to repo failed: %s", gateway.Namespace, gateway.Name, err)
 			return
 		}
 	} else {
 		// Incremental update
 		if err := c.repoClient.BatchIncrementalUpdate([]repo.Batch{batch}); err != nil {
-			log.Error().Msgf("Incremental sync config of Gateway %s/%s to repo failed: %s", gateway.Namespace, gateway.Name, err)
+			log.Error().Msgf("[GW] Incremental sync config of Gateway %s/%s to repo failed: %s", gateway.Namespace, gateway.Name, err)
 			return
 		}
 	}
@@ -227,7 +227,7 @@ func (c *GatewayProcessor) checkGatewayCodebase(gateway *gwv1.Gateway) bool {
 	if !c.repoClient.CodebaseExists(gatewayPath) {
 		// Derive codebase only, don't commit it, the codebase will be committed when all configs are ready
 		if err := c.repoClient.DeriveCodebaseOnly(gatewayPath, parentPath); err != nil {
-			log.Error().Msgf("Failed to derive codebase %q: %s", gatewayPath, err)
+			log.Error().Msgf("[GW] Failed to derive codebase %q: %s", gatewayPath, err)
 			return false
 		}
 	}
@@ -238,7 +238,7 @@ func (c *GatewayProcessor) checkGatewayCodebase(gateway *gwv1.Gateway) bool {
 func (c *GatewayProcessor) getDelItems(gatewayPath string, existFiles []string) ([]string, error) {
 	files, err := c.repoClient.ListFiles(gatewayPath)
 	if err != nil {
-		log.Error().Msgf("List files in %q error: %s", gatewayPath, err)
+		log.Error().Msgf("[GW] List files in %q error: %s", gatewayPath, err)
 		return nil, err
 	}
 
@@ -256,7 +256,7 @@ func (c *GatewayProcessor) getVersion(basepath string, file string) (string, err
 
 	json, err := c.repoClient.GetFile(path)
 	if err != nil {
-		log.Error().Msgf("Get %q from pipy repo error: %s", path, err)
+		log.Error().Msgf("[GW] Get %q from pipy repo error: %s", path, err)
 		return "", err
 	}
 
@@ -268,7 +268,7 @@ func (c *GatewayProcessor) getVersion(basepath string, file string) (string, err
 func toYAML(v interface{}) string {
 	y, err := yaml.Marshal(v)
 	if err != nil {
-		log.Error().Msgf("yaml marshal failed:%v\n%v\n", err, dump.Pretty(v))
+		log.Error().Msgf("[GW] yaml marshal failed:%v\n%v\n", err, dump.Pretty(v))
 		return ""
 	}
 

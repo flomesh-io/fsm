@@ -13,7 +13,7 @@ type TCPRoutesTrigger struct{}
 func (p *TCPRoutesTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	route, ok := obj.(*gwv1alpha2.TCPRoute)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -24,7 +24,7 @@ func (p *TCPRoutesTrigger) Insert(obj interface{}, processor processor.Processor
 func (p *TCPRoutesTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	route, ok := obj.(*gwv1alpha2.TCPRoute)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

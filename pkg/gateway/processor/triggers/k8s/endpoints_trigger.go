@@ -14,7 +14,7 @@ type EndpointsTrigger struct{}
 func (p *EndpointsTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	ep, ok := obj.(*corev1.Endpoints)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -31,7 +31,7 @@ func (p *EndpointsTrigger) Insert(obj interface{}, processor processor.Processor
 func (p *EndpointsTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	ep, ok := obj.(*corev1.Endpoints)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

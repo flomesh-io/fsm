@@ -25,7 +25,7 @@ func (c *ConfigGenerator) processGateway() *fgwv2.Gateway {
 	g2 := &fgwv2.Gateway{}
 
 	if err := gwutils.DeepCopy(g2, c.gateway); err != nil {
-		log.Error().Msgf("Failed to copy gateway: %v", err)
+		log.Error().Msgf("[GW] Failed to copy gateway: %v", err)
 		return nil
 	}
 
@@ -75,12 +75,12 @@ func (c *ConfigGenerator) processCertificates(l gwtypes.Listener, v2l *fgwv2.Lis
 		secret, err := resolver.SecretRefToSecret(c.gateway, ref)
 
 		if err != nil {
-			log.Error().Msgf("Failed to resolve Secret: %s", err)
+			log.Error().Msgf("[GW] Failed to resolve Secret: %s", err)
 			continue
 		}
 
 		if secret.Type != corev1.SecretTypeTLS {
-			log.Warn().Msgf("Secret %s/%s is not of type %s, will be ignored for port %d of Gateway %s/%s",
+			log.Warn().Msgf("[GW] Secret %s/%s is not of type %s, will be ignored for port %d of Gateway %s/%s",
 				secret.Namespace, secret.Name, corev1.SecretTypeTLS,
 				l.Port, c.gateway.Namespace, c.gateway.Name)
 			continue
@@ -203,12 +203,12 @@ func (c *ConfigGenerator) processGatewayBackendTLS(g2 *fgwv2.Gateway) {
 		secret, err := resolver.SecretRefToSecret(c.gateway, *ref)
 
 		if err != nil {
-			log.Error().Msgf("Failed to resolve Secret: %s", err)
+			log.Error().Msgf("[GW] Failed to resolve Secret: %s", err)
 			return
 		}
 
 		if secret.Type != corev1.SecretTypeTLS {
-			log.Warn().Msgf("BackendTLS Secret %s/%s is not of type %s, will be ignored for Gateway %s/%s",
+			log.Warn().Msgf("[GW] BackendTLS Secret %s/%s is not of type %s, will be ignored for Gateway %s/%s",
 				secret.Namespace, secret.Name, corev1.SecretTypeTLS,
 				c.gateway.Namespace, c.gateway.Name)
 			return

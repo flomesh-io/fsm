@@ -25,7 +25,7 @@ func (c *ConfigGenerator) processGRPCRoutes() []fgwv2.Resource {
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.GatewayGRPCRouteIndex, client.ObjectKeyFromObject(c.gateway).String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list GRPCRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list GRPCRoutes: %v", err)
 		return nil
 	}
 
@@ -55,7 +55,7 @@ func (c *ConfigGenerator) processGRPCRoutes() []fgwv2.Resource {
 func (c *ConfigGenerator) toV2GRPCRoute(grpcRoute *gwv1.GRPCRoute, holder status.RouteParentStatusObject) *fgwv2.GRPCRoute {
 	g2 := &fgwv2.GRPCRoute{}
 	if err := gwutils.DeepCopy(g2, grpcRoute); err != nil {
-		log.Error().Msgf("Failed to copy GRPCRoute: %v", err)
+		log.Error().Msgf("[GW] Failed to copy GRPCRoute: %v", err)
 		return nil
 	}
 
@@ -77,7 +77,7 @@ func (c *ConfigGenerator) toV2GRPCRoute(grpcRoute *gwv1.GRPCRoute, holder status
 func (c *ConfigGenerator) toV2GRPCRouteRule(grpcRoute *gwv1.GRPCRoute, rule *gwv1.GRPCRouteRule, ruleIndex int, holder status.RouteParentStatusObject) *fgwv2.GRPCRouteRule {
 	r2 := &fgwv2.GRPCRouteRule{}
 	if err := gwutils.DeepCopy(r2, rule); err != nil {
-		log.Error().Msgf("Failed to copy GRPCRouteRule: %v", err)
+		log.Error().Msgf("[GW] Failed to copy GRPCRouteRule: %v", err)
 		return nil
 	}
 
@@ -131,7 +131,7 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, index 
 
 				f2 := fgwv2.GRPCRouteFilter{}
 				if err := gwutils.DeepCopy(&f2, &f); err != nil {
-					log.Error().Msgf("Failed to copy RequestMirrorFilter: %v", err)
+					log.Error().Msgf("[GW] Failed to copy RequestMirrorFilter: %v", err)
 					continue
 				}
 
@@ -176,7 +176,7 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, index 
 		default:
 			f2 := fgwv2.GRPCRouteFilter{}
 			if err := gwutils.DeepCopy(&f2, &f); err != nil {
-				log.Error().Msgf("Failed to copy GRPCRouteFilter: %v", err)
+				log.Error().Msgf("[GW] Failed to copy GRPCRouteFilter: %v", err)
 				continue
 			}
 			f2.Key = filterKey(grpcRoute, f2, fmt.Sprintf("%s-%d", index, i))

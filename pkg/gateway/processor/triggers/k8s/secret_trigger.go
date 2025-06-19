@@ -38,7 +38,7 @@ type SecretTrigger struct{}
 func (p *SecretTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	secret, ok := obj.(*corev1.Secret)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -49,7 +49,7 @@ func (p *SecretTrigger) Insert(obj interface{}, processor processor.Processor) b
 func (p *SecretTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	secret, ok := obj.(*corev1.Secret)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

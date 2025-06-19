@@ -146,7 +146,7 @@ func (r *tcpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *tcpRouteReconciler) gatewayToTCPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
 	gateway, ok := object.(*gwv1.Gateway)
 	if !ok {
-		log.Error().Msgf("Unexpected type %T", object)
+		log.Error().Msgf("[GW] Unexpected type %T", object)
 		return nil
 	}
 
@@ -156,7 +156,7 @@ func (r *tcpRouteReconciler) gatewayToTCPRoutes(ctx context.Context, object clie
 	if err := r.fctx.Manager.GetCache().List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.GatewayTCPRouteIndex, client.ObjectKeyFromObject(gateway).String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list TCPRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list TCPRoutes: %v", err)
 		return nil
 	}
 
@@ -175,7 +175,7 @@ func (r *tcpRouteReconciler) gatewayToTCPRoutes(ctx context.Context, object clie
 func (r *tcpRouteReconciler) serviceToTCPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
 	service, ok := object.(*corev1.Service)
 	if !ok {
-		log.Error().Msgf("Unexpected type %T", object)
+		log.Error().Msgf("[GW] Unexpected type %T", object)
 		return nil
 	}
 
@@ -185,7 +185,7 @@ func (r *tcpRouteReconciler) serviceToTCPRoutes(ctx context.Context, object clie
 	if err := r.fctx.Manager.GetCache().List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.BackendTCPRouteIndex, client.ObjectKeyFromObject(service).String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list TCPRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list TCPRoutes: %v", err)
 		return nil
 	}
 
@@ -204,7 +204,7 @@ func (r *tcpRouteReconciler) serviceToTCPRoutes(ctx context.Context, object clie
 func (r *tcpRouteReconciler) backendTLSToTCPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
 	policy, ok := object.(*gwv1alpha3.BackendTLSPolicy)
 	if !ok {
-		log.Error().Msgf("Unexpected type %T", object)
+		log.Error().Msgf("[GW] Unexpected type %T", object)
 		return nil
 	}
 
@@ -240,7 +240,7 @@ func (r *tcpRouteReconciler) policyToTCPRoutes(ctx context.Context, policy clien
 				Name:      string(targetRef.Name),
 			}.String()),
 		}); err != nil {
-			log.Error().Msgf("Failed to list TCPRoutes: %v", err)
+			log.Error().Msgf("[GW] Failed to list TCPRoutes: %v", err)
 			continue
 		}
 
@@ -260,7 +260,7 @@ func (r *tcpRouteReconciler) policyToTCPRoutes(ctx context.Context, policy clien
 func (r *tcpRouteReconciler) referenceGrantToTCPRoutes(ctx context.Context, obj client.Object) []reconcile.Request {
 	refGrant, ok := obj.(*gwv1beta1.ReferenceGrant)
 	if !ok {
-		log.Error().Msgf("unexpected object type: %T", obj)
+		log.Error().Msgf("[GW] unexpected object type: %T", obj)
 		return nil
 	}
 
@@ -293,7 +293,7 @@ func (r *tcpRouteReconciler) referenceGrantToTCPRoutes(ctx context.Context, obj 
 		// This index implies that the TCPRoute has a backend of type Service in the same namespace as the ReferenceGrant
 		FieldSelector: fields.OneTermEqualSelector(constants.CrossNamespaceBackendNamespaceTCPRouteIndex, refGrant.Namespace),
 	}); err != nil {
-		log.Error().Msgf("Failed to list TCPRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list TCPRoutes: %v", err)
 		return nil
 	}
 
@@ -324,7 +324,7 @@ func (r *tcpRouteReconciler) referenceGrantToTCPRoutes(ctx context.Context, obj 
 func (r *tcpRouteReconciler) routeRuleFilterPolicyToTCPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
 	policy, ok := object.(*gwpav1alpha2.RouteRuleFilterPolicy)
 	if !ok {
-		log.Error().Msgf("Unexpected type %T", object)
+		log.Error().Msgf("[GW] Unexpected type %T", object)
 		return nil
 	}
 
@@ -341,7 +341,7 @@ func (r *tcpRouteReconciler) routeRuleFilterPolicyToTCPRoutes(ctx context.Contex
 			Name:      string(targetRef.Name),
 		}
 		if err := r.fctx.Manager.GetCache().Get(ctx, key, tcpRoute); err != nil {
-			log.Error().Msgf("Failed to get TCPRoute: %v", key.String())
+			log.Error().Msgf("[GW] Failed to get TCPRoute: %v", key.String())
 			continue
 		}
 

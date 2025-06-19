@@ -24,18 +24,18 @@ func (c *ConfigGenerator) resolveFilterDefinition(filterType extv1alpha1.FilterT
 
 	definition := &extv1alpha1.FilterDefinition{}
 	if err := c.client.Get(context.Background(), types.NamespacedName{Name: string(ref.Name)}, definition); err != nil {
-		log.Error().Msgf("Failed to resolve FilterDefinition: %s", err)
+		log.Error().Msgf("[GW] Failed to resolve FilterDefinition: %s", err)
 		return nil
 	}
 
 	if filterType != definition.Spec.Type {
-		log.Error().Msgf("FilterDefinition %s is not of type %s", definition.Name, filterType)
+		log.Error().Msgf("[GW] FilterDefinition %s is not of type %s", definition.Name, filterType)
 		return nil
 	}
 
 	definitionScope := ptr.Deref(definition.Spec.Scope, extv1alpha1.FilterScopeRoute)
 	if filterScope != definitionScope {
-		log.Error().Msgf("FilterDefinition %s is not of scope %s", definition.Name, filterScope)
+		log.Error().Msgf("[GW] FilterDefinition %s is not of scope %s", definition.Name, filterScope)
 		return nil
 	}
 
@@ -57,13 +57,13 @@ func (c *ConfigGenerator) resolveFilterConfig(ns string, ref *gwv1.LocalObjectRe
 
 		obj := &extv1alpha1.CircuitBreaker{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
-			log.Error().Msgf("Failed to resolve CircuitBreaker: %s", err)
+			log.Error().Msgf("[GW] Failed to resolve CircuitBreaker: %s", err)
 			return emptyConfig(k)
 		}
 
 		c2 := fgwv2.CircuitBreakerSpec{}
 		if err := gwutils.DeepCopy(&c2, &obj.Spec); err != nil {
-			log.Error().Msgf("Failed to copy CircuitBreaker: %s", err)
+			log.Error().Msgf("[GW] Failed to copy CircuitBreaker: %s", err)
 			return emptyConfig(k)
 		}
 
@@ -73,13 +73,13 @@ func (c *ConfigGenerator) resolveFilterConfig(ns string, ref *gwv1.LocalObjectRe
 
 		obj := &extv1alpha1.FaultInjection{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
-			log.Error().Msgf("Failed to resolve FaultInjection: %s", err)
+			log.Error().Msgf("[GW] Failed to resolve FaultInjection: %s", err)
 			return emptyConfig(k)
 		}
 
 		f2 := fgwv2.FaultInjectionSpec{}
 		if err := gwutils.DeepCopy(&f2, &obj.Spec); err != nil {
-			log.Error().Msgf("Failed to copy FaultInjection: %s", err)
+			log.Error().Msgf("[GW] Failed to copy FaultInjection: %s", err)
 			return emptyConfig(k)
 		}
 
@@ -89,13 +89,13 @@ func (c *ConfigGenerator) resolveFilterConfig(ns string, ref *gwv1.LocalObjectRe
 
 		obj := &extv1alpha1.RateLimit{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
-			log.Error().Msgf("Failed to resolve RateLimit: %s", err)
+			log.Error().Msgf("[GW] Failed to resolve RateLimit: %s", err)
 			return emptyConfig(k)
 		}
 
 		r2 := fgwv2.RateLimitSpec{}
 		if err := gwutils.DeepCopy(&r2, &obj.Spec); err != nil {
-			log.Error().Msgf("Failed to copy RateLimit: %s", err)
+			log.Error().Msgf("[GW] Failed to copy RateLimit: %s", err)
 			return emptyConfig(k)
 		}
 
@@ -105,13 +105,13 @@ func (c *ConfigGenerator) resolveFilterConfig(ns string, ref *gwv1.LocalObjectRe
 
 		obj := &extv1alpha1.HTTPLog{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
-			log.Error().Msgf("Failed to resolve HTTPLog: %s", err)
+			log.Error().Msgf("[GW] Failed to resolve HTTPLog: %s", err)
 			return emptyConfig(k)
 		}
 
 		l2 := fgwv2.HTTPLogSpec{}
 		if err := gwutils.DeepCopy(&l2, &obj.Spec); err != nil {
-			log.Error().Msgf("Failed to copy HTTPLog: %s", err)
+			log.Error().Msgf("[GW] Failed to copy HTTPLog: %s", err)
 			return emptyConfig(k)
 		}
 
@@ -121,13 +121,13 @@ func (c *ConfigGenerator) resolveFilterConfig(ns string, ref *gwv1.LocalObjectRe
 
 		obj := &extv1alpha1.Metrics{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
-			log.Error().Msgf("Failed to resolve Metrics: %s", err)
+			log.Error().Msgf("[GW] Failed to resolve Metrics: %s", err)
 			return emptyConfig(k)
 		}
 
 		m2 := fgwv2.MetricsSpec{}
 		if err := gwutils.DeepCopy(&m2, &obj.Spec); err != nil {
-			log.Error().Msgf("Failed to copy Metrics: %s", err)
+			log.Error().Msgf("[GW] Failed to copy Metrics: %s", err)
 			return emptyConfig(k)
 		}
 
@@ -137,7 +137,7 @@ func (c *ConfigGenerator) resolveFilterConfig(ns string, ref *gwv1.LocalObjectRe
 
 		obj := &extv1alpha1.Zipkin{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
-			log.Error().Msgf("Failed to resolve Zipkin: %s", err)
+			log.Error().Msgf("[GW] Failed to resolve Zipkin: %s", err)
 			return emptyConfig(k)
 		}
 
@@ -147,7 +147,7 @@ func (c *ConfigGenerator) resolveFilterConfig(ns string, ref *gwv1.LocalObjectRe
 
 		obj := &extv1alpha1.ProxyTag{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
-			log.Error().Msgf("Failed to resolve ProxyTag: %s", err)
+			log.Error().Msgf("[GW] Failed to resolve ProxyTag: %s", err)
 			return emptyConfig(k)
 		}
 
@@ -157,7 +157,7 @@ func (c *ConfigGenerator) resolveFilterConfig(ns string, ref *gwv1.LocalObjectRe
 
 		obj := &extv1alpha1.IPRestriction{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
-			log.Error().Msgf("Failed to resolve IPRestriction: %s", err)
+			log.Error().Msgf("[GW] Failed to resolve IPRestriction: %s", err)
 			return emptyConfig(k)
 		}
 
@@ -167,7 +167,7 @@ func (c *ConfigGenerator) resolveFilterConfig(ns string, ref *gwv1.LocalObjectRe
 
 		obj := &extv1alpha1.ExternalRateLimit{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
-			log.Error().Msgf("Failed to resolve ExternalRateLimit: %s", err)
+			log.Error().Msgf("[GW] Failed to resolve ExternalRateLimit: %s", err)
 			return emptyConfig(k)
 		}
 
@@ -177,7 +177,7 @@ func (c *ConfigGenerator) resolveFilterConfig(ns string, ref *gwv1.LocalObjectRe
 
 		obj := &extv1alpha1.RequestTermination{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
-			log.Error().Msgf("Failed to resolve RequestTermination: %s", err)
+			log.Error().Msgf("[GW] Failed to resolve RequestTermination: %s", err)
 			return emptyConfig(k)
 		}
 
@@ -187,7 +187,7 @@ func (c *ConfigGenerator) resolveFilterConfig(ns string, ref *gwv1.LocalObjectRe
 
 		obj := &extv1alpha1.ConcurrencyLimit{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
-			log.Error().Msgf("Failed to resolve ConcurrencyLimit: %s", err)
+			log.Error().Msgf("[GW] Failed to resolve ConcurrencyLimit: %s", err)
 			return emptyConfig(k)
 		}
 
@@ -197,7 +197,7 @@ func (c *ConfigGenerator) resolveFilterConfig(ns string, ref *gwv1.LocalObjectRe
 
 		obj := &extv1alpha1.DNSModifier{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
-			log.Error().Msgf("Failed to resolve DNSModifier: %s", err)
+			log.Error().Msgf("[GW] Failed to resolve DNSModifier: %s", err)
 			return emptyConfig(k)
 		}
 
@@ -215,13 +215,13 @@ func (c *ConfigGenerator) resolveFilterConfig(ns string, ref *gwv1.LocalObjectRe
 	case constants.GatewayAPIExtensionFilterConfigKind:
 		obj := &extv1alpha1.FilterConfig{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
-			log.Error().Msgf("Failed to resolve FilterConfig: %s", err)
+			log.Error().Msgf("[GW] Failed to resolve FilterConfig: %s", err)
 			return map[string]interface{}{}
 		}
 
 		vals := map[string]interface{}{}
 		if err := yaml.Unmarshal([]byte(obj.Spec.Config), &vals); err != nil {
-			log.Error().Msgf("Failed to unmarshal FilterConfig: %s", err)
+			log.Error().Msgf("[GW] Failed to unmarshal FilterConfig: %s", err)
 			return map[string]interface{}{}
 		}
 
@@ -247,14 +247,14 @@ func (c *ConfigGenerator) resolveFilterConfig(ns string, ref *gwv1.LocalObjectRe
 func toMap(key string, spec interface{}) map[string]interface{} {
 	bytes, err := yaml.Marshal(spec)
 	if err != nil {
-		log.Error().Msgf("Failed to marshal spec: %v", err)
+		log.Error().Msgf("[GW] Failed to marshal spec: %v", err)
 		return emptyConfig(key)
 	}
 
 	vals := map[string]interface{}{}
 	err = yaml.Unmarshal(bytes, &vals)
 	if err != nil {
-		log.Error().Msgf("Failed to read values: %v", err)
+		log.Error().Msgf("[GW] Failed to read values: %v", err)
 		return emptyConfig(key)
 	}
 

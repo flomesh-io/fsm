@@ -50,7 +50,7 @@ func (f *secretReferenceResolver) ResolveAllRefs(referer client.Object, refs []g
 
 	for _, ref := range refs {
 		if _, err := f.SecretRefToSecret(referer, ref); err != nil {
-			log.Error().Msgf("Error resolving secret reference: %v", err)
+			log.Error().Msgf("[GW] Error resolving secret reference: %v", err)
 			resolved = false
 			break
 		}

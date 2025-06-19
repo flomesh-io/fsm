@@ -15,7 +15,7 @@ type ConcurrencyLimitTrigger struct{}
 func (p *ConcurrencyLimitTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	config, ok := obj.(*extv1alpha1.ConcurrencyLimit)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -26,7 +26,7 @@ func (p *ConcurrencyLimitTrigger) Insert(obj interface{}, processor processor.Pr
 func (p *ConcurrencyLimitTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	config, ok := obj.(*extv1alpha1.ConcurrencyLimit)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

@@ -92,7 +92,7 @@ func (u *UpdateHandler) apply(update Update) {
 		newObj := update.Mutator.Mutate(obj)
 
 		if isStatusEqual(obj, newObj) {
-			u.log.Info().Msgf("%s/%s status unchanged, bypassing update", update.NamespacedName.Namespace, update.NamespacedName.Name)
+			u.log.Info().Msgf("[GW] %s/%s status unchanged, bypassing update", update.NamespacedName.Namespace, update.NamespacedName.Name)
 			return nil
 		}
 
@@ -100,7 +100,7 @@ func (u *UpdateHandler) apply(update Update) {
 
 		return u.client.Status().Update(context.Background(), newObj)
 	}); err != nil {
-		u.log.Error().Msgf("unable to update status %s/%s: %s", update.NamespacedName.Namespace, update.NamespacedName.Name, err)
+		u.log.Error().Msgf("[GW] unable to update status %s/%s: %s", update.NamespacedName.Namespace, update.NamespacedName.Name, err)
 	}
 }
 
@@ -110,8 +110,8 @@ func (u *UpdateHandler) NeedLeaderElection() bool {
 
 // Start runs the goroutine to perform status writes.
 func (u *UpdateHandler) Start(ctx context.Context) error {
-	u.log.Info().Msg("started status update handler")
-	defer u.log.Info().Msg("stopped status update handler")
+	u.log.Info().Msg("[GW] started status update handler")
+	defer u.log.Info().Msg("[GW] stopped status update handler")
 
 	// Enable Updaters to start sending updates to this handler.
 	close(u.sendUpdates)
@@ -121,7 +121,7 @@ func (u *UpdateHandler) Start(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case update := <-u.updateChannel:
-			u.log.Info().Msgf("received a status update namespace=%s name=%s", update.NamespacedName.Namespace, update.NamespacedName.Name)
+			u.log.Info().Msgf("[GW] received a status update namespace=%s name=%s", update.NamespacedName.Namespace, update.NamespacedName.Name)
 
 			u.apply(update)
 		}

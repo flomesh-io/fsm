@@ -55,7 +55,7 @@ func (c *GatewayProcessor) isRoutableHTTPService(service client.ObjectKey) bool 
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.BackendHTTPRouteIndex, service.String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list HTTPRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list HTTPRoutes: %v", err)
 		return false
 	}
 
@@ -68,7 +68,7 @@ func (c *GatewayProcessor) isRoutableGRPCService(service client.ObjectKey) bool 
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.BackendGRPCRouteIndex, service.String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list GRPCRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list GRPCRoutes: %v", err)
 		return false
 	}
 
@@ -81,7 +81,7 @@ func (c *GatewayProcessor) isRoutableTLSService(service client.ObjectKey) bool {
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.BackendTLSRouteIndex, service.String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list TLSRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list TLSRoutes: %v", err)
 		return false
 	}
 
@@ -94,7 +94,7 @@ func (c *GatewayProcessor) isRoutableTCPService(service client.ObjectKey) bool {
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.BackendTCPRouteIndex, service.String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list TCPRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list TCPRoutes: %v", err)
 		return false
 	}
 
@@ -107,7 +107,7 @@ func (c *GatewayProcessor) isRoutableUDPService(service client.ObjectKey) bool {
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.BackendUDPRouteIndex, service.String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list UDPRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list UDPRoutes: %v", err)
 		return false
 	}
 
@@ -154,7 +154,7 @@ func (c *GatewayProcessor) IsEffectiveTargetRef(policy client.Object, targetRef 
 	case constants.GatewayAPIGatewayKind:
 		gw := &gwv1.Gateway{}
 		if err := c.client.Get(context.Background(), key, gw); err != nil {
-			log.Error().Msgf("Failed to get Gateway: %v", err)
+			log.Error().Msgf("[GW] Failed to get Gateway: %v", err)
 			return false
 		}
 
@@ -162,7 +162,7 @@ func (c *GatewayProcessor) IsEffectiveTargetRef(policy client.Object, targetRef 
 	case constants.GatewayAPIHTTPRouteKind:
 		route := &gwv1.HTTPRoute{}
 		if err := c.client.Get(context.Background(), key, route); err != nil {
-			log.Error().Msgf("Failed to get HTTPRoute: %v", err)
+			log.Error().Msgf("[GW] Failed to get HTTPRoute: %v", err)
 			return false
 		}
 
@@ -170,7 +170,7 @@ func (c *GatewayProcessor) IsEffectiveTargetRef(policy client.Object, targetRef 
 	case constants.GatewayAPIGRPCRouteKind:
 		route := &gwv1.GRPCRoute{}
 		if err := c.client.Get(context.Background(), key, route); err != nil {
-			log.Error().Msgf("Failed to get GRPCRoute: %v", err)
+			log.Error().Msgf("[GW] Failed to get GRPCRoute: %v", err)
 			return false
 		}
 
@@ -204,7 +204,7 @@ func (c *GatewayProcessor) IsSecretReferred(secret client.ObjectKey) bool {
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.SecretGatewayIndex, secret.String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list Gateways: %v", err)
+		log.Error().Msgf("[GW] Failed to list Gateways: %v", err)
 		return false
 	}
 
@@ -216,7 +216,7 @@ func (c *GatewayProcessor) IsSecretReferred(secret client.ObjectKey) bool {
 	if err := c.client.List(context.Background(), policies, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.SecretBackendTLSPolicyIndex, secret.String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list BackendTLSPolicyList: %v", err)
+		log.Error().Msgf("[GW] Failed to list BackendTLSPolicyList: %v", err)
 		return false
 	}
 
@@ -232,7 +232,7 @@ func (c *GatewayProcessor) IsConfigMapReferred(cm client.ObjectKey) bool {
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.ConfigMapGatewayIndex, cm.String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list Gateways: %v", err)
+		log.Error().Msgf("[GW] Failed to list Gateways: %v", err)
 		return false
 	}
 
@@ -244,7 +244,7 @@ func (c *GatewayProcessor) IsConfigMapReferred(cm client.ObjectKey) bool {
 	if err := c.client.List(context.Background(), policies, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.ConfigmapBackendTLSPolicyIndex, cm.String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list BackendTLSPolicyList: %v", err)
+		log.Error().Msgf("[GW] Failed to list BackendTLSPolicyList: %v", err)
 		return false
 	}
 
@@ -271,7 +271,7 @@ func (c *GatewayProcessor) isFilterReferredByHTTPRoute(filter client.ObjectKey) 
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.ExtensionFilterHTTPRouteIndex, filter.String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list HTTPRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list HTTPRoutes: %v", err)
 		return false
 	}
 
@@ -283,7 +283,7 @@ func (c *GatewayProcessor) isFilterReferredByGRPCRoute(filter client.ObjectKey) 
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.ExtensionFilterGRPCRouteIndex, filter.String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list GRPCRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list GRPCRoutes: %v", err)
 		return false
 	}
 
@@ -351,7 +351,7 @@ func (c *GatewayProcessor) IsFilterConfigReferred(kind string, config client.Obj
 func (c *GatewayProcessor) IsHeadlessServiceWithoutSelector(key client.ObjectKey) bool {
 	service, err := c.getServiceFromCache(key)
 	if err != nil {
-		log.Warn().Msgf("failed to get service from processor: %v", err)
+		log.Warn().Msgf("[GW] failed to get service from processor: %v", err)
 		return false
 	}
 
