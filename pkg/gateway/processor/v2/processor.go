@@ -4,6 +4,8 @@ package v2
 import (
 	"fmt"
 
+	"github.com/flomesh-io/fsm/pkg/utils"
+
 	"sync"
 
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
@@ -203,4 +205,16 @@ func (c *GatewayProcessor) getTrigger(obj interface{}) processor.Trigger {
 
 func (c *GatewayProcessor) UseEndpointSlices() bool {
 	return c.useEndpointSlices
+}
+
+func (c *GatewayProcessor) OnDeleteGateway(gateway *gwv1.Gateway) bool {
+	gatewayPath := utils.GatewayCodebasePath(gateway.Namespace, gateway.Name)
+
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	log.Info().Msgf("Cleaning up files hash of Gateway %s", gatewayPath)
+	delete(c.gatewayFilesHash, gatewayPath)
+
+	return true
 }

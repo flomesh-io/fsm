@@ -61,6 +61,7 @@ type Processor interface {
 	IsFilterDefinitionReferred(filter client.ObjectKey) bool
 	IsFilterConfigReferred(kind string, config client.ObjectKey) bool
 	UseEndpointSlices() bool
+	OnDeleteGateway(gw *gwv1.Gateway) bool
 }
 
 // Generator is the interface for processing the gateway resources and building the configuration

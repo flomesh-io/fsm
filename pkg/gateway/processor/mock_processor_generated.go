@@ -274,6 +274,20 @@ func (mr *MockProcessorMockRecorder) IsValidLocalTargetRoutes(arg0, arg1 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsValidLocalTargetRoutes", reflect.TypeOf((*MockProcessor)(nil).IsValidLocalTargetRoutes), arg0, arg1)
 }
 
+// OnDeleteGateway mocks base method.
+func (m *MockProcessor) OnDeleteGateway(arg0 *v1.Gateway) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OnDeleteGateway", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// OnDeleteGateway indicates an expected call of OnDeleteGateway.
+func (mr *MockProcessorMockRecorder) OnDeleteGateway(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnDeleteGateway", reflect.TypeOf((*MockProcessor)(nil).OnDeleteGateway), arg0)
+}
+
 // UseEndpointSlices mocks base method.
 func (m *MockProcessor) UseEndpointSlices() bool {
 	m.ctrl.T.Helper()
