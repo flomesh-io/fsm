@@ -22,12 +22,12 @@ func (p *GatewaysTrigger) Insert(obj interface{}, processor processor.Processor)
 }
 
 // Delete removes the Gateway object from the processor and returns true if the processor was modified
-func (p *GatewaysTrigger) Delete(obj interface{}, _ processor.Processor) bool {
-	_, ok := obj.(*gwv1.Gateway)
+func (p *GatewaysTrigger) Delete(obj interface{}, processor processor.Processor) bool {
+	gw, ok := obj.(*gwv1.Gateway)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
 
-	return true
+	return processor.OnDeleteGateway(gw)
 }
