@@ -15,7 +15,7 @@ type ListenerFilterTrigger struct{}
 func (p *ListenerFilterTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	filter, ok := obj.(*extv1alpha1.ListenerFilter)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -26,7 +26,7 @@ func (p *ListenerFilterTrigger) Insert(obj interface{}, processor processor.Proc
 func (p *ListenerFilterTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	filter, ok := obj.(*extv1alpha1.ListenerFilter)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

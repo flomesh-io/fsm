@@ -20,7 +20,7 @@ func GetServiceRefGrants(c cache.Cache) []*gwv1beta1.ReferenceGrant {
 		FieldSelector: fields.OneTermEqualSelector(constants.TargetKindRefGrantIndex, constants.KubernetesServiceKind),
 	})
 	if err != nil {
-		log.Error().Msgf("Failed to list ReferenceGrants: %v", err)
+		log.Error().Msgf("[GW] Failed to list ReferenceGrants: %v", err)
 		return nil
 	}
 
@@ -34,7 +34,7 @@ func GetSecretRefGrants(c cache.Cache) []*gwv1beta1.ReferenceGrant {
 		FieldSelector: fields.OneTermEqualSelector(constants.TargetKindRefGrantIndex, constants.KubernetesSecretKind),
 	})
 	if err != nil {
-		log.Error().Msgf("Failed to list ReferenceGrants: %v", err)
+		log.Error().Msgf("[GW] Failed to list ReferenceGrants: %v", err)
 		return nil
 	}
 
@@ -51,7 +51,7 @@ func GetCARefGrants(c cache.Cache) []*gwv1beta1.ReferenceGrant {
 		),
 	})
 	if err != nil {
-		log.Error().Msgf("Failed to list ReferenceGrants: %v", err)
+		log.Error().Msgf("[GW] Failed to list ReferenceGrants: %v", err)
 		return nil
 	}
 

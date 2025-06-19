@@ -12,7 +12,7 @@ type HealthCheckPoliciesTrigger struct{}
 func (p *HealthCheckPoliciesTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	policy, ok := obj.(*gwpav1alpha2.HealthCheckPolicy)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -23,7 +23,7 @@ func (p *HealthCheckPoliciesTrigger) Insert(obj interface{}, processor processor
 func (p *HealthCheckPoliciesTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	policy, ok := obj.(*gwpav1alpha2.HealthCheckPolicy)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

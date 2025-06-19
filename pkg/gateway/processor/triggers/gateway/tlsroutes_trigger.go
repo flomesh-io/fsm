@@ -13,7 +13,7 @@ type TLSRoutesTrigger struct{}
 func (p *TLSRoutesTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	route, ok := obj.(*gwv1alpha2.TLSRoute)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -24,7 +24,7 @@ func (p *TLSRoutesTrigger) Insert(obj interface{}, processor processor.Processor
 func (p *TLSRoutesTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	route, ok := obj.(*gwv1alpha2.TLSRoute)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

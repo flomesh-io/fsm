@@ -15,7 +15,7 @@ type FilterDefinitionTrigger struct{}
 func (p *FilterDefinitionTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	definition, ok := obj.(*extv1alpha1.FilterDefinition)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -26,7 +26,7 @@ func (p *FilterDefinitionTrigger) Insert(obj interface{}, processor processor.Pr
 func (p *FilterDefinitionTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	definition, ok := obj.(*extv1alpha1.FilterDefinition)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

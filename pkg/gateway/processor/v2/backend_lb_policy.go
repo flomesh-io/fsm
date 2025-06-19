@@ -60,7 +60,7 @@ func (p *BackendLBPolicyProcessor) getOrCreateBackendLBPolicy(policy *gwpav1alph
 
 	p2 = &fgwv2.BackendLBPolicy{}
 	if err := gwutils.DeepCopy(p2, policy); err != nil {
-		log.Error().Err(err).Msgf("Failed to copy BackendLBPolicy %s", key)
+		log.Error().Err(err).Msgf("[GW] Failed to copy BackendLBPolicy %s", key)
 		return nil
 	}
 
@@ -72,7 +72,7 @@ func (p *BackendLBPolicyProcessor) getOrCreateBackendLBPolicy(policy *gwpav1alph
 	case *gwv1.HTTPRoute:
 		rule, ok := routeRule.(*gwv1.HTTPRouteRule)
 		if !ok {
-			log.Error().Msgf("Unexpected route rule type %T", routeRule)
+			log.Error().Msgf("[GW] Unexpected route rule type %T", routeRule)
 			return nil
 		}
 
@@ -82,7 +82,7 @@ func (p *BackendLBPolicyProcessor) getOrCreateBackendLBPolicy(policy *gwpav1alph
 	case *gwv1.GRPCRoute:
 		rule, ok := routeRule.(*gwv1.GRPCRouteRule)
 		if !ok {
-			log.Error().Msgf("Unexpected route rule type %T", routeRule)
+			log.Error().Msgf("[GW] Unexpected route rule type %T", routeRule)
 			return nil
 		}
 

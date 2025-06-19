@@ -209,10 +209,10 @@ func ValidCrossNamespaceRef(from gwtypes.CrossNamespaceFrom, to gwtypes.CrossNam
 	}
 
 	for _, refGrant := range referenceGrants {
-		log.Debug().Msgf("Evaluating ReferenceGrant: %s/%s", refGrant.GetNamespace(), refGrant.GetName())
+		log.Debug().Msgf("[GW] Evaluating ReferenceGrant: %s/%s", refGrant.GetNamespace(), refGrant.GetName())
 
 		if refGrant.Namespace != to.Namespace {
-			log.Debug().Msgf("ReferenceGrant namespace %s does not match to namespace %s", refGrant.Namespace, to.Namespace)
+			log.Debug().Msgf("[GW] ReferenceGrant namespace %s does not match to namespace %s", refGrant.Namespace, to.Namespace)
 			continue
 		}
 
@@ -220,13 +220,13 @@ func ValidCrossNamespaceRef(from gwtypes.CrossNamespaceFrom, to gwtypes.CrossNam
 		for _, refGrantFrom := range refGrant.Spec.From {
 			if string(refGrantFrom.Namespace) == from.Namespace && string(refGrantFrom.Group) == from.Group && string(refGrantFrom.Kind) == from.Kind {
 				fromAllowed = true
-				log.Debug().Msgf("ReferenceGrant from %s/%s/%s is allowed", from.Group, from.Kind, from.Namespace)
+				log.Debug().Msgf("[GW] ReferenceGrant from %s/%s/%s is allowed", from.Group, from.Kind, from.Namespace)
 				break
 			}
 		}
 
 		if !fromAllowed {
-			log.Debug().Msgf("ReferenceGrant from %s/%s/%s is NOT allowed", from.Group, from.Kind, from.Namespace)
+			log.Debug().Msgf("[GW] ReferenceGrant from %s/%s/%s is NOT allowed", from.Group, from.Kind, from.Namespace)
 			continue
 		}
 
@@ -234,21 +234,21 @@ func ValidCrossNamespaceRef(from gwtypes.CrossNamespaceFrom, to gwtypes.CrossNam
 		for _, refGrantTo := range refGrant.Spec.To {
 			if string(refGrantTo.Group) == to.Group && string(refGrantTo.Kind) == to.Kind && (refGrantTo.Name == nil || *refGrantTo.Name == "" || string(*refGrantTo.Name) == to.Name) {
 				toAllowed = true
-				log.Debug().Msgf("ReferenceGrant to %s/%s/%s/%s is allowed", to.Group, to.Kind, to.Namespace, to.Name)
+				log.Debug().Msgf("[GW] ReferenceGrant to %s/%s/%s/%s is allowed", to.Group, to.Kind, to.Namespace, to.Name)
 				break
 			}
 		}
 
 		if !toAllowed {
-			log.Debug().Msgf("ReferenceGrant to %s/%s/%s/%s is NOT allowed", to.Group, to.Kind, to.Namespace, to.Name)
+			log.Debug().Msgf("[GW] ReferenceGrant to %s/%s/%s/%s is NOT allowed", to.Group, to.Kind, to.Namespace, to.Name)
 			continue
 		}
 
-		log.Debug().Msgf("ReferenceGrant from %s/%s/%s to %s/%s/%s/%s is allowed", from.Group, from.Kind, from.Namespace, to.Group, to.Kind, to.Namespace, to.Name)
+		log.Debug().Msgf("[GW] ReferenceGrant from %s/%s/%s to %s/%s/%s/%s is allowed", from.Group, from.Kind, from.Namespace, to.Group, to.Kind, to.Namespace, to.Name)
 		return true
 	}
 
-	log.Debug().Msgf("ReferenceGrant from %s/%s/%s to %s/%s/%s/%s is NOT allowed", from.Group, from.Kind, from.Namespace, to.Group, to.Kind, to.Namespace, to.Name)
+	log.Debug().Msgf("[GW] ReferenceGrant from %s/%s/%s to %s/%s/%s/%s is NOT allowed", from.Group, from.Kind, from.Namespace, to.Group, to.Kind, to.Namespace, to.Name)
 	return false
 }
 

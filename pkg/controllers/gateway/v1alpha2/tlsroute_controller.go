@@ -141,7 +141,7 @@ func (r *tlsRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *tlsRouteReconciler) gatewayToTLSRoutes(ctx context.Context, object client.Object) []reconcile.Request {
 	gateway, ok := object.(*gwv1.Gateway)
 	if !ok {
-		log.Error().Msgf("Unexpected type %T", object)
+		log.Error().Msgf("[GW] Unexpected type %T", object)
 		return nil
 	}
 
@@ -151,7 +151,7 @@ func (r *tlsRouteReconciler) gatewayToTLSRoutes(ctx context.Context, object clie
 	if err := r.fctx.Manager.GetCache().List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.GatewayTLSRouteIndex, client.ObjectKeyFromObject(gateway).String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list TLSRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list TLSRoutes: %v", err)
 		return nil
 	}
 
@@ -170,7 +170,7 @@ func (r *tlsRouteReconciler) gatewayToTLSRoutes(ctx context.Context, object clie
 func (r *tlsRouteReconciler) serviceToTLSRoutes(ctx context.Context, object client.Object) []reconcile.Request {
 	service, ok := object.(*corev1.Service)
 	if !ok {
-		log.Error().Msgf("Unexpected type %T", object)
+		log.Error().Msgf("[GW] Unexpected type %T", object)
 		return nil
 	}
 
@@ -180,7 +180,7 @@ func (r *tlsRouteReconciler) serviceToTLSRoutes(ctx context.Context, object clie
 	if err := r.fctx.Manager.GetCache().List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.BackendTLSRouteIndex, client.ObjectKeyFromObject(service).String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list TLSRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list TLSRoutes: %v", err)
 		return nil
 	}
 

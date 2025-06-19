@@ -85,7 +85,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			log.Info().Msgf("GatewayClass resource not found. Ignoring since object must be deleted")
+			log.Info().Msgf("[GW] GatewayClass resource not found. Ignoring since object must be deleted")
 			r.fctx.GatewayEventHandler.OnDelete(&gwv1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: req.Namespace,
@@ -95,7 +95,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		log.Error().Msgf("Failed to get GatewayClass, %v", err)
+		log.Error().Msgf("[GW] Failed to get GatewayClass, %v", err)
 		return ctrl.Result{}, err
 	}
 
@@ -115,7 +115,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
 			class, ok := obj.(*gwv1.GatewayClass)
 			if !ok {
-				log.Error().Msgf("Unexpected object type %T", obj)
+				log.Error().Msgf("[GW] Unexpected object type %T", obj)
 			}
 			classCopy := class.DeepCopy()
 			r.setAccepted(classCopy)
@@ -154,7 +154,7 @@ func (r *gatewayClassReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	gwclsPrct := predicate.NewPredicateFuncs(func(object client.Object) bool {
 		gatewayClass, ok := object.(*gwv1.GatewayClass)
 		if !ok {
-			log.Error().Msgf("unexpected object type: %T", object)
+			log.Error().Msgf("[GW] unexpected object type: %T", object)
 			return false
 		}
 

@@ -14,7 +14,7 @@ type ConfigMapTrigger struct{}
 func (p *ConfigMapTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	cm, ok := obj.(*corev1.ConfigMap)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -25,7 +25,7 @@ func (p *ConfigMapTrigger) Insert(obj interface{}, processor processor.Processor
 func (p *ConfigMapTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	cm, ok := obj.(*corev1.ConfigMap)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

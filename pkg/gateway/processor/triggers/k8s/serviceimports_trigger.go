@@ -14,7 +14,7 @@ type ServiceImportsTrigger struct{}
 func (p *ServiceImportsTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	svcimp, ok := obj.(*mcsv1alpha1.ServiceImport)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -25,7 +25,7 @@ func (p *ServiceImportsTrigger) Insert(obj interface{}, processor processor.Proc
 func (p *ServiceImportsTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	svcimp, ok := obj.(*mcsv1alpha1.ServiceImport)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

@@ -29,7 +29,7 @@ func (c *ConfigGenerator) processTCPRoutes() []fgwv2.Resource {
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.GatewayTCPRouteIndex, client.ObjectKeyFromObject(c.gateway).String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list TCPRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list TCPRoutes: %v", err)
 		return nil
 	}
 
@@ -59,7 +59,7 @@ func (c *ConfigGenerator) processTCPRoutes() []fgwv2.Resource {
 func (c *ConfigGenerator) toV2TCPRoute(tcpRoute *gwv1alpha2.TCPRoute, holder status.RouteParentStatusObject) *fgwv2.TCPRoute {
 	t2 := &fgwv2.TCPRoute{}
 	if err := gwutils.DeepCopy(t2, tcpRoute); err != nil {
-		log.Error().Msgf("Failed to copy TCPRoute: %v", err)
+		log.Error().Msgf("[GW] Failed to copy TCPRoute: %v", err)
 		return nil
 	}
 
@@ -81,7 +81,7 @@ func (c *ConfigGenerator) toV2TCPRoute(tcpRoute *gwv1alpha2.TCPRoute, holder sta
 func (c *ConfigGenerator) toV2TCPRouteRule(tcpRoute *gwv1alpha2.TCPRoute, rule gwv1alpha2.TCPRouteRule, ruleIndex int, holder status.RouteParentStatusObject) *fgwv2.TCPRouteRule {
 	r2 := &fgwv2.TCPRouteRule{}
 	if err := gwutils.DeepCopy(r2, &rule); err != nil {
-		log.Error().Msgf("Failed to copy TCPRouteRule: %v", err)
+		log.Error().Msgf("[GW] Failed to copy TCPRouteRule: %v", err)
 		return nil
 	}
 

@@ -13,7 +13,7 @@ type ReferenceGrantTrigger struct{}
 func (p *ReferenceGrantTrigger) Insert(obj interface{}, _ processor.Processor) bool {
 	_, ok := obj.(*gwv1beta1.ReferenceGrant)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 
@@ -24,7 +24,7 @@ func (p *ReferenceGrantTrigger) Insert(obj interface{}, _ processor.Processor) b
 func (p *ReferenceGrantTrigger) Delete(obj interface{}, _ processor.Processor) bool {
 	_, ok := obj.(*gwv1beta1.ReferenceGrant)
 	if !ok {
-		log.Error().Msgf("unexpected object type %T", obj)
+		log.Error().Msgf("[GW] unexpected object type %T", obj)
 		return false
 	}
 

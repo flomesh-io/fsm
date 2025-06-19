@@ -26,7 +26,7 @@ func (c *ConfigGenerator) processHTTPRoutes() []fgwv2.Resource {
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.GatewayHTTPRouteIndex, client.ObjectKeyFromObject(c.gateway).String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list HTTPRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list HTTPRoutes: %v", err)
 		return nil
 	}
 
@@ -56,7 +56,7 @@ func (c *ConfigGenerator) processHTTPRoutes() []fgwv2.Resource {
 func (c *ConfigGenerator) toV2HTTPRoute(httpRoute *gwv1.HTTPRoute, holder status.RouteParentStatusObject) *fgwv2.HTTPRoute {
 	h2 := &fgwv2.HTTPRoute{}
 	if err := gwutils.DeepCopy(h2, httpRoute); err != nil {
-		log.Error().Msgf("Failed to copy HTTPRoute: %v", err)
+		log.Error().Msgf("[GW] Failed to copy HTTPRoute: %v", err)
 		return nil
 	}
 
@@ -78,7 +78,7 @@ func (c *ConfigGenerator) toV2HTTPRoute(httpRoute *gwv1.HTTPRoute, holder status
 func (c *ConfigGenerator) toV2HTTPRouteRule(httpRoute *gwv1.HTTPRoute, rule *gwv1.HTTPRouteRule, ruleIndex int, holder status.RouteParentStatusObject) *fgwv2.HTTPRouteRule {
 	r2 := &fgwv2.HTTPRouteRule{}
 	if err := gwutils.DeepCopy(r2, rule); err != nil {
-		log.Error().Msgf("Failed to copy HTTPRouteRule: %v", err)
+		log.Error().Msgf("[GW] Failed to copy HTTPRouteRule: %v", err)
 		return nil
 	}
 
@@ -132,7 +132,7 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, index 
 
 				f2 := fgwv2.HTTPRouteFilter{}
 				if err := gwutils.DeepCopy(&f2, &f); err != nil {
-					log.Error().Msgf("Failed to copy RequestMirrorFilter: %v", err)
+					log.Error().Msgf("[GW] Failed to copy RequestMirrorFilter: %v", err)
 					continue
 				}
 
@@ -177,7 +177,7 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, index 
 		default:
 			f2 := fgwv2.HTTPRouteFilter{}
 			if err := gwutils.DeepCopy(&f2, &f); err != nil {
-				log.Error().Msgf("Failed to copy HTTPRouteFilter: %v", err)
+				log.Error().Msgf("[GW] Failed to copy HTTPRouteFilter: %v", err)
 				continue
 			}
 			f2.Key = filterKey(httpRoute, f2, fmt.Sprintf("%s-%d", index, i))

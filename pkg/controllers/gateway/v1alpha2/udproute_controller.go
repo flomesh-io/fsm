@@ -144,7 +144,7 @@ func (r *udpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *udpRouteReconciler) gatewayToUDPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
 	gateway, ok := object.(*gwv1.Gateway)
 	if !ok {
-		log.Error().Msgf("Unexpected type %T", object)
+		log.Error().Msgf("[GW] Unexpected type %T", object)
 		return nil
 	}
 
@@ -154,7 +154,7 @@ func (r *udpRouteReconciler) gatewayToUDPRoutes(ctx context.Context, object clie
 	if err := r.fctx.Manager.GetCache().List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.GatewayUDPRouteIndex, client.ObjectKeyFromObject(gateway).String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list UDPRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list UDPRoutes: %v", err)
 		return nil
 	}
 
@@ -173,7 +173,7 @@ func (r *udpRouteReconciler) gatewayToUDPRoutes(ctx context.Context, object clie
 func (r *udpRouteReconciler) serviceToUDPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
 	service, ok := object.(*corev1.Service)
 	if !ok {
-		log.Error().Msgf("Unexpected type %T", object)
+		log.Error().Msgf("[GW] Unexpected type %T", object)
 		return nil
 	}
 
@@ -183,7 +183,7 @@ func (r *udpRouteReconciler) serviceToUDPRoutes(ctx context.Context, object clie
 	if err := r.fctx.Manager.GetCache().List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.BackendUDPRouteIndex, client.ObjectKeyFromObject(service).String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list UDPRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list UDPRoutes: %v", err)
 		return nil
 	}
 
@@ -202,7 +202,7 @@ func (r *udpRouteReconciler) serviceToUDPRoutes(ctx context.Context, object clie
 func (r *udpRouteReconciler) referenceGrantToUDPRoutes(ctx context.Context, obj client.Object) []reconcile.Request {
 	refGrant, ok := obj.(*gwv1beta1.ReferenceGrant)
 	if !ok {
-		log.Error().Msgf("unexpected object type: %T", obj)
+		log.Error().Msgf("[GW] unexpected object type: %T", obj)
 		return nil
 	}
 
@@ -235,7 +235,7 @@ func (r *udpRouteReconciler) referenceGrantToUDPRoutes(ctx context.Context, obj 
 		// This index implies that the UDPRoute has a backend of type Service in the same namespace as the ReferenceGrant
 		FieldSelector: fields.OneTermEqualSelector(constants.CrossNamespaceBackendNamespaceUDPRouteIndex, refGrant.Namespace),
 	}); err != nil {
-		log.Error().Msgf("Failed to list UDPRoutes: %v", err)
+		log.Error().Msgf("[GW] Failed to list UDPRoutes: %v", err)
 		return nil
 	}
 
@@ -266,7 +266,7 @@ func (r *udpRouteReconciler) referenceGrantToUDPRoutes(ctx context.Context, obj 
 func (r *udpRouteReconciler) routeRuleFilterPolicyToUDPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
 	policy, ok := object.(*gwpav1alpha2.RouteRuleFilterPolicy)
 	if !ok {
-		log.Error().Msgf("Unexpected type %T", object)
+		log.Error().Msgf("[GW] Unexpected type %T", object)
 		return nil
 	}
 
@@ -283,7 +283,7 @@ func (r *udpRouteReconciler) routeRuleFilterPolicyToUDPRoutes(ctx context.Contex
 			Name:      string(targetRef.Name),
 		}
 		if err := r.fctx.Manager.GetCache().Get(ctx, key, udpRoute); err != nil {
-			log.Error().Msgf("Failed to get UDPRoute: %v", key.String())
+			log.Error().Msgf("[GW] Failed to get UDPRoute: %v", key.String())
 			continue
 		}
 

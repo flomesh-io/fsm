@@ -62,17 +62,17 @@ func (r *GatewayWebhook) Default(ctx context.Context, obj runtime.Object) error 
 		return fmt.Errorf("unexpected type: %T", obj)
 	}
 
-	log.Debug().Msgf("Default Webhook, name=%s", gateway.Name)
-	log.Debug().Msgf("Before setting default values: %v", gateway)
+	log.Debug().Msgf("[GW] Default Webhook, name=%s", gateway.Name)
+	log.Debug().Msgf("[GW] Before setting default values: %v", gateway)
 
 	gatewayClass := &gwv1.GatewayClass{}
 	if err := r.Get(ctx, types.NamespacedName{Name: string(gateway.Spec.GatewayClassName)}, gatewayClass); err != nil {
-		log.Error().Msgf("failed to get gatewayclass %s", gateway.Spec.GatewayClassName)
+		log.Error().Msgf("[GW] failed to get gatewayclass %s", gateway.Spec.GatewayClassName)
 		return err
 	}
 
 	if gatewayClass.Spec.ControllerName != constants.GatewayController {
-		log.Warn().Msgf("class controller of Gateway %s/%s is not %s", gateway.Namespace, gateway.Name, constants.GatewayController)
+		log.Warn().Msgf("[GW] class controller of Gateway %s/%s is not %s", gateway.Namespace, gateway.Name, constants.GatewayController)
 		return nil
 	}
 
@@ -108,7 +108,7 @@ func (r *GatewayWebhook) doValidation(ctx context.Context, obj runtime.Object) (
 	}
 
 	if gatewayClass.Spec.ControllerName != constants.GatewayController {
-		log.Warn().Msgf("class controller of Gateway %s/%s is not %s", gateway.Namespace, gateway.Name, constants.GatewayController)
+		log.Warn().Msgf("[GW] class controller of Gateway %s/%s is not %s", gateway.Namespace, gateway.Name, constants.GatewayController)
 		return nil, nil
 	}
 
