@@ -81,10 +81,12 @@ func (r *gatewayConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, nil
 	}
 
-	mc := r.fctx.Configurator
-	result, err := r.deployConnector(connector, mc)
-	if err != nil || result.RequeueAfter > 0 || result.Requeue {
-		return result, err
+	if !r.hasDeployment(string(ctv1.GatewayDiscoveryService), req.Namespace, req.Name) {
+		mc := r.fctx.Configurator
+		result, err := r.deployConnector(connector, mc)
+		if err != nil || result.RequeueAfter > 0 || result.Requeue {
+			return result, err
+		}
 	}
 
 	return ctrl.Result{}, nil
