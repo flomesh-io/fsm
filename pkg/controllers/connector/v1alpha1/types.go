@@ -65,6 +65,14 @@ func (r *connectorReconciler) NeedLeaderElection() bool {
 	return true
 }
 
+func (r *connectorReconciler) hasDeployment(provider, namespace, name string) bool {
+	key := fmt.Sprintf("fsc-%s-%s-%s", provider, namespace, name)
+	if deploy, err := r.fctx.KubeClient.AppsV1().Deployments(r.fctx.FsmNamespace).Get(context.TODO(), key, metav1.GetOptions{}); err != nil || deploy == nil {
+		return false
+	}
+	return true
+}
+
 func (r *connectorReconciler) removeDeployment(provider, namespace, name string) {
 	key := fmt.Sprintf("fsc-%s-%s-%s", provider, namespace, name)
 	if err := r.fctx.KubeClient.AppsV1().Deployments(r.fctx.FsmNamespace).Delete(context.TODO(), key, metav1.DeleteOptions{}); err != nil {
