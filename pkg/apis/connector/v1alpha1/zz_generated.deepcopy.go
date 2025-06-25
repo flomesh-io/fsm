@@ -190,6 +190,16 @@ func (in *ConsulSyncFromK8SSpec) DeepCopyInto(out *ConsulSyncFromK8SSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.FilterAnnotations != nil {
+		in, out := &in.FilterAnnotations, &out.FilterAnnotations
+		*out = make([]Metadata, len(*in))
+		copy(*out, *in)
+	}
+	if in.FilterLabels != nil {
+		in, out := &in.FilterLabels, &out.FilterLabels
+		*out = make([]Metadata, len(*in))
+		copy(*out, *in)
+	}
 	if in.FilterIPRanges != nil {
 		in, out := &in.FilterIPRanges, &out.FilterIPRanges
 		*out = make([]string, len(*in))
@@ -455,6 +465,16 @@ func (in *EurekaSyncFromK8SSpec) DeepCopyInto(out *EurekaSyncFromK8SSpec) {
 	if in.DenyK8sNamespaces != nil {
 		in, out := &in.DenyK8sNamespaces, &out.DenyK8sNamespaces
 		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.FilterAnnotations != nil {
+		in, out := &in.FilterAnnotations, &out.FilterAnnotations
+		*out = make([]Metadata, len(*in))
+		copy(*out, *in)
+	}
+	if in.FilterLabels != nil {
+		in, out := &in.FilterLabels, &out.FilterLabels
+		*out = make([]Metadata, len(*in))
 		copy(*out, *in)
 	}
 	if in.FilterIPRanges != nil {
@@ -1039,6 +1059,16 @@ func (in *NacosSyncFromK8SSpec) DeepCopyInto(out *NacosSyncFromK8SSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.FilterAnnotations != nil {
+		in, out := &in.FilterAnnotations, &out.FilterAnnotations
+		*out = make([]Metadata, len(*in))
+		copy(*out, *in)
+	}
+	if in.FilterLabels != nil {
+		in, out := &in.FilterLabels, &out.FilterLabels
+		*out = make([]Metadata, len(*in))
+		copy(*out, *in)
+	}
 	if in.FilterIPRanges != nil {
 		in, out := &in.FilterIPRanges, &out.FilterIPRanges
 		*out = make([]string, len(*in))
@@ -1357,6 +1387,16 @@ func (in *ZookeeperSyncFromK8SSpec) DeepCopyInto(out *ZookeeperSyncFromK8SSpec) 
 	if in.DenyK8sNamespaces != nil {
 		in, out := &in.DenyK8sNamespaces, &out.DenyK8sNamespaces
 		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.FilterAnnotations != nil {
+		in, out := &in.FilterAnnotations, &out.FilterAnnotations
+		*out = make([]Metadata, len(*in))
+		copy(*out, *in)
+	}
+	if in.FilterLabels != nil {
+		in, out := &in.FilterLabels, &out.FilterLabels
+		*out = make([]Metadata, len(*in))
 		copy(*out, *in)
 	}
 	if in.FilterIPRanges != nil {
