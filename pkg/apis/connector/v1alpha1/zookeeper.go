@@ -140,6 +140,11 @@ type ZookeeperSyncFromK8SSpec struct {
 	DenyK8sNamespaces []string `json:"denyK8sNamespaces,omitempty"`
 
 	// +optional
+	FilterAnnotations []Metadata `json:"filterAnnotations,omitempty"`
+
+	// +optional
+	FilterLabels []Metadata `json:"filterLabels,omitempty"`
+
 	// +optional
 	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
 

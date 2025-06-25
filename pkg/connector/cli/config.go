@@ -143,8 +143,10 @@ type config struct {
 		// takes precedence over allowK8sNamespacesSet.
 		denyK8sNamespacesSet mapset.Set
 
-		filterIPRanges  []string
-		excludeIPRanges []string
+		filterAnnotations []ctv1.Metadata
+		filterLabels      []ctv1.Metadata
+		filterIPRanges    []string
+		excludeIPRanges   []string
 
 		withGateway bool
 
@@ -610,6 +612,18 @@ func (c *config) GetC2KFilterIPRanges() []*cidr.CIDR {
 	return cidrs
 }
 
+func (c *config) GetK2CFilterAnnotations() []ctv1.Metadata {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.k2cCfg.filterAnnotations
+}
+
+func (c *config) GetK2CFilterLabels() []ctv1.Metadata {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.k2cCfg.filterLabels
+}
+
 func (c *config) GetK2CFilterIPRanges() []*cidr.CIDR {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
@@ -1024,6 +1038,8 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 	c.k2cCfg.metadataStrategy = spec.SyncFromK8S.MetadataStrategy
 	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
 	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
+	c.k2cCfg.filterAnnotations = append([]ctv1.Metadata{}, spec.SyncFromK8S.FilterAnnotations...)
+	c.k2cCfg.filterLabels = append([]ctv1.Metadata{}, spec.SyncFromK8S.FilterLabels...)
 	c.k2cCfg.filterIPRanges = append([]string{}, spec.SyncFromK8S.FilterIPRanges...)
 	c.k2cCfg.excludeIPRanges = append([]string{}, spec.SyncFromK8S.ExcludeIPRanges...)
 	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway.Enable
@@ -1090,6 +1106,8 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 	c.k2cCfg.metadataStrategy = spec.SyncFromK8S.MetadataStrategy
 	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
 	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
+	c.k2cCfg.filterAnnotations = append([]ctv1.Metadata{}, spec.SyncFromK8S.FilterAnnotations...)
+	c.k2cCfg.filterLabels = append([]ctv1.Metadata{}, spec.SyncFromK8S.FilterLabels...)
 	c.k2cCfg.filterIPRanges = append([]string{}, spec.SyncFromK8S.FilterIPRanges...)
 	c.k2cCfg.excludeIPRanges = append([]string{}, spec.SyncFromK8S.ExcludeIPRanges...)
 	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway.Enable
@@ -1167,6 +1185,8 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 	c.k2cCfg.metadataStrategy = spec.SyncFromK8S.MetadataStrategy
 	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
 	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
+	c.k2cCfg.filterAnnotations = append([]ctv1.Metadata{}, spec.SyncFromK8S.FilterAnnotations...)
+	c.k2cCfg.filterLabels = append([]ctv1.Metadata{}, spec.SyncFromK8S.FilterLabels...)
 	c.k2cCfg.filterIPRanges = append([]string{}, spec.SyncFromK8S.FilterIPRanges...)
 	c.k2cCfg.excludeIPRanges = append([]string{}, spec.SyncFromK8S.ExcludeIPRanges...)
 	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway.Enable
@@ -1239,6 +1259,8 @@ func (c *client) initZookeeperConnectorConfig(spec ctv1.ZookeeperSpec) {
 	c.k2cCfg.appendMetadataSet = ToMetaSet(spec.SyncFromK8S.AppendMetadatas)
 	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
 	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
+	c.k2cCfg.filterAnnotations = append([]ctv1.Metadata{}, spec.SyncFromK8S.FilterAnnotations...)
+	c.k2cCfg.filterLabels = append([]ctv1.Metadata{}, spec.SyncFromK8S.FilterLabels...)
 	c.k2cCfg.filterIPRanges = append([]string{}, spec.SyncFromK8S.FilterIPRanges...)
 	c.k2cCfg.excludeIPRanges = append([]string{}, spec.SyncFromK8S.ExcludeIPRanges...)
 	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway.Enable

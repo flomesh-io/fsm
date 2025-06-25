@@ -254,6 +254,60 @@ func (t *KtoCSource) shouldSync(svc *corev1.Service) bool {
 		return false
 	}
 
+	if filterLabels := t.controller.GetK2CFilterLabels(); len(filterLabels) > 0 {
+		matched := true
+		labels := svc.Labels
+		for _, filterLabel := range filterLabels {
+			if len(labels) == 0 {
+				if len(filterLabel.Value) > 0 {
+					matched = false
+					break
+				}
+				continue
+			} else {
+				if labelValue, labelExist := labels[filterLabel.Key]; labelExist {
+					if strings.EqualFold(labelValue, filterLabel.Value) {
+						continue
+					}
+				} else if len(filterLabel.Value) == 0 {
+					continue
+				}
+				matched = false
+				break
+			}
+		}
+		if !matched {
+			return false
+		}
+	}
+
+	if filterAnnotations := t.controller.GetK2CFilterAnnotations(); len(filterAnnotations) > 0 {
+		matched := true
+		annotations := svc.Annotations
+		for _, filterAnnotation := range filterAnnotations {
+			if len(annotations) == 0 {
+				if len(filterAnnotation.Value) > 0 {
+					matched = false
+					break
+				}
+				continue
+			} else {
+				if annotationValue, annotationExist := annotations[filterAnnotation.Key]; annotationExist {
+					if strings.EqualFold(annotationValue, filterAnnotation.Value) {
+						continue
+					}
+				} else if len(filterAnnotation.Value) == 0 {
+					continue
+				}
+				matched = false
+				break
+			}
+		}
+		if !matched {
+			return false
+		}
+	}
+
 	if len(svc.Annotations) > 0 {
 		hasLocalInstance := false
 		if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
