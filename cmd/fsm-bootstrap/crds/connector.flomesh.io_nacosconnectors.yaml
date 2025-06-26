@@ -252,9 +252,33 @@ spec:
                     items:
                       type: string
                     type: array
+                  filterAnnotations:
+                    items:
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                      required:
+                      - key
+                      - value
+                      type: object
+                    type: array
                   filterIpRanges:
                     items:
                       type: string
+                    type: array
+                  filterLabels:
+                    items:
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                      required:
+                      - key
+                      - value
+                      type: object
                     type: array
                   groupId:
                     default: DEFAULT_GROUP

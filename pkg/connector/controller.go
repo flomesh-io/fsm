@@ -51,6 +51,8 @@ type ConnectController interface {
 	GetC2KExcludeMetadatas() []ctv1.Metadata
 	GetC2KFilterIPRanges() []*cidr.CIDR
 	GetC2KExcludeIPRanges() []*cidr.CIDR
+	GetK2CFilterAnnotations() []ctv1.Metadata
+	GetK2CFilterLabels() []ctv1.Metadata
 	GetK2CFilterIPRanges() []*cidr.CIDR
 	GetK2CExcludeIPRanges() []*cidr.CIDR
 	GetPrefixTag() string
