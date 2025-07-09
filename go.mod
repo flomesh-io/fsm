@@ -74,7 +74,7 @@ require (
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
 	github.com/vishvananda/netlink v1.3.1
-	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6
+	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
 	golang.org/x/net v0.41.0
 	golang.org/x/sync v0.15.0
 	golang.org/x/sys v0.33.0
@@ -82,6 +82,7 @@ require (
 	gomodules.xyz/jsonpatch/v2 v2.5.0
 	google.golang.org/grpc v1.73.0
 	gopkg.in/yaml.v2 v2.4.0
+<<<<<<< HEAD
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.26.0
 	helm.sh/helm/v3 v3.17.3
@@ -92,6 +93,18 @@ require (
 	k8s.io/client-go v0.32.5
 	k8s.io/code-generator v0.32.5
 	k8s.io/gengo/v2 v2.0.0-20250207200755-1244d31929d7
+=======
+	gorm.io/driver/mysql v1.6.0
+	gorm.io/gorm v1.30.0
+	helm.sh/helm/v3 v3.18.3
+	k8s.io/api v0.33.2
+	k8s.io/apiextensions-apiserver v0.33.2
+	k8s.io/apimachinery v0.33.2
+	k8s.io/cli-runtime v0.33.2
+	k8s.io/client-go v0.33.2
+	k8s.io/code-generator v0.33.2
+	k8s.io/gengo/v2 v2.0.0-20250704022524-ddb642e17a28
+>>>>>>> 1842cfe (build(deps): update helm.sh/helm/v3 to v3.18.3 (#980))
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kubectl v0.32.5
 	k8s.io/kubernetes v1.32.5
@@ -631,7 +644,7 @@ require (
 	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
 	golang.org/x/text v0.26.0 // indirect
-	golang.org/x/tools v0.33.0 // indirect
+	golang.org/x/tools v0.34.0 // indirect
 	google.golang.org/api v0.223.0 // indirect
 	google.golang.org/genproto v0.0.0-20241118233622-e639e219e697 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250324211829-b45e905df463 // indirect
@@ -655,7 +668,11 @@ require (
 	k8s.io/kube-openapi v0.0.0-20241212222426-2c72e554b1e7 // indirect
 	mvdan.cc/gofumpt v0.7.0 // indirect
 	mvdan.cc/unparam v0.0.0-20240528143540-8a5130ca722f // indirect
+<<<<<<< HEAD
 	oras.land/oras-go v1.2.5 // indirect
+=======
+	oras.land/oras-go/v2 v2.6.0 // indirect
+>>>>>>> 1842cfe (build(deps): update helm.sh/helm/v3 to v3.18.3 (#980))
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/kustomize/api v0.18.0 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.18.1 // indirect
