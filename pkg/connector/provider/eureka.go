@@ -23,6 +23,7 @@ type heartbeat struct {
 func (h *heartbeat) run() {
 	slidingTimer := time.NewTimer(h.dc.connectController.GetEurekaHeartBeatPeriod())
 	defer slidingTimer.Stop()
+	fails := 0
 	for {
 		select {
 		case <-h.stop:
@@ -30,6 +31,14 @@ func (h *heartbeat) run() {
 		case <-slidingTimer.C:
 			if err := h.dc.eurekaClient().HeartBeatInstance(h.instance); err != nil {
 				log.Error().Err(err).Msgf("%s/%s heart beat error", h.instance.App, h.instance.InstanceId)
+				fails++
+			} else {
+				fails = 0
+			}
+			if fails >= 5 {
+				if err := h.dc.eurekaClient().RegisterInstance(h.instance); err == nil {
+					fails = 0
+				}
 			}
 			slidingTimer.Reset(h.dc.connectController.GetEurekaHeartBeatPeriod())
 		}
@@ -375,9 +384,7 @@ func (dc *EurekaDiscoveryClient) Deregister(dereg *connector.CatalogDeregistrati
 
 func (dc *EurekaDiscoveryClient) Register(reg *connector.CatalogRegistration) error {
 	ins := reg.ToEureka()
-	cacheIns := *ins
-	cacheIns.UniqueID = nil
-	return dc.connectController.CacheRegisterInstance(ins.InstanceId, cacheIns, func() error {
+	return dc.connectController.CacheRegisterInstance(ins.InstanceId, *reg, func() error {
 		err := dc.eurekaClient().RegisterInstance(ins)
 		if err == nil {
 			if dc.connectController.GetEurekaHeartBeatInstance() {
