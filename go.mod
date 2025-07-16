@@ -5,7 +5,7 @@ go 1.24.0
 toolchain go1.24.2
 
 require (
-	github.com/AlekSi/gocov-xml v1.1.0
+	github.com/AlekSi/gocov-xml v1.2.0
 	github.com/Azure/go-autorest/autorest/to v0.4.1
 	github.com/axw/gocov v1.2.1
 	github.com/blang/semver v3.5.1+incompatible
