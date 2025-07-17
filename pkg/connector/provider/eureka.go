@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -119,11 +120,28 @@ func (dc *EurekaDiscoveryClient) CatalogInstances(service string, _ *connector.Q
 			if filterMetadatas := dc.connectController.GetC2KFilterMetadatas(); len(filterMetadatas) > 0 {
 				matched := true
 				for _, meta := range filterMetadatas {
-					if metaSet, metaErr := ins.Metadata.GetString(meta.Key); metaErr == nil {
-						if strings.EqualFold(metaSet, meta.Value) {
-							continue
-						} else if len(metaSet) == 0 && len(meta.Value) == 0 {
-							continue
+					if len(meta.Key) == 0 {
+						continue
+					}
+					if metaMap := ins.Metadata.GetMap(); len(metaMap) > 0 {
+						if metaVal, exist := metaMap[meta.Key]; exist {
+							if metaValStr, ok := metaVal.(string); ok {
+								if strings.EqualFold(metaValStr, meta.Value) {
+									continue
+								} else if len(metaValStr) == 0 && len(meta.Value) == 0 {
+									continue
+								}
+							} else if metaValBool, ok := metaVal.(string); ok {
+								metaValS := fmt.Sprintf("%v", metaValBool)
+								if strings.EqualFold(metaValS, strings.ToLower(meta.Value)) {
+									continue
+								}
+							} else {
+								metaValS := fmt.Sprintf("%v", metaVal)
+								if strings.EqualFold(metaValS, meta.Value) {
+									continue
+								}
+							}
 						}
 					}
 					matched = false
@@ -205,11 +223,28 @@ func (dc *EurekaDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]ctv
 				if filterMetadatas := dc.connectController.GetC2KFilterMetadatas(); len(filterMetadatas) > 0 {
 					matched := true
 					for _, meta := range filterMetadatas {
-						if metaSet, metaErr := svcIns.Metadata.GetString(meta.Key); metaErr == nil {
-							if strings.EqualFold(metaSet, meta.Value) {
-								continue
-							} else if len(metaSet) == 0 && len(meta.Value) == 0 {
-								continue
+						if len(meta.Key) == 0 {
+							continue
+						}
+						if metaMap := svcIns.Metadata.GetMap(); len(metaMap) > 0 {
+							if metaVal, exist := metaMap[meta.Key]; exist {
+								if metaValStr, ok := metaVal.(string); ok {
+									if strings.EqualFold(metaValStr, meta.Value) {
+										continue
+									} else if len(metaValStr) == 0 && len(meta.Value) == 0 {
+										continue
+									}
+								} else if metaValBool, ok := metaVal.(string); ok {
+									metaValS := fmt.Sprintf("%v", metaValBool)
+									if strings.EqualFold(metaValS, strings.ToLower(meta.Value)) {
+										continue
+									}
+								} else {
+									metaValS := fmt.Sprintf("%v", metaVal)
+									if strings.EqualFold(metaValS, meta.Value) {
+										continue
+									}
+								}
 							}
 						}
 						matched = false
