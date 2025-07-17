@@ -123,16 +123,7 @@ func (dc *EurekaDiscoveryClient) CatalogInstances(service string, _ *connector.Q
 				}
 			}
 			if excludeMetadatas := dc.connectController.GetC2KExcludeMetadatas(); len(excludeMetadatas) > 0 {
-				matched := false
-				for _, meta := range excludeMetadatas {
-					if metaSet, metaErr := ins.Metadata.GetString(meta.Key); metaErr == nil {
-						if strings.EqualFold(metaSet, meta.Value) {
-							matched = true
-							break
-						}
-					}
-				}
-				if matched {
+				if matched := dc.excludeByMetadatas(excludeMetadatas, ins); matched {
 					continue
 				}
 			}
@@ -197,16 +188,7 @@ func (dc *EurekaDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]ctv
 					}
 				}
 				if excludeMetadatas := dc.connectController.GetC2KExcludeMetadatas(); len(excludeMetadatas) > 0 {
-					matched := false
-					for _, meta := range excludeMetadatas {
-						if metaSet, metaErr := svcIns.Metadata.GetString(meta.Key); metaErr == nil {
-							if strings.EqualFold(metaSet, meta.Value) {
-								matched = true
-								break
-							}
-						}
-					}
-					if matched {
+					if matched := dc.excludeByMetadatas(excludeMetadatas, svcIns); matched {
 						continue
 					}
 				}
@@ -242,18 +224,16 @@ func (dc *EurekaDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]ctv
 	return catalogServices, nil
 }
 
-func (dc *EurekaDiscoveryClient) filterByMetadatas(filterMetadatas []ctv1.Metadata, svcIns *eureka.Instance) bool {
+func (dc *EurekaDiscoveryClient) filterByMetadatas(filterMetadatas []ctv1.Metadata, ins *eureka.Instance) bool {
 	matched := true
 	for _, meta := range filterMetadatas {
 		if len(meta.Key) == 0 {
 			continue
 		}
-		if metaMap := svcIns.Metadata.GetMap(); len(metaMap) > 0 {
+		if metaMap := ins.Metadata.GetMap(); len(metaMap) > 0 {
 			if metaVal, exist := metaMap[meta.Key]; exist {
 				if metaValStr, ok := metaVal.(string); ok {
-					if strings.EqualFold(metaValStr, meta.Value) {
-						continue
-					} else if len(metaValStr) == 0 && len(meta.Value) == 0 {
+					if len(metaValStr) == len(meta.Value) && strings.EqualFold(metaValStr, meta.Value) {
 						continue
 					}
 				} else if metaValBool, ok := metaVal.(string); ok {
@@ -271,6 +251,44 @@ func (dc *EurekaDiscoveryClient) filterByMetadatas(filterMetadatas []ctv1.Metada
 		}
 		matched = false
 		break
+	}
+	return matched
+}
+
+func (dc *EurekaDiscoveryClient) excludeByMetadatas(excludeMetadatas []ctv1.Metadata, ins *eureka.Instance) bool {
+	matched := false
+	for _, meta := range excludeMetadatas {
+		if len(meta.Key) == 0 {
+			continue
+		}
+		if metaSet, metaErr := ins.Metadata.GetString(meta.Key); metaErr == nil {
+			if strings.EqualFold(metaSet, meta.Value) {
+				matched = true
+				break
+			}
+		}
+		if metaMap := ins.Metadata.GetMap(); len(metaMap) > 0 {
+			if metaVal, exist := metaMap[meta.Key]; exist {
+				if metaValStr, ok := metaVal.(string); ok {
+					if len(metaValStr) == len(meta.Value) && strings.EqualFold(metaValStr, meta.Value) {
+						matched = true
+						break
+					}
+				} else if metaValBool, ok := metaVal.(string); ok {
+					metaValS := fmt.Sprintf("%v", metaValBool)
+					if strings.EqualFold(metaValS, strings.ToLower(meta.Value)) {
+						matched = true
+						break
+					}
+				} else {
+					metaValS := fmt.Sprintf("%v", metaVal)
+					if strings.EqualFold(metaValS, meta.Value) {
+						matched = true
+						break
+					}
+				}
+			}
+		}
 	}
 	return matched
 }
