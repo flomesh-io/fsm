@@ -159,12 +159,12 @@ func ARPing(srcIP, dstIP net.IP, iface *net.Interface) (net.HardwareAddr, error)
 	if err != nil {
 		return nil, err
 	}
-	defer sock.deinitialize()
 
 	pingCancel := false
 	pingResultChan := make(chan PingResult, 1)
 
 	go func() {
+		defer sock.deinitialize()
 		// send arp request
 		if _, err := sock.send(request); err != nil {
 			pingResultChan <- PingResult{nil, err}
