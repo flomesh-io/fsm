@@ -143,6 +143,11 @@ func (s *LinuxSocket) deinitialize() error {
 	return syscall.Close(s.sock)
 }
 
+type PingResult struct {
+	mac net.HardwareAddr
+	err error
+}
+
 // ARPing sends an arp ping over interface 'iface' to 'dstIP'
 func ARPing(srcIP, dstIP net.IP, iface *net.Interface) (net.HardwareAddr, error) {
 	srcMac := iface.HardwareAddr
@@ -156,10 +161,7 @@ func ARPing(srcIP, dstIP net.IP, iface *net.Interface) (net.HardwareAddr, error)
 	}
 	defer sock.deinitialize()
 
-	type PingResult struct {
-		mac net.HardwareAddr
-		err error
-	}
+	pingCancel := false
 	pingResultChan := make(chan PingResult, 1)
 
 	go func() {
@@ -167,17 +169,21 @@ func ARPing(srcIP, dstIP net.IP, iface *net.Interface) (net.HardwareAddr, error)
 		if _, err := sock.send(request); err != nil {
 			pingResultChan <- PingResult{nil, err}
 		} else {
-			for {
+			for !pingCancel {
 				// receive arp response
 				response, _, err := sock.receive()
 
 				if err != nil {
-					pingResultChan <- PingResult{nil, err}
+					if !pingCancel {
+						pingResultChan <- PingResult{nil, err}
+					}
 					return
 				}
 
 				if response.IsResponseOf(request) {
-					pingResultChan <- PingResult{response.SenderMac(), err}
+					if !pingCancel {
+						pingResultChan <- PingResult{response.SenderMac(), err}
+					}
 					return
 				}
 			}
@@ -186,9 +192,10 @@ func ARPing(srcIP, dstIP net.IP, iface *net.Interface) (net.HardwareAddr, error)
 
 	select {
 	case pingResult := <-pingResultChan:
+		pingCancel = true
 		return pingResult.mac, pingResult.err
 	case <-time.After(timeout):
-		sock.deinitialize()
+		pingCancel = true
 		return nil, errors.New("arping timeout")
 	}
 }
