@@ -80,7 +80,7 @@ require (
 	golang.org/x/sys v0.34.0
 	golang.org/x/time v0.12.0
 	gomodules.xyz/jsonpatch/v2 v2.5.0
-	google.golang.org/grpc v1.74.0
+	google.golang.org/grpc v1.74.2
 	gopkg.in/yaml.v2 v2.4.0
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.30.0
