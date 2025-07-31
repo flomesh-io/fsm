@@ -867,7 +867,7 @@ func (t *KtoCSource) registerServiceInstance(
 		port := baseService.MicroService.EndpointPort()
 		t.choosePorts(subset, overridePortName, overridePortNumber, protocol, port)
 		if protocol.Empty() || *port == 0 {
-			log.Error().Msgf("invalid port:%d or invalid protocol:%s", *port, *protocol)
+			log.Error().Msgf("invalid port:%d or invalid protocol:%s key:%s", *port, *protocol, key)
 			continue
 		}
 		for _, subsetAddr := range subset.Addresses {
@@ -954,13 +954,20 @@ func (t *KtoCSource) choosePorts(subset corev1.EndpointSubset,
 		// Otherwise we'll just use the first port in the list
 		// (unless the port number was overridden by an annotation).
 		for _, p := range subset.Ports {
-			if *port == 0 && p.AppProtocol != nil &&
-				strings.EqualFold(strings.ToUpper(string(p.Protocol)), strings.ToUpper(constants.ProtocolTCP)) {
+			if *port == 0 {
 				if protocol.Empty() {
-					protocol.Set(strings.ToLower(*p.AppProtocol))
-					port.Set(p.Port)
-				} else if strings.EqualFold(strings.ToLower(*p.AppProtocol), strings.ToLower(protocol.Get())) {
-					port.Set(p.Port)
+					if p.AppProtocol != nil {
+						protocol.Set(strings.ToLower(*p.AppProtocol))
+						port.Set(p.Port)
+					} else if strings.EqualFold(strings.ToUpper(string(p.Protocol)), strings.ToUpper(constants.ProtocolTCP)) {
+						protocol.Set(constants.ProtocolHTTP)
+						port.Set(p.Port)
+					}
+				} else {
+					if p.AppProtocol != nil && strings.EqualFold(strings.ToLower(*p.AppProtocol), strings.ToLower(protocol.Get())) {
+						protocol.Set(strings.ToLower(*p.AppProtocol))
+						port.Set(p.Port)
+					}
 				}
 			}
 			if *port > 0 {

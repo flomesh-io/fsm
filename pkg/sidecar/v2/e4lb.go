@@ -200,10 +200,8 @@ func (s *Server) gratuitousEIPs() {
 	eips := s.eipCache.Keys()
 	for _, eip := range eips {
 		if n, exists := s.eipCache.Get(eip); exists {
-			if !n.adv {
-				neigh.SetNeighOverIface(n.ifIndex, n.eip, n.macAddr)
-				n.adv = true
-			}
+			n.adv = true
+			neigh.SetNeighOverIface(n.ifIndex, n.eip, n.macAddr)
 			neigh.GratuitousNeighOverIface(n.ifName, n.ifIndex, n.eip, n.macAddr)
 		}
 	}
