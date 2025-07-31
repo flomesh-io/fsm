@@ -22,14 +22,14 @@ func (s *Server) BroadcastListener(stopCh <-chan struct{}) {
 		defer meshSlidingTimer.Stop()
 	}
 
-	e4lbScheduleTimer := time.NewTimer(time.Second * 5)
-	eipScheduleTimer := time.NewTimer(time.Second * 2)
+	elbScheduleTicker := time.NewTicker(time.Second * 5)
+	eipScheduleTicker := time.NewTicker(time.Second * 2)
 	if !s.enableE4lb {
-		e4lbScheduleTimer.Stop()
-		eipScheduleTimer.Stop()
+		elbScheduleTicker.Stop()
+		eipScheduleTicker.Stop()
 	} else {
-		defer e4lbScheduleTimer.Stop()
-		defer eipScheduleTimer.Stop()
+		defer elbScheduleTicker.Stop()
+		defer eipScheduleTicker.Stop()
 	}
 
 	reconfirm := true
@@ -59,7 +59,7 @@ func (s *Server) BroadcastListener(stopCh <-chan struct{}) {
 				reconfirm = false
 				meshSlidingTimer.Reset(time.Second * 10)
 			}
-		case <-e4lbScheduleTimer.C:
+		case <-elbScheduleTicker.C:
 			if s.enableE4lb {
 				newJob := func() *xnetworkE4lbJob {
 					return &xnetworkE4lbJob{
@@ -69,8 +69,7 @@ func (s *Server) BroadcastListener(stopCh <-chan struct{}) {
 				}
 				<-s.workQueues.AddJob(newJob())
 			}
-			e4lbScheduleTimer.Reset(time.Second * 5)
-		case <-eipScheduleTimer.C:
+		case <-eipScheduleTicker.C:
 			if s.enableE4lb {
 				newJob := func() *xnetworkEIPJob {
 					return &xnetworkEIPJob{
@@ -80,7 +79,6 @@ func (s *Server) BroadcastListener(stopCh <-chan struct{}) {
 				}
 				<-s.workQueues.AddJob(newJob())
 			}
-			eipScheduleTimer.Reset(time.Second * 2)
 		}
 	}
 }
