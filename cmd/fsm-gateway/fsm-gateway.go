@@ -34,6 +34,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"syscall"
 
 	"github.com/flomesh-io/fsm/pkg/repo"
 
@@ -134,8 +135,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	pipyPID := 0
 	_, cancel := context.WithCancel(context.TODO())
-	stop := signals.RegisterExitHandlers(cancel)
+	stop := signals.RegisterExitHandlers(cancel, func() {
+		if pipyPID != 0 {
+			_ = syscall.Kill(pipyPID, syscall.SIGKILL)
+		}
+	})
 	msgBroker := messaging.NewBroker(stop)
 
 	informerCollection, err := informers.NewInformerCollection(meshName, stop,
@@ -161,9 +167,13 @@ func main() {
 	spawn := calcPipySpawn(kubeClient)
 	log.Info().Msgf("PIPY SPAWN = %d", spawn)
 
-	startHTTPServer(cfg)
+	go startHTTPServer(cfg)
 
-	startPipy(spawn, url, cfg)
+	pipyPIDCh := make(chan int)
+	go startPipy(spawn, url, cfg, pipyPIDCh)
+
+	pipyPID = <-pipyPIDCh
+	log.Info().Msgf("Received pipy PID: %d", pipyPID)
 
 	<-stop
 	cancel()
@@ -232,7 +242,7 @@ func parseFlags() error {
 	return nil
 }
 
-func startPipy(spawn int64, url string, _ configurator.Configurator) {
+func startPipy(spawn int64, url string, _ configurator.Configurator, pipyPIDCh chan int) {
 	args := []string{url}
 	if spawn > 1 {
 		args = append([]string{"--reuse-port", fmt.Sprintf("--threads=%d", spawn)}, args...)
@@ -254,10 +264,11 @@ func startPipy(spawn int64, url string, _ configurator.Configurator) {
 	cmd := exec.Command("pipy", args...) // #nosec G204
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	log.Info().Msgf("cmd = %v", cmd)
 
-	if err := cmd.Run(); err != nil {
+	if err := cmd.Start(); err != nil {
 		log.Fatal().Err(err)
 		os.Exit(1)
 	}
@@ -267,10 +278,16 @@ func startPipy(spawn int64, url string, _ configurator.Configurator) {
 	}
 
 	if cmd.Process != nil {
-		// detach it from the go process
-		if err := cmd.Process.Release(); err != nil {
-			log.Fatal().Err(err)
-		}
+		pid := cmd.Process.Pid
+		log.Info().Msgf("pipy PID: %d", pid)
+		pipyPIDCh <- pid
+	}
+
+	if err := cmd.Wait(); err != nil {
+		log.Fatal().Msgf("PIPY process exited with error: %v", err)
+		os.Exit(1)
+	} else {
+		log.Info().Msg("PIPY process exited successfully")
 	}
 }
 
