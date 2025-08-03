@@ -33,6 +33,13 @@ type nacosConnect struct {
 	expiresAt    time.Time
 }
 
+func (nc *nacosConnect) close() {
+	if nc.namingClient != nil {
+		nc.namingClient.CloseClient()
+		nc.namingClient = nil
+	}
+}
+
 type NacosDiscoveryClient struct {
 	connectController connector.ConnectController
 	nacosConnects     map[string]*nacosConnect
@@ -52,6 +59,11 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INa
 	conn, exists := dc.nacosConnects[connectKey]
 	if !exists || time.Now().After(conn.expiresAt) {
 		level := env.GetString("LOG_LEVEL", "error")
+
+		if conn != nil {
+			conn.close()
+		}
+
 		conn = new(nacosConnect)
 		conn.clientCfg = constant.ClientConfig{
 			TimeoutMs:            60000,
@@ -74,27 +86,27 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INa
 	}
 	if !strings.EqualFold(conn.clientCfg.NamespaceId, namespaceId) {
 		conn.clientCfg.NamespaceId = namespaceId
-		conn.namingClient = nil
+		conn.close()
 	}
 	if username := connectController.GetAuthNacosUsername(); !strings.EqualFold(conn.clientCfg.Username, username) {
 		conn.clientCfg.Username = username
-		conn.namingClient = nil
+		conn.close()
 	}
 	if password := connectController.GetAuthNacosPassword(); !strings.EqualFold(conn.clientCfg.Password, password) {
 		conn.clientCfg.Password = password
-		conn.namingClient = nil
+		conn.close()
 	}
 	if accessKey := connectController.GetAuthNacosAccessKey(); !strings.EqualFold(conn.clientCfg.AccessKey, accessKey) {
 		conn.clientCfg.AccessKey = accessKey
-		conn.namingClient = nil
+		conn.close()
 	}
 	if secretKey := connectController.GetAuthNacosSecretKey(); !strings.EqualFold(conn.clientCfg.SecretKey, secretKey) {
 		conn.clientCfg.SecretKey = secretKey
-		conn.namingClient = nil
+		conn.close()
 	}
 	if ttl := connectController.GetAuthNacosTokenTtl(); conn.ttl.Nanoseconds() != ttl.Nanoseconds() {
 		conn.ttl = ttl
-		conn.namingClient = nil
+		conn.close()
 	}
 
 	var scheme = "http"
@@ -118,17 +130,17 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INa
 
 	if !strings.EqualFold(conn.serverCfg.Scheme, scheme) {
 		conn.serverCfg.Scheme = scheme
-		conn.namingClient = nil
+		conn.close()
 	}
 
 	if !strings.EqualFold(conn.serverCfg.IpAddr, ipAddr) {
 		conn.serverCfg.IpAddr = ipAddr
-		conn.namingClient = nil
+		conn.close()
 	}
 
 	if conn.serverCfg.Port != port {
 		conn.serverCfg.Port = port
-		conn.namingClient = nil
+		conn.close()
 	}
 
 	if grpcPort == 0 {
@@ -137,12 +149,12 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INa
 
 	if conn.serverCfg.GrpcPort != grpcPort {
 		conn.serverCfg.GrpcPort = grpcPort
-		conn.namingClient = nil
+		conn.close()
 	}
 
 	if !strings.EqualFold(conn.serverCfg.ContextPath, contextPath) {
 		conn.serverCfg.ContextPath = contextPath
-		conn.namingClient = nil
+		conn.close()
 	}
 
 	if conn.namingClient == nil {
