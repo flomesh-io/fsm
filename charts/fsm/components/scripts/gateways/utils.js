@@ -62,8 +62,8 @@ export function findPolicies(kind, targetResource) {
 }
 
 export function makeFilters(protocol, filters) {
-  if (!filters) return []
-  return filters.map(
+  filters = filters || []
+  var pipelines = filters.map(
     config => {
       var maker = (
         importFilter(`./config/filters/${protocol}/${config.type}.js`) ||
@@ -71,9 +71,13 @@ export function makeFilters(protocol, filters) {
       )
       if (!maker) throw `${protocol} filter not found: ${config.type}`
       if (typeof maker !== 'function') throw `filter ${config.type} is not a function`
-      return maker(config, resources)
+      var pl = maker(config, resources)
+      protocol = pl?.meta?.outputProtocol || protocol
+      return pl
     }
   )
+  pipelines.outputProtocol = protocol
+  return pipelines
 }
 
 function importFilter(pathname) {

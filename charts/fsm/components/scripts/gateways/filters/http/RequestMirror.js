@@ -6,7 +6,7 @@ export default function (config, resources) {
   if (backendRef) {
     var kind = backendRef.kind || 'Backend'
     var name = backendRef.name
-    var backend = resources.list(kind).find(r => r.metadata.name === name)
+    var backend = resources.find(kind, name)
     var target = backend?.spec?.targets?.[0]
   }
 

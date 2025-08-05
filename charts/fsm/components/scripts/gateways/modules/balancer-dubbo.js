@@ -32,11 +32,11 @@ export default function (backendRef, backendResource) {
     $.handleMessageStart(res => {
       var r = $ctx.response
       r.head = res.head
-      r.headTime = Date.now()
+      r.headTime = pipy.performance.now()
     })
     $.handleMessageEnd(res => {
       var r = $ctx.response
-      r.tailTime = Date.now()
+      r.tailTime = pipy.performance.now()
     })
 
     if (log) {
@@ -56,14 +56,14 @@ export default function (backendRef, backendResource) {
 
     var forward = pipeline($=>{
       $.onStart(() => {
-        $ctx.sendTime = Date.now()
+        $ctx.sendTime = pipy.performance.now()
         $ctx.target = $session.target.address
         $conn = {
           protocol: 'tcp',
           target: $session.target,
         }
       })
-      $.mux(() => $session).to($=>$
+      $.muxQueue(() => $session).to($=>$
         .encodeDubbo()
         .pipe(backend.connect, () => $conn)
         .decodeDubbo()

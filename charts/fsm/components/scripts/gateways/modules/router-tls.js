@@ -1,6 +1,6 @@
 import resources from '../resources.js'
 import makeBackendSelector from './backend-selector.js'
-import makeBalancer from './balancer-tcp.js'
+import makeBalancer from './balancer.js'
 import { log } from '../utils.js'
 
 var shutdown = pipeline($=>$.replaceStreamStart(new StreamEnd))
@@ -56,8 +56,8 @@ function makeRouter(listener, routeResources, gateway) {
     hostnames.forEach(name => {
       var selector = makeBackendSelector(
         'tcp', listener, r.spec.rules?.[0],
-        function (backendRef, backendResource, filters) {
-          var forwarder = backendResource ? makeBalancer(backendRef, backendResource, gateway) : shutdown
+        function (backendRef, backendResource, filters, protocol) {
+          var forwarder = backendResource ? makeBalancer(protocol, backendRef, backendResource, { gateway }) : shutdown
           return pipeline($=>$
             .pipe([...filters, forwarder], () => $ctx)
             .onEnd(() => $selection.free?.())

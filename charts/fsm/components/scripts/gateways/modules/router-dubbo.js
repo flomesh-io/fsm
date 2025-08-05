@@ -1,6 +1,6 @@
 import resources from '../resources.js'
 import makeBackendSelector from './backend-selector.js'
-import makeBalancer from './balancer-dubbo.js'
+import makeBalancer from './balancer.js'
 import { log } from '../utils.js'
 
 var response404 = pipeline($=>$.replaceMessage(new Message({ status: 404 })))
@@ -32,7 +32,7 @@ export default function (routerKey, listener, routeResources) {
           parent: $ctx,
           id: ++$ctx.messageCount,
           head: msg.head,
-          headTime: Date.now(),
+          headTime: pipy.performance.now(),
           tailTime: 0,
           sendTime: 0,
           body: null,
@@ -63,28 +63,15 @@ export default function (routerKey, listener, routeResources) {
     )
     .handleMessageEnd(
       function (msg) {
-        $ctx.tailTime = Date.now()
+        $ctx.tailTime = pipy.performance.now()
       }
     )
     .pipe(() => $selection ? $selection.target.pipeline : response404)
-    .handleMessageStart(
-      function (msg) {
-        var r = $ctx.response
-        r.head = msg.head
-        r.headTime = Date.now()
-      }
-    )
-    .handleMessageEnd(
-      function () {
-        var r = $ctx.response
-        r.tailTime = Date.now()
-      }
-    )
   )
 
   var handleStream = pipeline($=>$
     .decodeDubbo()
-    .demux().to(handleRequest)
+    .demuxQueue().to(handleRequest)
     .encodeDubbo()
   )
 
@@ -95,10 +82,17 @@ export default function (routerKey, listener, routeResources) {
 }
 
 function makeRouter(listener, routeResources) {
+  var cache = new algo.Cache({ ttl: 3600 })
   var selector = makeRuleSelector(routeResources)
 
   return function (head, body) {
-    $selection = selector(body)
+    var key = body.slice(1,5).join(' ')
+    var val = cache.get(key)
+    if (val) {
+      $selection = val
+    } else {
+      cache.set(key, $selection = selector(body))
+    }
     log?.(
       `Inb #${$ctx.parent.inbound.id} Req #${$ctx.parent.messageCount+1}`, head.requestID,
       `backend ${$selection?.target?.backendRef?.name}`,
@@ -192,10 +186,9 @@ function makeRouter(listener, routeResources) {
   function makeBackendSelectorForRule(rule) {
     var selector = makeBackendSelector(
       'dubbo', listener, rule,
-
-      function (backendRef, backendResource, filters) {
+      function (backendRef, backendResource, filters, protocol) {
         if (!backendResource && filters.length === 0) return response500
-        var forwarder = backendResource ? [makeBalancer(backendRef, backendResource)] : []
+        var forwarder = backendResource ? [makeBalancer(protocol, backendRef, backendResource)] : []
         return pipeline($=>$
           .pipe([...filters, ...forwarder], () => $ctx)
           .onEnd(() => $selection.free?.())

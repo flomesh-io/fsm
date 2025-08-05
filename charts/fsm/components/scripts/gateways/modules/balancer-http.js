@@ -50,12 +50,12 @@ export default function (backendRef, backendResource, gateway, isHTTP2) {
     $.handleMessageStart(res => {
       var r = $ctx.response
       r.head = res.head
-      r.headTime = Date.now()
+      r.headTime = pipy.performance.now()
     })
     $.handleMessageEnd(res => {
       var r = $ctx.response
       r.tail = res.tail
-      r.tailTime = Date.now()
+      r.tailTime = pipy.performance.now()
     })
 
     if (log) {
@@ -76,7 +76,7 @@ export default function (backendRef, backendResource, gateway, isHTTP2) {
 
     var forward = pipeline($=>{
       $.onStart(() => {
-        $ctx.sendTime = Date.now()
+        $ctx.sendTime = pipy.performance.now()
         $ctx.target = $session.target.address
         $conn = {
           protocol: 'tcp',
