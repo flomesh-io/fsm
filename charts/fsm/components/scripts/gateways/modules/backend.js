@@ -7,6 +7,7 @@ var cache = new algo.Cache(
     var backendResource = findBackendResource(backendName)
     var backendLBPolicies = findPolicies('BackendLBPolicy', backendResource)
     var algorithm = backendLBPolicies.find(r => r.spec.algorithm)?.spec?.algorithm
+    var timeouts = backendLBPolicies.find(r => r.spec.timeouts)?.spec?.timeouts
     var targets = getTargets(backendResource)
 
     if (algorithm === 'LeastLoad') {
@@ -93,9 +94,17 @@ var cache = new algo.Cache(
           'deny': $=>$.replaceStreamStart(new StreamEnd)
         })
       } else {
+        var tcpOptions = { idleTimeout: 0 }
+        var udpOptions = { idleTimeout: 60, protocol: 'udp' }
+        if (timeouts) {
+          if (timeouts.connect) tcpOptions.connectTimeout = Number.parseFloat(timeouts.connect)
+          if (timeouts.idle) tcpOptions.idleTimeout = udpOptions.idleTimeout = Number.parseFloat(timeouts.idle)
+          if (timeouts.read) tcpOptions.readTimeout = udpOptions.readTimeout = Number.parseFloat(timeouts.read)
+          if (timeouts.write) tcpOptions.writeTimeout = udpOptions.writeTimeout = Number.parseFloat(timeouts.write)
+        }
         $.pipe(() => $protocol, {
-          'tcp': $=>$.connect(() => $target.address),
-          'udp': $=>$.connect(() => $target.address, { protocol: 'udp' }),
+          'tcp': $=>$.connect(() => $target.address, tcpOptions),
+          'udp': $=>$.connect(() => $target.address, udpOptions),
         })
       }
 
@@ -133,9 +142,7 @@ var cache = new algo.Cache(
 )
 
 function findBackendResource(backendName) {
-  return resources.list('Backend').find(
-    r => r.metadata?.name === backendName
-  )
+  return resources.find('Backend', backendName)
 }
 
 function getTargets(backendResource) {

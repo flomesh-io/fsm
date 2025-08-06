@@ -43,6 +43,7 @@ export default function (config) {
   updateUpstreamStats()
 
   var $ctx
+  var $headTime
 
   return pipeline($=>$
     .onStart(c => { $ctx = c })
@@ -50,6 +51,7 @@ export default function (config) {
       http_request_total.increase()
     })
     .pipeNext()
+    .handleMessageStart(() => { $headTime = pipy.performance.now() })
     .handleMessageEnd(() => {
       var host = $ctx.host
       var backend = $ctx.backendResource?.metadata?.name
@@ -72,7 +74,7 @@ export default function (config) {
       var l = http_latency.withLabels(target, backend, route, consumer)
       l.withLabels('upstream').observe(response.headTime - $ctx.sendTime)
       l.withLabels('fgw').observe($ctx.sendTime - $ctx.headTime)
-      l.withLabels('request').observe(Date.now() - $ctx.headTime)
+      l.withLabels('request').observe($headTime - $ctx.headTime)
 
       var retries = $ctx.retries
       if (retries.length > 0) {

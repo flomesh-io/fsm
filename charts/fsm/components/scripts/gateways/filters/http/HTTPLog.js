@@ -46,6 +46,7 @@ export default function (config) {
       var response = $ctx.response
       var resHead = response.head
       var resTail = response.tail
+      var timeOrigin = pipy.performance.timeOrigin
       log({
         type: 'fgw',
         meshName, node, pod,
@@ -53,9 +54,9 @@ export default function (config) {
         localPort: inbound.localPort,
         remoteAddr: inbound.remoteAddr,
         remotePort: inbound.remotePort,
-        reqTime: $ctx.headTime,
-        resTime: response.headTime,
-        endTime: response.tailTime,
+        reqTime: timeOrigin + $ctx.headTime,
+        resTime: timeOrigin + response.headTime,
+        endTime: timeOrigin + response.tailTime,
         req: {
           protocol: reqHead.protocol,
           scheme: reqHead.scheme,

@@ -1,6 +1,6 @@
 import resources from '../resources.js'
 import makeBackendSelector from './backend-selector.js'
-import makeBalancer from './balancer-udp.js'
+import makeBalancer from './balancer.js'
 import { log } from '../utils.js'
 
 var shutdown = pipeline($=>$.replaceStreamStart(new StreamEnd))
@@ -35,8 +35,8 @@ function makeRouter(listener, routeResources) {
   var selector = makeBackendSelector(
     'udp', listener,
     routeResources[0]?.spec?.rules?.[0],
-    function (backendRef, backendResource, filters) {
-      var forwarder = backendResource ? makeBalancer(backendRef, backendResource) : shutdown
+    function (backendRef, backendResource, filters, protocol) {
+      var forwarder = backendResource ? makeBalancer(protocol, backendRef, backendResource) : shutdown
       return pipeline($=>$
         .pipe([...filters, forwarder], () => $ctx)
         .onEnd(() => $selection.free?.())

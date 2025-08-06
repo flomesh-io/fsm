@@ -1,8 +1,10 @@
 import resources from '../resources.js'
 import makeBackendSelector from './backend-selector.js'
-import makeBalancer from './balancer-http.js'
+import makeBalancer from './balancer.js'
 import makeSessionPersistence from './session-persistence.js'
 import { log, stringifyHTTPHeaders } from '../utils.js'
+
+var USE_FAST_MATCH = true
 
 var response404 = pipeline($=>$.replaceMessage(new Message({ status: 404 })))
 var response500 = pipeline($=>$.replaceMessage(new Message({ status: 500 })))
@@ -38,7 +40,7 @@ export default function (routerKey, listener, routeResources, gateway) {
           host: $hostname,
           path: msg.head.path,
           head: msg.head,
-          headTime: Date.now(),
+          headTime: pipy.performance.now(),
           tail: null,
           tailTime: 0,
           sendTime: 0,
@@ -62,24 +64,10 @@ export default function (routerKey, listener, routeResources, gateway) {
     .handleMessageEnd(
       function (msg) {
         $ctx.tail = msg.tail
-        $ctx.tailTime = Date.now()
+        $ctx.tailTime = pipy.performance.now()
       }
     )
     .pipe(() => $selection ? $selection.target.pipeline : response404)
-    .handleMessageStart(
-      function (msg) {
-        var r = $ctx.response
-        r.head = msg.head
-        r.headTime = Date.now()
-      }
-    )
-    .handleMessageEnd(
-      function (msg) {
-        var r = $ctx.response
-        r.tail = msg.tail
-        r.tailTime = Date.now()
-      }
-    )
   )
 
   var handleStream = pipeline($=>$
@@ -145,46 +133,48 @@ function makeRouter(listener, routeResources, gateway) {
     var rules = routeResources.flatMap(resource => resource.spec.rules.map(
       r => [r, makeBackendSelectorForRule(r, kind === 'GRPCRoute'), resource]
     ))
+
     var matches = rules.flatMap(([rule, backendSelector, resource]) => {
       if (rule.matches) {
-        return rule.matches.map(m => [m, backendSelector, resource, rule])
+        return rule.matches.map(m => [m, backendSelector, resource, rule, ''])
       } else {
-        return [[{}, backendSelector, resource, rule]]
+        return [[{}, backendSelector, resource, rule, '']]
       }
+    })
+
+    matches.forEach((a, i) => {
+      a[4] = getMatchPriority(a[0], i)
     })
 
     matches.sort((a, b) => {
-      var ra = getMatchPriority(a[0])
-      var rb = getMatchPriority(b[0])
-      var i = ra.findIndex((r, i) => r !== rb[i])
-      if (i < 0) return 0
-      return ra[i] > rb[i] ? -1 : 1
+      return a[4] > b[4] ? -1 : 1
     })
 
-    function getMatchPriority(match) {
+    function getMatchPriority(match, index) {
       var ranks = new Array(5)
       switch (match.path?.type) {
         case 'Exact':
-          ranks[0] = 3
-          ranks[1] = match.path.value
+          ranks[0] = '3'
+          ranks[1] = '000'
           break
         case 'PathPrefix':
-          ranks[0] = 2
-          ranks[1] = match.path.value.length
+          ranks[0] = '2'
+          ranks[1] = match.path.value.length.toString().padStart(3, '0')
           break
         case 'RegularExpression':
-          ranks[0] = 1
-          ranks[1] = match.path.value.length
+          ranks[0] = '1'
+          ranks[1] = match.path.value.length.toString().padStart(3, '0')
           break
         default:
-          ranks[0] = 0
-          ranks[1] = 0
+          ranks[0] = '0'
+          ranks[1] = '000'
           break
       }
-      ranks[2] = Boolean(match.method)
-      ranks[3] = match.headers?.length || 0
-      ranks[4] = match.queryParams?.length || 0
-      return ranks
+      ranks[2] = (match.method ? '1' : '0')
+      ranks[3] = (match.headers?.length || 0).toString().padStart(3, '0')
+      ranks[4] = (match.queryParams?.length || 0).toString().padStart(3, '0')
+      ranks[5] = index.toString().padStart(6, '0')
+      return ranks.join('/')
     }
 
     switch (kind) {
@@ -203,7 +193,7 @@ function makeRouter(listener, routeResources, gateway) {
             $matchedRule = rule
             return true
           }
-          return [matchFunc, backendSelector]
+          return [matchFunc, backendSelector, m]
         })
         break
       case 'GRPCRoute':
@@ -215,20 +205,80 @@ function makeRouter(listener, routeResources, gateway) {
             if (matchHeaders && !matchHeaders(head.headers)) return false
             return true
           }
-          return [matchFunc, backendSelector]
+          return [matchFunc, backendSelector, m]
         })
         break
       default: throw `route-http: unknown resource kind: '${kind}'`
     }
-    return function (head) {
-      var m = matches.find(([matchFunc]) => matchFunc(head))
-      if (m) return m[1](head)
+
+    var pathMatches = {}
+    var methodMatches = {}
+    var slowMatches = []
+
+    if (kind === 'HTTPRoute') {
+      matches.forEach(match => {
+        var m = match[2]
+        if (m.path && (m.path.type === 'Exact' || m.path.type === 'PathPrefix')) {
+          var path = m.path.value
+          if (m.path.type === 'PathPrefix') path = os.path.join(path, '*')
+          var methods = (pathMatches[path] ??= {})
+          var checks = (methods[m.method || '*'] ??= [])
+          checks.push(match)
+        } else if (m.path && m.path.type === 'PathPrefix') {
+          var path = m.path.value
+          if (m.path.type === 'PathPrefix') path = os.path.join(path, '*')
+          var methods = (pathMatches[path] ??= {})
+          var checks = (methods[m.method || '*'] ??= [])
+          checks.push(match)
+        } else if (m.method) {
+          var checks = (methodMatches[m.method] ??= [])
+          checks.push(match)
+        } else {
+          slowMatches.push(match)
+        }
+      })
+    } else {
+      slowMatches = matches
+    }
+
+    pathMatches = new algo.URLRouter(pathMatches)
+
+    if (USE_FAST_MATCH && kind === 'HTTPRoute') {
+      return function (head) {
+        var pm = pathMatches.find(head.path)
+        if (pm) {
+          var checks = pm[head.method] || pm['*']
+          if (checks) {
+            var m = checks.find(([matchFunc]) => matchFunc(head))
+            if (m) return m[1](head)
+          }
+        }
+
+        var checks = methodMatches[head.method]
+        if (checks) {
+          var m = checks.find(([matchFunc]) => matchFunc(head))
+          if (m) return m[1](head)
+        }
+
+        var m = slowMatches.find(([matchFunc]) => matchFunc(head))
+        if (m) return m[1](head)
+      }
+
+    } else {
+      return function (head) {
+        var m = matches.find(([matchFunc]) => matchFunc(head))
+        if (m) return m[1](head)
+      }
     }
   }
 
   function makeMethodMatcher(match) {
-    if (match) {
-      return method => method === match
+    if (USE_FAST_MATCH) {
+      return null
+    } else {
+      if (match) {
+        return method => method === match
+      }
     }
   }
 
@@ -238,15 +288,26 @@ function makeRouter(listener, routeResources, gateway) {
       var value = match.value
       switch (type) {
         case 'Exact':
-          var patterns = new algo.URLRouter({ [value]: true })
-          return path => patterns.find(path)
+          if (USE_FAST_MATCH) {
+            return null
+          } else {
+            var patterns = new algo.URLRouter({ [value]: true })
+            return path => patterns.find(path)
+          }
         case 'PathPrefix':
           var base = (value.endsWith('/') ? value.substring(0, value.length - 1) : value) || '/'
-          var patterns = new algo.URLRouter({ [base]: true, [base + '/*']: true })
-          return path => {
-            if (patterns.find(path)) {
+          if (USE_FAST_MATCH) {
+            return () => {
               $basePath = base
               return true
+            }
+          } else {
+            var patterns = new algo.URLRouter({ [base]: true, [base + '/*']: true })
+            return path => {
+              if (patterns.find(path)) {
+                $basePath = base
+                return true
+              }
             }
           }
         case 'RegularExpression':
@@ -299,19 +360,16 @@ function makeRouter(listener, routeResources, gateway) {
     var sessionPersistenceConfig = rule.sessionPersistence
     var sessionPersistence = sessionPersistenceConfig && makeSessionPersistence(sessionPersistenceConfig)
     var timeoutConfig = rule.timeouts
-    var timeoutPipeline = null
+    var timeoutFrontendPipeline = null
+    var timeoutBackendPipeline = null
     var retryConfig = rule.retry
     var retryPipeline = null
     var retryCodes = {}
 
     if (timeoutConfig) {
-      var timeout = Math.min(
-        Number.parseFloat(timeoutConfig.request) || Number.POSITIVE_INFINITY,
-        Number.parseFloat(timeoutConfig.backendRequest) || Number.POSITIVE_INFINITY,
-      )
-      if (timeout > 0 && Number.isFinite(timeout)) {
+      var makeTimeoutPipeline = function (timeout) {
         var $branch
-        timeoutPipeline = pipeline($=>$
+        return pipeline($=>$
           .forkRace(['forward', 'timeout']).to($=>$
             .onStart(b => { $branch = b })
             .pipe(() => $branch, {
@@ -321,6 +379,10 @@ function makeRouter(listener, routeResources, gateway) {
           )
         )
       }
+      var timeoutFrontend = Number.parseFloat(timeoutConfig.request) || Number.POSITIVE_INFINITY
+      var timeoutBackend = Number.parseFloat(timeoutConfig.backendRequest) || Number.POSITIVE_INFINITY
+      if (timeoutFrontend > 0 && Number.isFinite(timeoutFrontend)) timeoutFrontendPipeline = makeTimeoutPipeline(timeoutFrontend)
+      if (timeoutBackend > 0 && Number.isFinite(timeoutBackend)) timeoutBackendPipeline = makeTimeoutPipeline(timeoutBackend)
     }
 
     if (retryConfig) {
@@ -377,17 +439,22 @@ function makeRouter(listener, routeResources, gateway) {
     var selector = makeBackendSelector(
       'http', listener, rule,
 
-      function (backendRef, backendResource, filters) {
+      function (backendRef, backendResource, filters, protocol) {
         if (!backendResource && filters.length === 0) return response500
-        var forwarder = backendResource ? [makeBalancer(backendRef, backendResource, gateway, isHTTP2)] : []
+        var forwarder = backendResource ? [makeBalancer(protocol, backendRef, backendResource, { gateway, isHTTP2 })] : []
 
-        if (retryPipeline) forwarder.unshift(retryPipeline)
-        if (timeoutPipeline) forwarder.unshift(timeoutPipeline)
+        if (protocol === 'http') {
+          if (retryPipeline) forwarder.unshift(retryPipeline)
+          if (timeoutBackendPipeline) forwarder.unshift(timeoutBackendPipeline)
+        }
+
+        var filterChain = [...filters, ...forwarder]
+        if (timeoutFrontendPipeline) filterChain.unshift(timeoutFrontendPipeline)
 
         if (sessionPersistence) {
           var preserveSession = sessionPersistence.preserve
           return pipeline($=>$
-            .pipe([...filters, ...forwarder], () => $ctx)
+            .pipe(filterChain, () => $ctx)
             .handleMessageStart(
               msg => preserveSession(msg.head, $selection?.target?.backendRef?.name)
             )
@@ -395,7 +462,7 @@ function makeRouter(listener, routeResources, gateway) {
           )
         } else {
           return pipeline($=>$
-            .pipe([...filters, ...forwarder], () => $ctx)
+            .pipe(filterChain, () => $ctx)
             .onEnd(() => $selection.free?.())
           )
         }

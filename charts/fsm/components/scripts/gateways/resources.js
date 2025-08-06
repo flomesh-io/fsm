@@ -3,6 +3,7 @@ import { log, isIdentical } from './utils.js'
 var DEFAULT_CONFIG_PATH = '/etc/fgw'
 
 var resources = null
+var resourceMap = {}
 var files = {}
 var secrets = {}
 var updaters = {}
@@ -23,7 +24,9 @@ function init(pathname, onResourceChange) {
       throw `configuration file or directory does not exist: ${pathname}`
     }
     if (s.isDirectory()) {
-      pipy.mount('config', pathname)
+      if (pipy.thread.id === 0) {
+        pipy.mount('config', pathname)
+      }
       configFile = null
     } else if (s.isFile()) {
       configFile = os.read(pathname)
@@ -43,6 +46,7 @@ function init(pathname, onResourceChange) {
     }
 
     resources = config.resources
+    resources.forEach(r => appendResource(r))
     Object.entries(config.secrets || {}).forEach(([k, v]) => secrets[k] = v)
 
   } else {
@@ -53,6 +57,7 @@ function init(pathname, onResourceChange) {
         if (data && data.kind && data.spec) {
           log?.(`Load resource file: ${pathname}`)
           files[pathname] = data
+          appendResource(data)
         }
       }
     )
@@ -94,6 +99,8 @@ function readFile(pathname) {
 function changeFile(pathname, data) {
   var old = files[pathname]
   var cur = data
+  if (old) removeResource(old)
+  if (cur) appendResource(cur)
   var oldKind = old?.kind
   var curKind = cur?.kind
   if (curKind && curKind === oldKind) {
@@ -112,6 +119,29 @@ function changeFile(pathname, data) {
   }
 }
 
+function appendResource(resource) {
+  var kind = resource.kind
+  if (kind) {
+    var map = (resourceMap[kind] ??= { list: [], dict: {} })
+    var name = resource.metadata?.name
+    if (name) map.dict[name] = resource
+    map.list.push(resource)
+  }
+}
+
+function removeResource(resource) {
+  var kind = resource.kind
+  if (kind) {
+    var map = resourceMap[kind]
+    if (map) {
+      var i = map.list.indexOf(resource)
+      var name = resource.metadata?.name
+      if (name) delete map.dict[name]
+      if (i >= 0) map.list.splice(i, 1)
+    }
+  }
+}
+
 function isJSON(filename) {
   return filename.endsWith('.json')
 }
@@ -125,11 +155,13 @@ function isSecret(filename) {
 }
 
 function list(kind) {
-  if (resources) {
-    return resources.filter(r => r.kind === kind)
-  } else {
-    return Object.values(files).filter(r => r.kind === kind)
-  }
+  var list = resourceMap[kind]?.list
+  return list ? [...list] : []
+}
+
+function find(kind, name) {
+  var dict = resourceMap[kind]?.dict
+  return dict?.[name] || null
 }
 
 function setUpdater(kind, key, cb) {
@@ -146,11 +178,19 @@ function addUpdater(kind, key, cb) {
 function runUpdaters(kind, key, a, b, c) {
   var listMap = updaters[kind]
   if (listMap) {
-    var list = listMap[key]
-    if (list) {
-      delete listMap[key]
-      list.forEach(f => f(a, b, c))
+    if (key === undefined) {
+      delete updaters[kind]
+      Object.values(listMap).forEach(
+        list => list.forEach(f => f(a, b, c))
+      )
       return true
+    } else {
+      var list = listMap[key]
+      if (list) {
+        delete listMap[key]
+        list.forEach(f => f(a, b, c))
+        return true
+      }
     }
   }
   return false
@@ -218,6 +258,7 @@ var allExports = {
   init,
   initZTM,
   list,
+  find,
   secrets,
   setUpdater,
   addUpdater,

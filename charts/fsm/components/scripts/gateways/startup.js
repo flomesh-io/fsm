@@ -6,6 +6,7 @@ var dirtyGateways = []
 var dirtyRouters = []
 var dirtyBackends = []
 var dirtyPolicies = []
+var dirtyResources = []
 var dirtyTimeout = null
 
 export function startGateway(gateway) {
@@ -79,7 +80,7 @@ function makeListener(gateway, listener) {
 
   var $ctx
 
-  pipy.listen(port, wireProto, $=>$
+  pipy.listen(port, wireProto, { idleTimeout: 0 }, $=>$
     .onStart(i => {
       $ctx = {
         inbound: i,
@@ -213,6 +214,9 @@ export function makeResourceWatcher(gatewayFilter) {
         if (newName) addDirtyBackend(newName)
         if (oldName) addDirtyBackend(oldName)
         break
+      default:
+        dirtyResources.push([kind, newResource, oldResource])
+        break
     }
     if (dirtyTimeout) dirtyTimeout.cancel()
     dirtyTimeout = new Timeout(5)
@@ -343,9 +347,16 @@ export function makeResourceWatcher(gatewayFilter) {
       currentListeners = updatedListeners
     }
 
+    dirtyResources.forEach(
+      ([kind, newResource, oldResource]) => {
+        resources.runUpdaters(kind, undefined, newResource, oldResource)
+      }
+    )
+
     dirtyGateways = []
     dirtyRouters = []
     dirtyBackends = []
     dirtyPolicies = []
+    dirtyResources = []
   }
 }
