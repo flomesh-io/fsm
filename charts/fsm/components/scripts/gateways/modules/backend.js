@@ -94,7 +94,7 @@ var cache = new algo.Cache(
         })
       } else {
         $.pipe(() => $protocol, {
-          'tcp': $=>$.connect(() => $target.address),
+          'tcp': $=>$.connect(() => $target.address, { idleTimeout: 0 }),
           'udp': $=>$.connect(() => $target.address, { protocol: 'udp' }),
         })
       }

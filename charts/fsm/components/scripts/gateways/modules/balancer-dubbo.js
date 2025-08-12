@@ -63,7 +63,7 @@ export default function (backendRef, backendResource) {
           target: $session.target,
         }
       })
-      $.mux(() => $session).to($=>$
+      $.muxQueue(() => $session).to($=>$
         .encodeDubbo()
         .pipe(backend.connect, () => $conn)
         .decodeDubbo()

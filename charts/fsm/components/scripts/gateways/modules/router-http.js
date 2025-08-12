@@ -1,6 +1,6 @@
 import resources from '../resources.js'
 import makeBackendSelector from './backend-selector.js'
-import makeBalancer from './balancer-http.js'
+import makeBalancer from './balancer.js'
 import makeSessionPersistence from './session-persistence.js'
 import { log, stringifyHTTPHeaders } from '../utils.js'
 
@@ -377,12 +377,14 @@ function makeRouter(listener, routeResources, gateway) {
     var selector = makeBackendSelector(
       'http', listener, rule,
 
-      function (backendRef, backendResource, filters) {
+      function (backendRef, backendResource, filters, protocol) {
         if (!backendResource && filters.length === 0) return response500
-        var forwarder = backendResource ? [makeBalancer(backendRef, backendResource, gateway, isHTTP2)] : []
+        var forwarder = backendResource ? [makeBalancer(protocol, backendRef, backendResource, { gateway, isHTTP2 })] : []
 
-        if (retryPipeline) forwarder.unshift(retryPipeline)
-        if (timeoutPipeline) forwarder.unshift(timeoutPipeline)
+        if (protocol === 'http') {
+          if (retryPipeline) forwarder.unshift(retryPipeline)
+          if (timeoutPipeline) forwarder.unshift(timeoutPipeline)
+        }
 
         if (sessionPersistence) {
           var preserveSession = sessionPersistence.preserve

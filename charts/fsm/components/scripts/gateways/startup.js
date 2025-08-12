@@ -79,7 +79,7 @@ function makeListener(gateway, listener) {
 
   var $ctx
 
-  pipy.listen(port, wireProto, $=>$
+  pipy.listen(port, wireProto, { idleTimeout: 0 }, $=>$
     .onStart(i => {
       $ctx = {
         inbound: i,
