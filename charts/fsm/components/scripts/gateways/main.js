@@ -28,3 +28,5 @@ resources.list('Gateway').forEach(gw => {
     startGateway(gw)
   }
 })
+
+console.info('FGW started')
