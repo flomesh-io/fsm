@@ -80,7 +80,7 @@ func healthcheckHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	address := fmt.Sprintf("%s:%s", constants.LocalhostIPAddress, port)
+	address := net.JoinHostPort(constants.LocalhostIPAddress, port)
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
 		msg := fmt.Sprintf("Failed to establish connection to %s", address)
