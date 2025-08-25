@@ -36,6 +36,9 @@ permissions:
   contents: read
   packages: write
 
+env:
+  GOEXPERIMENT: jsonv2
+
 jobs:
   build:
     runs-on: ubuntu-24.04

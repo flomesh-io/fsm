@@ -24,7 +24,7 @@ GIT_SHA=$$(git rev-parse HEAD)
 BUILD_DATE_VAR := github.com/flomesh-io/fsm/pkg/version.BuildDate
 BUILD_VERSION_VAR := github.com/flomesh-io/fsm/pkg/version.Version
 BUILD_GITCOMMIT_VAR := github.com/flomesh-io/fsm/pkg/version.GitCommit
-DOCKER_GO_VERSION ?= 1.24
+DOCKER_GO_VERSION ?= 1.25
 DOCKER_BUILDX_PLATFORM ?= linux/amd64
 # Value for the --output flag on docker buildx build.
 # https://docs.docker.com/engine/reference/commandline/buildx_build/#output
@@ -468,7 +468,7 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.4.3
-HELM_VERSION ?= v3.18.5
+HELM_VERSION ?= v3.18.6
 CONTROLLER_TOOLS_VERSION ?= v0.18.0
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"

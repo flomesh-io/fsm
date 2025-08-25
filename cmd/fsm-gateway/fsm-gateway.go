@@ -34,6 +34,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"syscall"
 
 	"github.com/flomesh-io/fsm/pkg/repo"
@@ -366,7 +367,7 @@ func healthCheckHandler() http.Handler {
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		address := fmt.Sprintf("%s:%d", constants.LocalhostIPAddress, constants.FSMGatewayAdminPort)
+		address := net.JoinHostPort(constants.LocalhostIPAddress, strconv.Itoa(constants.FSMGatewayAdminPort))
 
 		conn, err := net.Dial("tcp", address)
 		if err != nil {
