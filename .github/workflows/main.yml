@@ -38,6 +38,7 @@ env:
   FSM_DEMO_IMAGES_DOWNLOAD_PATH: ${{ vars.FSM_DEMO_IMAGES_DOWNLOAD_PATH || '/tmp/fsm-demo-images' }}
   FSM_DEMO_IMAGE_ARTIFACTS_NAME: ${{ vars.FSM_DEMO_IMAGE_ARTIFACTS_NAME || 'fsm-demo-images' }}
   FSM_CLI_ARTIFACTS_NAME: ${{ vars.FSM_CLI_ARTIFACTS_NAME || 'fsm-cli' }}
+  GOEXPERIMENT: jsonv2
 
 permissions:
   contents: read

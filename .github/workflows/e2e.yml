@@ -43,6 +43,7 @@ env:
   CTR_REGISTRY: ${{ vars.CI_CTR_REGISTRY || 'localhost:5000' }}
   CTR_TAG: ${{ github.sha }}
   LOAD_IMAGES_INTO_CLUSTER: ${{ vars.LOAD_IMAGES_INTO_CLUSTER || 'false' }}
+  GOEXPERIMENT: jsonv2
 
 permissions:
   contents: read

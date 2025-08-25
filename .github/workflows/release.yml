@@ -9,6 +9,9 @@ permissions:
   packages: write
   actions: read
 
+env:
+  GOEXPERIMENT: jsonv2
+
 jobs:
   version:
     name: Set Version from git ref
