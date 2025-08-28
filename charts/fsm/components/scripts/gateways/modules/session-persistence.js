@@ -56,7 +56,7 @@ export default function (sessionPersistence) {
   }
 
   function makeHeaderSessionKeyGetter() {
-    var headerName = sessionPresistance.sessionName
+    var headerName = sessionPersistence.sessionName
     return (head) => head.headers[headerName]
   }
 
