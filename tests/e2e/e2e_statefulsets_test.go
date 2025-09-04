@@ -66,6 +66,9 @@ var _ = FSMDescribe("Test traffic among Statefulset members",
 						"create": true,
 						"name":   saName,
 					},
+					"image": map[string]interface{}{
+						"tag": "3.8.0-debian-11-r9",
+					},
 				})
 
 				Expect(err).NotTo(HaveOccurred())
