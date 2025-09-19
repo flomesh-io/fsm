@@ -67,15 +67,9 @@ require (
 	github.com/servicemeshinterface/smi-sdk-go v0.5.0
 	github.com/sethvargo/go-retry v0.3.0
 	github.com/sirupsen/logrus v1.9.3
-<<<<<<< HEAD
-	github.com/spf13/cobra v1.9.1
-	github.com/spf13/pflag v1.0.7
-	github.com/spf13/viper v1.20.1
-=======
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
->>>>>>> e0829f0 (build(deps): Bump github.com/spf13/viper from 1.20.1 to 1.21.0 (#1075))
 	github.com/stretchr/testify v1.11.1
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
