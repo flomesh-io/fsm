@@ -15,8 +15,8 @@ updates:
       - "change/github-actions"
       - "priority/P2"
       - "size/XS"
-    # Milestone v1.6.0
-    milestone: 29
+    # Milestone v1.7.0
+    milestone: 54
     groups:
       actions-deps:
         patterns:
@@ -36,8 +36,8 @@ updates:
       - "change/dependencies"
       - "priority/P2"
       - "size/XS"
-    # Milestone v1.6.0
-    milestone: 29
+    # Milestone v1.7.0
+    milestone: 54
     groups:
       k8s:
         patterns:
