@@ -98,6 +98,14 @@ FSM is under active development and is ready for production workloads.
 | UDPRoute |          v1alpha2           | |
 | ReferenceGrant |           v1beta1           | |
 
+### FSM Version and Supported GatewayAPI Version Mapping
+|   FSM Version    |      Supported GatewayAPI Version      |          Comments          |
+| :---------------------------- |:---------------------------:|  :--------------------------------: |
+| v1.7.x | v1.4.x | |
+| v1.6.x | v1.3.x | |
+| v1.5.x | v1.2.x | |
+| v1.4.x | v1.1.x | |
+
 ## FSM Design
 
 Read more about [FSM's high level goals, design, and architecture](DESIGN.md).
