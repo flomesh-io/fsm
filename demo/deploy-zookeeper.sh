@@ -15,7 +15,7 @@ bin/fsm namespace add --mesh-name "$MESH_NAME" zookeeper
 bin/fsm metrics enable --namespace zookeeper
 
 
-helm install kafka bitnami/zookeeper --set replicaCount=3 --set serviceAccount.create=true --set serviceAccount.name=zookeeper --namespace zookeeper
+helm install kafka bitnamilegacy/zookeeper --set replicaCount=3 --set serviceAccount.create=true --set serviceAccount.name=zookeeper --namespace zookeeper
 
 if [ "$DEPLOY_ON_OPENSHIFT" = true ] ; then
     oc adm policy add-scc-to-user privileged -z "zookeeper" -n "zookeeper"
