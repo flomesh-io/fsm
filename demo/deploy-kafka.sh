@@ -14,7 +14,7 @@ bin/fsm namespace add --mesh-name "$MESH_NAME" kafka
 
 bin/fsm metrics enable --namespace kafka
 
-helm install kafka bitnami/kafka --set replicaCount=3 --set zookeeper.enabled=false --set zookeeperChrootPath='/kafka-root' --set serviceAccount.create=true --set serviceAccount.name=kafka --namespace kafka --set "externalZookeeper.servers={kafka-zookeeper-0.kafka-zookeeper-headless.zookeeper.svc.cluster.local,kafka-zookeeper-1.kafka-zookeeper-headless.zookeeper.svc.cluster.local,kafka-zookeeper-2.kafka-zookeeper-headless.zookeeper.svc.cluster.local}"
+helm install kafka bitnamilegacy/kafka --set replicaCount=3 --set zookeeper.enabled=false --set zookeeperChrootPath='/kafka-root' --set serviceAccount.create=true --set serviceAccount.name=kafka --namespace kafka --set "externalZookeeper.servers={kafka-zookeeper-0.kafka-zookeeper-headless.zookeeper.svc.cluster.local,kafka-zookeeper-1.kafka-zookeeper-headless.zookeeper.svc.cluster.local,kafka-zookeeper-2.kafka-zookeeper-headless.zookeeper.svc.cluster.local}"
 
 if [ "$DEPLOY_ON_OPENSHIFT" = true ] ; then
     oc adm policy add-scc-to-user privileged -z "kafka" -n "kafka"
@@ -85,7 +85,7 @@ EOF
 # Use these commands to test out Kafka
 #
 # Create and exec into a pod with a Kafka image
-#   kubectl run --rm -it kafka-client --image docker.io/bitnami/kafka:3.1.0-debian-10-r60 --namespace kafka -- bash
+#   kubectl run --rm -it kafka-client --image docker.io/bitnamilegacy/kafka:3.1.0-debian-10-r60 --namespace kafka -- bash
 # Run the Kafka producer command (opens an interactive prompt where each line entered is sent as a Kafka message)
 # You can exit the prompt with Ctrl-C
 #   kafka-console-producer.sh --broker-list kafka-0.kafka-headless.kafka.svc.cluster.local:9092 --topic test
