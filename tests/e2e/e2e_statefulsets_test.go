@@ -67,7 +67,8 @@ var _ = FSMDescribe("Test traffic among Statefulset members",
 						"name":   saName,
 					},
 					"image": map[string]interface{}{
-						"tag": "3.8.0-debian-11-r9",
+						"repository": "bitnamilegacy/zookeeper",
+						"tag":        "3.8.4-debian-12-r9",
 					},
 				})
 
