@@ -15,13 +15,8 @@ updates:
       - "change/github-actions"
       - "priority/P2"
       - "size/XS"
-<<<<<<< HEAD
-    # Milestone v1.5.0
-    milestone: 22
-=======
     # Milestone v1.7.0
     milestone: 54
->>>>>>> 2ef838b (ci: Update milestone in dependabot configuration (#1104))
     groups:
       actions-deps:
         patterns:
@@ -41,13 +36,8 @@ updates:
       - "change/dependencies"
       - "priority/P2"
       - "size/XS"
-<<<<<<< HEAD
-    # Milestone v1.5.0
-    milestone: 22
-=======
     # Milestone v1.7.0
     milestone: 54
->>>>>>> 2ef838b (ci: Update milestone in dependabot configuration (#1104))
     groups:
       k8s:
         patterns:
