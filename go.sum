@@ -1181,8 +1181,8 @@ github.com/hashicorp/vault-plugin-secrets-openldap v0.15.4 h1:hIzo90tKFGCF6smDwA
 github.com/hashicorp/vault-plugin-secrets-openldap v0.15.4/go.mod h1:pRXM0xkUe8B7Y8Seb7TQr9GuL70sovCB7gY5UbxXlsA=
 github.com/hashicorp/vault-plugin-secrets-terraform v0.11.0 h1:dIOJ7VKyYU8o9xH1DuD61Fsfl6uSPHy6OrYdEjp4Ku0=
 github.com/hashicorp/vault-plugin-secrets-terraform v0.11.0/go.mod h1:6FNbBAQvISpPqLXdvhV8MvxXKWG9iS+D+spzIGU2WuI=
-github.com/hashicorp/vault/api v1.21.0 h1:Xej4LJETV/spWRdjreb2vzQhEZt4+B5yxHAObfQVDOs=
-github.com/hashicorp/vault/api v1.21.0/go.mod h1:IUZA2cDvr4Ok3+NtK2Oq/r+lJeXkeCrHRmqdyWfpmGM=
+github.com/hashicorp/vault/api v1.22.0 h1:+HYFquE35/B74fHoIeXlZIP2YADVboaPjaSicHEZiH0=
+github.com/hashicorp/vault/api v1.22.0/go.mod h1:IUZA2cDvr4Ok3+NtK2Oq/r+lJeXkeCrHRmqdyWfpmGM=
 github.com/hashicorp/vault/api/auth/userpass v0.1.0 h1:C6OdAYczMbzd1Pe1LLf2SHDulxOq/iybWV3kbgV/PS4=
 github.com/hashicorp/vault/api/auth/userpass v0.1.0/go.mod h1:0orUbtkEwbEPmaQ+wvfrOddGBimLJnuN8A/J0PNfBks=
 github.com/hashicorp/vault/sdk v0.18.0 h1:8RWVn4P4HOU5lct0GDeZS9fysJHyOJwR+Ulb5n8NPnI=
