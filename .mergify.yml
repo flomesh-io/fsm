@@ -52,6 +52,8 @@ pull_request_rules:
         title: "[backport] {{ title }} (#{{ number }})"
         assignees:
           - "{{ author }}"
+        labels:
+          - v1.6.x
   - name: Backport features/patches to the release/v1.5 branch
     conditions:
       - base=main
@@ -63,6 +65,8 @@ pull_request_rules:
         title: "[backport] {{ title }} (#{{ number }})"
         assignees:
           - "{{ author }}"
+        labels:
+          - v1.5.x
   - name: Backport features/patches to the release/v1.4 branch
     conditions:
       - base=main
@@ -74,6 +78,8 @@ pull_request_rules:
         title: "[backport] {{ title }} (#{{ number }})"
         assignees:
           - "{{ author }}"
+        labels:
+          - v1.4.x
   - name: Backport features/patches to the release/v1.3 branch
     conditions:
       - base=main
@@ -85,6 +91,8 @@ pull_request_rules:
         title: "[backport] {{ title }} (#{{ number }})"
         assignees:
           - "{{ author }}"
+        labels:
+          - v1.3.x
   - name: Backport features/patches to the release/v1.2 branch
     conditions:
       - base=main
@@ -96,6 +104,8 @@ pull_request_rules:
         title: "[backport] {{ title }} (#{{ number }})"
         assignees:
           - "{{ author }}"
+        labels:
+          - v1.2.x
   - name: Cherry-pick patches from release/v* to the main branch
     conditions:
       - base~=^release\/v
