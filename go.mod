@@ -75,7 +75,7 @@ require (
 	github.com/tidwall/sjson v1.2.5
 	github.com/vishvananda/netlink v1.3.1
 	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b
-    golang.org/x/net v0.46.0
+	golang.org/x/net v0.46.0
 	golang.org/x/sync v0.17.0
 	golang.org/x/sys v0.37.0
 	golang.org/x/time v0.13.0
