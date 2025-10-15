@@ -326,11 +326,7 @@ require (
 	github.com/google/go-containerregistry v0.19.1 // indirect
 	github.com/google/go-metrics-stackdriver v0.2.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-<<<<<<< HEAD
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/gopacket v1.1.19 // indirect
-=======
->>>>>>> f716153 (build(deps): Bump github.com/libp2p/go-netroute from 0.2.2 to 0.3.0 (#1123))
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
