@@ -44,7 +44,31 @@ pull_request_rules:
       - base = main
       - "#commits-behind >= 3"
     actions:
+<<<<<<< HEAD
       rebase:
+=======
+      backport:
+        branches:
+          - "release/v1.6"
+        title: "[backport] {{ title }} (#{{ number }})"
+        assignees:
+          - "{{ author }}"
+        labels:
+          - v1.6.x
+  - name: Backport features/patches to the release/v1.5 branch
+    conditions:
+      - base=main
+      - label = backport/v1.5
+    actions:
+      backport:
+        branches:
+          - "release/v1.5"
+        title: "[backport] {{ title }} (#{{ number }})"
+        assignees:
+          - "{{ author }}"
+        labels:
+          - v1.5.x
+>>>>>>> c7a221a (ci: Add version labels for backport actions in Mergify configuration (#1147))
   - name: Backport features/patches to the release/v1.4 branch
     conditions:
       - base=main
@@ -56,6 +80,8 @@ pull_request_rules:
         title: "[backport] {{ title }} (#{{ number }})"
         assignees:
           - "{{ author }}"
+        labels:
+          - v1.4.x
   - name: Backport features/patches to the release/v1.3 branch
     conditions:
       - base=main
@@ -67,6 +93,8 @@ pull_request_rules:
         title: "[backport] {{ title }} (#{{ number }})"
         assignees:
           - "{{ author }}"
+        labels:
+          - v1.3.x
   - name: Backport features/patches to the release/v1.2 branch
     conditions:
       - base=main
@@ -78,6 +106,8 @@ pull_request_rules:
         title: "[backport] {{ title }} (#{{ number }})"
         assignees:
           - "{{ author }}"
+        labels:
+          - v1.2.x
   - name: Cherry-pick patches from release/v* to the main branch
     conditions:
       - base~=^release\/v
