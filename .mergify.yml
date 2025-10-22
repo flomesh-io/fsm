@@ -41,8 +41,6 @@ pull_request_rules:
     actions:
       merge:
         method: squash
-<<<<<<< HEAD
-=======
   - name: Backport features/patches to the release/v1.6 branch
     conditions:
       - base=main
@@ -56,7 +54,6 @@ pull_request_rules:
           - "{{ author }}"
         labels:
           - v1.6.x
->>>>>>> c7a221a (ci: Add version labels for backport actions in Mergify configuration (#1147))
   - name: Backport features/patches to the release/v1.5 branch
     conditions:
       - base=main
