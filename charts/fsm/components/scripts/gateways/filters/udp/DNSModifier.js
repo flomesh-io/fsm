@@ -33,7 +33,7 @@ export default function (config) {
         return new Message(data)
       }
     })
-    .demux().to($=>$
+    .demuxQueue().to($=>$
       .replaceMessage(
         msg => {
           $question = DNS.decode(msg.body)
