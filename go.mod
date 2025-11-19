@@ -16,7 +16,7 @@ require (
 	github.com/distribution/reference v0.6.0
 	github.com/docker/docker v28.5.1+incompatible
 	github.com/docker/go-connections v0.6.0
-	github.com/dubbogo/go-zookeeper v1.0.3
+	github.com/dubbogo/go-zookeeper v1.0.4
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.18.0
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
