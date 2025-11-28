@@ -98,7 +98,11 @@ jobs:
           
       - name: Docker meta
         id: docker_meta
+<<<<<<< HEAD
         uses: crazy-max/ghaction-docker-meta@v5.8.0
+=======
+        uses: crazy-max/ghaction-docker-meta@v5.10.0
+>>>>>>> fb5e54c (build(deps): Bump crazy-max/ghaction-docker-meta from 5.9.0 to 5.10.0 in the actions-deps group (#1219))
         with:
           images: flomesh/pipy
           tags: |
