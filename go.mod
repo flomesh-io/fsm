@@ -24,7 +24,11 @@ require (
 	github.com/go-co-op/gocron v1.37.0
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zerologr v1.2.3
+<<<<<<< HEAD
 	github.com/go-resty/resty/v2 v2.16.5
+=======
+	github.com/go-resty/resty/v2 v2.17.1
+>>>>>>> b066bc0 (build(deps): Bump github.com/go-resty/resty/v2 from 2.17.0 to 2.17.1 (#1250))
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/gobwas/glob v0.2.3
 	github.com/golang/mock v1.6.0
