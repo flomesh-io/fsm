@@ -193,7 +193,7 @@ jobs:
         env:
           DOCKER_TAR_PATH: ${{ env.FSM_TAR_PATH }}
       - name: Upload fsm images
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ env.FSM_IMAGE_ARTIFACTS_NAME }}
           path: ${{ env.FSM_TAR_PATH }}
@@ -206,7 +206,7 @@ jobs:
         env:
           DOCKER_TAR_PATH: ${{ env.FSM_DEMO_TAR_PATH }}
       - name: Upload fsm demo images
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ env.FSM_DEMO_IMAGE_ARTIFACTS_NAME }}
           path: ${{ env.FSM_DEMO_TAR_PATH }}
@@ -215,7 +215,7 @@ jobs:
       - name: Build fsm CLI
         run: make build-fsm
       - name: Upload fsm CLI
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: fsm-cli
           path: ./bin/fsm
@@ -230,7 +230,7 @@ jobs:
       - name: Setup Trivy
         uses: aquasecurity/setup-trivy@v0.2.4
       - name: Download docker image artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: ${{ env.FSM_IMAGE_ARTIFACTS_NAME }}
           path: ${{ env.FSM_IMAGES_DOWNLOAD_PATH }}
@@ -370,7 +370,7 @@ jobs:
           curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
           k3d version
       - name: Download fsm image artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: ${{ env.FSM_IMAGE_ARTIFACTS_NAME }}
           path: ${{ env.FSM_IMAGES_DOWNLOAD_PATH }}
@@ -379,7 +379,7 @@ jobs:
           ls -1 ${{ env.FSM_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
           docker image ls -a
       - name: Download fsm demo image artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: ${{ env.FSM_DEMO_IMAGE_ARTIFACTS_NAME }}
           path: ${{ env.FSM_DEMO_IMAGES_DOWNLOAD_PATH }}
@@ -388,7 +388,7 @@ jobs:
           ls -1 ${{ env.FSM_DEMO_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
           docker image ls -a
       - name: Download fsm CLI
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: ${{ env.FSM_CLI_ARTIFACTS_NAME }}
           path: ./bin
