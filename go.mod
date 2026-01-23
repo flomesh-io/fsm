@@ -73,9 +73,15 @@ require (
 	github.com/tidwall/sjson v1.2.5
 	github.com/vishvananda/netlink v1.3.1
 	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b
+<<<<<<< HEAD
 	golang.org/x/net v0.47.0
 	golang.org/x/sync v0.18.0
 	golang.org/x/sys v0.38.0
+=======
+	golang.org/x/net v0.48.0
+	golang.org/x/sync v0.19.0
+	golang.org/x/sys v0.40.0
+>>>>>>> 1e932f4 (build(deps): Bump golang.org/x/sys from 0.39.0 to 0.40.0 (#1261))
 	golang.org/x/time v0.14.0
 	gomodules.xyz/jsonpatch/v2 v2.5.0
 	google.golang.org/grpc v1.78.0
