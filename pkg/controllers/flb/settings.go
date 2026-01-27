@@ -2,8 +2,11 @@ package flb
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -289,14 +292,31 @@ func newOverrideSetting(secret *corev1.Secret, defaultSetting *Setting) *Setting
 }
 
 func newHTTPClient(baseURL string) *resty.Client {
+	scheme := "http"
+	if strings.Contains(baseURL, "://") {
+		u, err := url.Parse(baseURL)
+		if err == nil {
+			scheme = u.Scheme
+		}
+	}
+
+	transport := &http.Transport{
+		DisableKeepAlives:  false,
+		MaxIdleConns:       10,
+		IdleConnTimeout:    60 * time.Second,
+		DisableCompression: false,
+	}
+
+	if strings.ToLower(scheme) == "https" {
+		// #nosec G402
+		transport.TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
+	}
+
 	return resty.New().
-		SetTransport(&http.Transport{
-			DisableKeepAlives:  false,
-			MaxIdleConns:       10,
-			IdleConnTimeout:    60 * time.Second,
-			DisableCompression: false,
-		}).
-		SetScheme("http").
+		SetTransport(transport).
+		SetScheme(scheme).
 		SetBaseURL(baseURL).
 		SetTimeout(5 * time.Second).
 		SetDebug(true).
