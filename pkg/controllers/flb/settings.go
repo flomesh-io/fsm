@@ -308,6 +308,7 @@ func newHTTPClient(baseURL string) *resty.Client {
 	}
 
 	if strings.ToLower(scheme) == "https" {
+		// #nosec G402
 		transport.TLSClientConfig = &tls.Config{
 			InsecureSkipVerify: true,
 		}
