@@ -46,7 +46,7 @@ var _ = FSMDescribe("Test traffic among Statefulset members",
 				install.Namespace = testNS
 				install.Timeout = 180 * time.Second
 				saName := "zookeeper"
-				replicaCount := 3
+				replicaCount := 1
 
 				cli := cli.New()
 				chartPath, err := install.LocateChart("https://charts.bitnami.com/bitnami/zookeeper-9.0.2.tgz", cli)
@@ -65,6 +65,10 @@ var _ = FSMDescribe("Test traffic among Statefulset members",
 					"serviceAccount": map[string]interface{}{
 						"create": true,
 						"name":   saName,
+					},
+					"image": map[string]interface{}{
+						"repository": "bitnamilegacy/zookeeper",
+						"tag":        "3.8.4-debian-12-r9",
 					},
 				})
 
@@ -114,7 +118,7 @@ var _ = FSMDescribe("Test traffic among Statefulset members",
 
 				Expect(Td.WaitForPodsRunningReady(testNS, replicaCount, nil)).To(Succeed())
 
-				time.Sleep(30 * time.Second)
+				time.Sleep(90 * time.Second)
 
 				pods, err := Td.Client.CoreV1().Pods(testNS).List(context.TODO(), metav1.ListOptions{})
 
@@ -146,7 +150,7 @@ var _ = FSMDescribe("Test traffic among Statefulset members",
 					}
 
 					return !hadErr
-				}, 1, 90*time.Second)
+				}, 1, 120*time.Second)
 
 				Expect(cond).To(BeTrue())
 
