@@ -229,7 +229,7 @@ jobs:
     needs: fsm-artifacts
     steps:
       - name: Setup Trivy
-        uses: aquasecurity/setup-trivy@v0.2.4
+        uses: aquasecurity/setup-trivy@v0.2.5
       - name: Download docker image artifacts
         uses: actions/download-artifact@v7
         with:
