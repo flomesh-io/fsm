@@ -43,7 +43,7 @@ jobs:
       - name: Generate Release Notes
         run: scripts/release-notes.sh $VERSION > /tmp/release-notes.md
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           args: release --clean --parallelism 5 --release-notes /tmp/release-notes.md --verbose
 
