@@ -33,8 +33,8 @@ pull_request_rules:
       - "#approved-reviews-by >= 1"
       - or:
           - and:
-            - label=ok-to-merge
-            - label=squash
+              - label=ok-to-merge
+              - label=squash
           - label=ok-to-squash
       - -label=wip
       - -label=do-not-merge/hold
@@ -139,7 +139,7 @@ pull_request_rules:
           ❗❗❗
           All commits in this PR must be signed off. 
           Please sign all commits by:
-          
+
           ```shell
           git rebase HEAD~{{ commits | length }} --signoff
           git push --force-with-lease origin {{ head }}
@@ -149,26 +149,26 @@ merge_protections:
     description: Make sure that we follow https://www.conventionalcommits.org/en/v1.0.0/
     if:
       - or:
-        - base=main
-        - base~=^release\/v
+          - base=main
+          - base~=^release\/v
     success_conditions:
-      - "title ~= ^(\\[wip\\]|\\[backport\\]|\\[cherry-pick\\])?(
-        )?(fix|feat|docs|style|refactor|perf|test|build|ci|chore|revert)(?:\\(.+\
-        \\))?:"
+      - "title ~= ^(\\[wip\\]|\\[backport\\]|\\[cherry-pick\\])?( )?(fix|feat|docs|style|refactor|perf|test|build|ci|chore|revert)(?:\\(.+\\))?:"
   - name: Enforce verified commits
     description: Make sure that we have verified commits
     if:
       - or:
-        - base=main
-        - base~=^release\/v
+          - base=main
+          - base~=^release\/v
     success_conditions:
       - "#commits-unverified = 0"
   - name: Enforce linear history
     description: Make sure that we have a linear history, no merge commits are allowed
     if:
       - or:
-        - base=main
-        - base~=^release\/v
+          - base=main
+          - base~=^release\/v
     success_conditions:
       - "linear-history"
 
+merge_protections_settings:
+  reporting_method: check-runs
