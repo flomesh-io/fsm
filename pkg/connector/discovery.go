@@ -150,8 +150,12 @@ func (as *AgentService) FromNacos(ins *nacos.Instance) {
 	as.ID = ins.InstanceId
 	as.MicroService.Service = strings.ToLower(strings.Split(ins.ServiceName, constant.SERVICE_INFO_SPLITER)[1])
 	as.InstanceId = ins.InstanceId
-	as.MicroService.Protocol().SetVar(ProtocolHTTP)
 	as.MicroService.Endpoint().Set(MicroServiceAddress(ins.Ip), MicroServicePort(ins.Port))
+	if proto, ok := ins.Metadata["protocol"]; ok && strings.EqualFold(proto, string(ProtocolGRPC)) {
+		as.MicroService.Protocol().SetVar(ProtocolGRPC)
+	} else {
+		as.MicroService.Protocol().SetVar(ProtocolHTTP)
+	}
 	if len(ins.Metadata) > 0 {
 		as.Meta = make(map[string]interface{})
 		for k, v := range ins.Metadata {
@@ -344,6 +348,9 @@ func (cr *CatalogRegistration) ToNacos(cluster, group string, weight float64) *v
 			for k, v := range cr.Service.Meta {
 				r.Metadata[k] = fmt.Sprintf("%v", v)
 			}
+		}
+		if cr.Service.MicroService.protocol == ProtocolGRPC {
+			r.Metadata["protocol"] = string(ProtocolGRPC)
 		}
 	}
 	return r

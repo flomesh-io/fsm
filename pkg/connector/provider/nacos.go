@@ -482,7 +482,8 @@ func (dc *NacosDiscoveryClient) Register(reg *connector.CatalogRegistration) err
 		return fmt.Errorf("invalid port value: %v", ins.Port)
 	}
 	port := int32(parsedPort)
-	instanceId := dc.getServiceInstanceID(ins.ServiceName, ins.Ip, connector.MicroServicePort(port), connector.ProtocolHTTP)
+	protocol := protocolFromNacosMetadata(ins.Metadata)
+	instanceId := dc.getServiceInstanceID(ins.ServiceName, ins.Ip, connector.MicroServicePort(port), protocol)
 	return dc.connectController.CacheRegisterInstance(instanceId, ins, func() error {
 		_, err := dc.nacosClient(instanceId).RegisterInstance(*ins)
 		return err
@@ -507,6 +508,13 @@ func (dc *NacosDiscoveryClient) RegisteredNamespace(kubeNS string) string {
 
 func (dc *NacosDiscoveryClient) MicroServiceProvider() ctv1.DiscoveryServiceProvider {
 	return ctv1.NacosDiscoveryService
+}
+
+func protocolFromNacosMetadata(metadata map[string]string) connector.MicroServiceProtocol {
+	if v, ok := metadata["protocol"]; ok && strings.EqualFold(v, string(connector.ProtocolGRPC)) {
+		return connector.ProtocolGRPC
+	}
+	return connector.ProtocolHTTP
 }
 
 func (dc *NacosDiscoveryClient) getServiceInstanceID(name, addr string, port connector.MicroServicePort, _ connector.MicroServiceProtocol) string {
