@@ -131,21 +131,8 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *corev1.Service) {
 				if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) {
 					gw.updateGatewayHTTPRoute(k8sSvc, portSpec, parentRefs)
 				} else if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) {
-					if svcMeta != nil && svcMeta.GRPCMeta != nil &&
-						len(svcMeta.GRPCMeta.Interface) > 0 && len(svcMeta.GRPCMeta.Methods) > 0 {
-						var grpcRouteMatches []gwv1.GRPCRouteMatch
-						for method := range svcMeta.GRPCMeta.Methods {
-							method := method
-							grpcRouteMatches = append(grpcRouteMatches, gwv1.GRPCRouteMatch{
-								Method: &gwv1.GRPCMethodMatch{
-									Type:    &grpcMatchType,
-									Service: &svcMeta.GRPCMeta.Interface,
-									Method:  &method,
-								},
-							})
-						}
-						gw.updateGatewayGRPCRoute(k8sSvc, portSpec, parentRefs, grpcRouteMatches)
-					}
+					grpcRouteMatches := buildGRPCRouteMatches(svcMeta)
+					gw.updateGatewayGRPCRoute(k8sSvc, portSpec, parentRefs, grpcRouteMatches)
 				} else {
 					gw.updateGatewayTCPRoute(k8sSvc, portSpec, parentRefs)
 				}
@@ -311,6 +298,25 @@ func (gw *GatewaySource) updateGatewayHTTPRoute(k8sSvc *corev1.Service, portSpec
 			}
 		}
 	}
+}
+
+func buildGRPCRouteMatches(svcMeta *connector.MicroSvcMeta) []gwv1.GRPCRouteMatch {
+	if svcMeta == nil || svcMeta.GRPCMeta == nil ||
+		len(svcMeta.GRPCMeta.Interface) == 0 || len(svcMeta.GRPCMeta.Methods) == 0 {
+		return nil
+	}
+	matches := make([]gwv1.GRPCRouteMatch, 0, len(svcMeta.GRPCMeta.Methods))
+	for method := range svcMeta.GRPCMeta.Methods {
+		method := method
+		matches = append(matches, gwv1.GRPCRouteMatch{
+			Method: &gwv1.GRPCMethodMatch{
+				Type:    &grpcMatchType,
+				Service: &svcMeta.GRPCMeta.Interface,
+				Method:  &method,
+			},
+		})
+	}
+	return matches
 }
 
 func (gw *GatewaySource) updateGatewayGRPCRoute(k8sSvc *corev1.Service, portSpec corev1.ServicePort,
