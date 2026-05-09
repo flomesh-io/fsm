@@ -384,7 +384,7 @@ func (s *KtoCSyncer) syncFull(ctx context.Context) {
 		deregCnt++
 		go func(r *connector.CatalogDeregistration) {
 			defer deregWg.Done()
-			maxRetries := 1
+			maxRetries := 3
 			for maxRetries > 0 {
 				log.Info().Msgf("deregistering service service-id:%s service-namespace:%s",
 					r.ServiceID,
@@ -432,7 +432,7 @@ func (s *KtoCSyncer) syncFull(ctx context.Context) {
 			regCnt++
 			go func(r *connector.CatalogRegistration) {
 				defer regWg.Done()
-				maxRetries := 1
+				maxRetries := 3
 				// Register the service.
 				for maxRetries > 0 {
 					if err := s.discClient.Register(r); err != nil {
