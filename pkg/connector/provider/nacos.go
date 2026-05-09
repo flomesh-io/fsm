@@ -71,9 +71,9 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INa
 			AsyncUpdateService:   true,
 			UpdateCacheWhenEmpty: true,
 			DisableUseSnapShot:   true,
-			LogDir:               "/tmp/nacos/log",
 			CacheDir:             "/tmp/nacos/cache",
 			LogLevel:             level,
+			AppendToStdout:       true,
 		}
 		conn.ttl = connectController.GetAuthNacosTokenTtl()
 		conn.expiresAt = time.Now().Add(conn.ttl)
