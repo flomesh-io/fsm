@@ -116,7 +116,7 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INa
 	var grpcPort uint64
 
 	address := connectController.GetHTTPAddr()
-	if nacosAddr, err := url.Parse(address); err == nil {
+	if nacosAddr, err := url.Parse(address); err == nil && len(nacosAddr.Host) > 0 {
 		scheme = nacosAddr.Scheme
 		ipAddr = nacosAddr.Hostname()
 		port, _ = strconv.ParseUint(nacosAddr.Port(), 10, 64)
@@ -163,6 +163,8 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INa
 			"clientConfig":  conn.clientCfg,
 		})
 		conn.expiresAt = time.Now().Add(conn.ttl)
+		// Allow SDK internal goroutines to establish connection
+		time.Sleep(2 * time.Second)
 	}
 
 	connectController.WaitLimiter()
@@ -460,9 +462,14 @@ func (dc *NacosDiscoveryClient) Deregister(dereg *connector.CatalogDeregistratio
 	return dc.connectController.CacheDeregisterInstance(instanceId, func() error {
 		conn := dc.nacosClient(instanceId)
 		_, err := conn.DeregisterInstance(*ins)
+		if err != nil {
+			log.Error().Err(err).Msgf("deregister nacos instance failed: service=%s, ip=%s, port=%d, cluster=%s, group=%s",
+				ins.ServiceName, ins.Ip, ins.Port, ins.Cluster, ins.GroupName)
+			return err
+		}
 		conn.CloseClient()
 		delete(dc.nacosConnects, instanceId)
-		return err
+		return nil
 	})
 }
 
