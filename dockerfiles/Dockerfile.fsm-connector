@@ -11,5 +11,6 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o fsm-connector -ldflags "$LDFLAGS" ./cmd/fsm-connector
 
-FROM gcr.io/distroless/static
+FROM alpine:3.21
+RUN apk add --no-cache ca-certificates
 COPY --from=builder /fsm/fsm-connector /
