@@ -16,9 +16,11 @@ func TestAgentServiceFromNacosProtocol(t *testing.T) {
 		{"grpc lowercase", map[string]string{"protocol": "grpc"}, ProtocolGRPC},
 		{"GRPC uppercase", map[string]string{"protocol": "GRPC"}, ProtocolGRPC},
 		{"GrPc mixed", map[string]string{"protocol": "GrPc"}, ProtocolGRPC},
+		{"tri lowercase", map[string]string{"protocol": "tri"}, ProtocolGRPC},
+		{"TRI uppercase", map[string]string{"protocol": "TRI"}, ProtocolGRPC},
+		{"Tri mixed", map[string]string{"protocol": "Tri"}, ProtocolGRPC},
 		{"http explicit", map[string]string{"protocol": "http"}, ProtocolHTTP},
 		{"empty value", map[string]string{"protocol": ""}, ProtocolHTTP},
-		{"unknown value", map[string]string{"protocol": "tri"}, ProtocolHTTP},
 		{"no key", map[string]string{"other": "x"}, ProtocolHTTP},
 		{"nil metadata", nil, ProtocolHTTP},
 	}

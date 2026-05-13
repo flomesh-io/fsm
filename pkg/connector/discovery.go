@@ -151,7 +151,7 @@ func (as *AgentService) FromNacos(ins *nacos.Instance) {
 	as.MicroService.Service = strings.ToLower(strings.Split(ins.ServiceName, constant.SERVICE_INFO_SPLITER)[1])
 	as.InstanceId = ins.InstanceId
 	as.MicroService.Endpoint().Set(MicroServiceAddress(ins.Ip), MicroServicePort(ins.Port))
-	if proto, ok := ins.Metadata["protocol"]; ok && strings.EqualFold(proto, string(ProtocolGRPC)) {
+	if proto, ok := ins.Metadata["protocol"]; ok && (strings.EqualFold(proto, string(ProtocolGRPC)) || strings.EqualFold(proto, "tri")) {
 		as.MicroService.Protocol().SetVar(ProtocolGRPC)
 	} else {
 		as.MicroService.Protocol().SetVar(ProtocolHTTP)

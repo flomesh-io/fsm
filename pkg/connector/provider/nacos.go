@@ -518,8 +518,10 @@ func (dc *NacosDiscoveryClient) MicroServiceProvider() ctv1.DiscoveryServiceProv
 }
 
 func protocolFromNacosMetadata(metadata map[string]string) connector.MicroServiceProtocol {
-	if v, ok := metadata["protocol"]; ok && strings.EqualFold(v, string(connector.ProtocolGRPC)) {
-		return connector.ProtocolGRPC
+	if v, ok := metadata["protocol"]; ok {
+		if strings.EqualFold(v, string(connector.ProtocolGRPC)) || strings.EqualFold(v, "tri") {
+			return connector.ProtocolGRPC
+		}
 	}
 	return connector.ProtocolHTTP
 }
