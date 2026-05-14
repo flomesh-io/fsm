@@ -151,8 +151,20 @@ func (as *AgentService) FromNacos(ins *nacos.Instance) {
 	as.MicroService.Service = strings.ToLower(strings.Split(ins.ServiceName, constant.SERVICE_INFO_SPLITER)[1])
 	as.InstanceId = ins.InstanceId
 	as.MicroService.Endpoint().Set(MicroServiceAddress(ins.Ip), MicroServicePort(ins.Port))
-	if proto, ok := ins.Metadata["protocol"]; ok && (strings.EqualFold(proto, string(ProtocolGRPC)) || strings.EqualFold(proto, "tri")) {
-		as.MicroService.Protocol().SetVar(ProtocolGRPC)
+	// 读取 appprotocol 字段，如果没有则读取 protocol 字段（兼容旧数据）
+	proto := ""
+	if v, ok := ins.Metadata["appprotocol"]; ok {
+		proto = v
+	} else if v, ok := ins.Metadata["protocol"]; ok {
+		proto = v
+	}
+	if proto != "" {
+		proto = strings.ToLower(proto)
+		if proto == string(ProtocolGRPC) || proto == "tri" {
+			as.MicroService.Protocol().SetVar(MicroServiceProtocol(proto))
+		} else {
+			as.MicroService.Protocol().SetVar(ProtocolHTTP)
+		}
 	} else {
 		as.MicroService.Protocol().SetVar(ProtocolHTTP)
 	}
@@ -350,7 +362,7 @@ func (cr *CatalogRegistration) ToNacos(cluster, group string, weight float64) *v
 			}
 		}
 		if cr.Service.MicroService.protocol == ProtocolGRPC {
-			r.Metadata["protocol"] = string(ProtocolGRPC)
+			r.Metadata["appprotocol"] = string(ProtocolGRPC)
 		}
 	}
 	return r

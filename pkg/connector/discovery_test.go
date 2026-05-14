@@ -13,14 +13,22 @@ func TestAgentServiceFromNacosProtocol(t *testing.T) {
 		metadata map[string]string
 		want     MicroServiceProtocol
 	}{
-		{"grpc lowercase", map[string]string{"protocol": "grpc"}, ProtocolGRPC},
-		{"GRPC uppercase", map[string]string{"protocol": "GRPC"}, ProtocolGRPC},
-		{"GrPc mixed", map[string]string{"protocol": "GrPc"}, ProtocolGRPC},
-		{"tri lowercase", map[string]string{"protocol": "tri"}, ProtocolGRPC},
-		{"TRI uppercase", map[string]string{"protocol": "TRI"}, ProtocolGRPC},
-		{"Tri mixed", map[string]string{"protocol": "Tri"}, ProtocolGRPC},
-		{"http explicit", map[string]string{"protocol": "http"}, ProtocolHTTP},
-		{"empty value", map[string]string{"protocol": ""}, ProtocolHTTP},
+		// appprotocol 字段测试
+		{"appprotocol grpc", map[string]string{"appprotocol": "grpc"}, ProtocolGRPC},
+		{"appprotocol tri", map[string]string{"appprotocol": "tri"}, MicroServiceProtocol("tri")},
+		{"appprotocol http", map[string]string{"appprotocol": "http"}, ProtocolHTTP},
+		// protocol 字段测试（兼容旧数据）
+		{"protocol grpc lowercase", map[string]string{"protocol": "grpc"}, ProtocolGRPC},
+		{"protocol GRPC uppercase", map[string]string{"protocol": "GRPC"}, ProtocolGRPC},
+		{"protocol GrPc mixed", map[string]string{"protocol": "GrPc"}, ProtocolGRPC},
+		{"protocol tri lowercase", map[string]string{"protocol": "tri"}, MicroServiceProtocol("tri")},
+		{"protocol TRI uppercase", map[string]string{"protocol": "TRI"}, MicroServiceProtocol("tri")},
+		{"protocol Tri mixed", map[string]string{"protocol": "Tri"}, MicroServiceProtocol("tri")},
+		{"protocol http explicit", map[string]string{"protocol": "http"}, ProtocolHTTP},
+		{"protocol empty value", map[string]string{"protocol": ""}, ProtocolHTTP},
+		// appprotocol 优先级高于 protocol
+		{"appprotocol takes precedence", map[string]string{"appprotocol": "grpc", "protocol": "http"}, ProtocolGRPC},
+		// 无字段
 		{"no key", map[string]string{"other": "x"}, ProtocolHTTP},
 		{"nil metadata", nil, ProtocolHTTP},
 	}
@@ -52,9 +60,9 @@ func TestCatalogRegistrationToNacosProtocol(t *testing.T) {
 		wantKey  bool
 		wantVal  string
 	}{
-		{"grpc writes protocol=grpc", ProtocolGRPC, true, "grpc"},
-		{"http omits protocol key", ProtocolHTTP, false, ""},
-		{"empty omits protocol key", MicroServiceProtocol(""), false, ""},
+		{"grpc writes appprotocol=grpc", ProtocolGRPC, true, "grpc"},
+		{"http omits appprotocol key", ProtocolHTTP, false, ""},
+		{"empty omits appprotocol key", MicroServiceProtocol(""), false, ""},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -67,16 +75,16 @@ func TestCatalogRegistrationToNacosProtocol(t *testing.T) {
 			if out == nil {
 				t.Fatal("ToNacos returned nil")
 			}
-			got, ok := out.Metadata["protocol"]
+			got, ok := out.Metadata["appprotocol"]
 			if tc.wantKey {
 				if !ok {
-					t.Fatalf("metadata[protocol] missing, want %q", tc.wantVal)
+					t.Fatalf("metadata[appprotocol] missing, want %q", tc.wantVal)
 				}
 				if got != tc.wantVal {
-					t.Fatalf("metadata[protocol]=%q want %q", got, tc.wantVal)
+					t.Fatalf("metadata[appprotocol]=%q want %q", got, tc.wantVal)
 				}
 			} else if ok && got == "grpc" {
-				t.Fatalf("metadata[protocol] unexpectedly set to grpc for non-grpc service")
+				t.Fatalf("metadata[appprotocol] unexpectedly set to grpc for non-grpc service")
 			}
 		})
 	}
@@ -94,7 +102,7 @@ func TestCatalogRegistrationToNacosPreservesMeta(t *testing.T) {
 	if out.Metadata["env"] != "prod" || out.Metadata["region"] != "us-west" {
 		t.Fatalf("existing metadata not preserved: %#v", out.Metadata)
 	}
-	if out.Metadata["protocol"] != "grpc" {
-		t.Fatalf("protocol metadata not written: %#v", out.Metadata)
+	if out.Metadata["appprotocol"] != "grpc" {
+		t.Fatalf("appprotocol metadata not written: %#v", out.Metadata)
 	}
 }

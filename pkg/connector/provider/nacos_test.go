@@ -12,14 +12,22 @@ func TestProtocolFromNacosMetadata(t *testing.T) {
 		metadata map[string]string
 		want     connector.MicroServiceProtocol
 	}{
-		{"grpc lowercase", map[string]string{"protocol": "grpc"}, connector.ProtocolGRPC},
-		{"GRPC uppercase", map[string]string{"protocol": "GRPC"}, connector.ProtocolGRPC},
-		{"GrPc mixed", map[string]string{"protocol": "GrPc"}, connector.ProtocolGRPC},
-		{"tri lowercase", map[string]string{"protocol": "tri"}, connector.ProtocolGRPC},
-		{"TRI uppercase", map[string]string{"protocol": "TRI"}, connector.ProtocolGRPC},
-		{"Tri mixed", map[string]string{"protocol": "Tri"}, connector.ProtocolGRPC},
-		{"http explicit", map[string]string{"protocol": "http"}, connector.ProtocolHTTP},
-		{"empty value", map[string]string{"protocol": ""}, connector.ProtocolHTTP},
+		// appprotocol 字段测试
+		{"appprotocol grpc", map[string]string{"appprotocol": "grpc"}, connector.ProtocolGRPC},
+		{"appprotocol tri", map[string]string{"appprotocol": "tri"}, connector.MicroServiceProtocol("tri")},
+		{"appprotocol http", map[string]string{"appprotocol": "http"}, connector.ProtocolHTTP},
+		// protocol 字段测试（兼容旧数据）
+		{"protocol grpc lowercase", map[string]string{"protocol": "grpc"}, connector.ProtocolGRPC},
+		{"protocol GRPC uppercase", map[string]string{"protocol": "GRPC"}, connector.ProtocolGRPC},
+		{"protocol GrPc mixed", map[string]string{"protocol": "GrPc"}, connector.ProtocolGRPC},
+		{"protocol tri lowercase", map[string]string{"protocol": "tri"}, connector.MicroServiceProtocol("tri")},
+		{"protocol TRI uppercase", map[string]string{"protocol": "TRI"}, connector.MicroServiceProtocol("tri")},
+		{"protocol Tri mixed", map[string]string{"protocol": "Tri"}, connector.MicroServiceProtocol("tri")},
+		{"protocol http explicit", map[string]string{"protocol": "http"}, connector.ProtocolHTTP},
+		{"protocol empty value", map[string]string{"protocol": ""}, connector.ProtocolHTTP},
+		// appprotocol 优先级高于 protocol
+		{"appprotocol takes precedence", map[string]string{"appprotocol": "grpc", "protocol": "http"}, connector.ProtocolGRPC},
+		// 无字段
 		{"no protocol key", map[string]string{"version": "1.0"}, connector.ProtocolHTTP},
 		{"empty map", map[string]string{}, connector.ProtocolHTTP},
 		{"nil map", nil, connector.ProtocolHTTP},

@@ -477,7 +477,7 @@ func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *cor
 					specPort.Port = int32(*port)
 				}
 			}
-			if appProtocol == constants.ProtocolGRPC {
+			if appProtocol == constants.ProtocolGRPC || appProtocol == "tri" {
 				specPort.AppProtocol = &protocolGRPC
 			}
 			createSvc.Spec.Ports = append(createSvc.Spec.Ports, specPort)
