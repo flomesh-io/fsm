@@ -3,6 +3,7 @@
   specEnableEgress = config?.Spec?.Traffic?.EnableEgress,
   outboundL7Chains = config?.Chains?.["outbound-http"],
   outboundL4Chains = config?.Chains?.["outbound-tcp"],
+  isDebugEnabled = config?.Spec?.SidecarLogLevel === 'debug',
 
   certChain = config?.Certificate?.CertChain,
   privateKey = config?.Certificate?.PrivateKey,
@@ -69,7 +70,10 @@
 
 .pipeline()
 .onStart(
-  () => void portHandlers.get(__inbound.destinationPort)()
+  () => void (
+    portHandlers.get(__inbound.destinationPort)(),
+    isDebugEnabled && console.log('outbound-main # port:', __inbound.destinationPort, 'protocol:', __protocol, '__isHTTP2:', __isHTTP2, 'dst:', __port?.Port, 'dstProtocol:', __port?.Protocol)
+  )
 )
 .branch(
   () => __protocol === 'http', (

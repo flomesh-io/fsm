@@ -1,6 +1,7 @@
 ((
   config = pipy.solve('config.js'),
   specServiceIdentity = config?.Spec?.ServiceIdentity,
+  isDebugEnabled = config?.Spec?.SidecarLogLevel === 'debug',
   {
     shuffle,
     failover,
@@ -140,7 +141,10 @@
 .branch(
   () => (__protocol === 'http') && !__isHTTP2, (
     $=>$.detectProtocol(
-      proto => proto === 'HTTP2' && (_useHttp2 = true)
+      proto => (
+        proto === 'HTTP2' && (_useHttp2 = true),
+        isDebugEnabled && console.log('outbound-http-routing # detectProtocol:', proto, '_useHttp2:', _useHttp2, '__isHTTP2:', __isHTTP2)
+      )
     )
   ), (
     $=>$
@@ -152,9 +156,11 @@
     $=>$
     .handleMessageStart(
       msg => (
-        _useHttp2 && msg?.head?.headers?.['content-type'] === 'application/grpc' && (
-          __isHTTP2 = true
+        _useHttp2 && msg?.head?.headers?.['content-type']?.startsWith?.('application/grpc') && (
+          __isHTTP2 = true,
+          isDebugEnabled && console.log('outbound-http-routing # gRPC detected, __isHTTP2:', __isHTTP2, 'content-type:', msg?.head?.headers?.['content-type'])
         ),
+        isDebugEnabled && console.log('outbound-http-routing # request:', msg?.head?.method, msg?.head?.path, '_useHttp2:', _useHttp2, '__isHTTP2:', __isHTTP2, 'port:', __port?.Port, 'content-type:', msg?.head?.headers?.['content-type']),
         _origPath && (msg.head.path = _origPath) || (_origPath = msg?.head?.path),
         _failoverCluster && (
           __cluster = _failoverCluster,

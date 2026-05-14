@@ -213,8 +213,8 @@
   isDebugEnabled, (
     $=>$.handleStreamStart(
       () => (
-        console.log('outbound-http # port/service/route/cluster/egress/cert :',
-          __port?.Port, __service?.name, __route?.Path, __cluster?.name, __isEgress, Boolean(__cert))
+        console.log('outbound-http # port/service/route/cluster/egress/cert/isHTTP2 :',
+          __port?.Port, __service?.name, __route?.Path, __cluster?.name, __isEgress, Boolean(__cert), __isHTTP2)
       )
     )
   )

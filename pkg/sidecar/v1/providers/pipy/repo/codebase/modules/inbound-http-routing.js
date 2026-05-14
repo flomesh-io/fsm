@@ -148,7 +148,7 @@
 .demuxHTTP().to(
   $=>$.handleMessageStart(
     msg => (
-      _useHttp2 && msg?.head?.headers?.['content-type'] === 'application/grpc' && (
+      _useHttp2 && msg?.head?.headers?.['content-type']?.startsWith?.('application/grpc') && (
         __isHTTP2 = true
       ),
       portHandlers.get(__port)(msg)
