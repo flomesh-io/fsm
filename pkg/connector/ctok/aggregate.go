@@ -92,10 +92,14 @@ func (s *CtoKSource) aggregateMeta(svcMetaMap map[connector.KubeSvcName]*connect
 	endpointMeta := new(connector.MicroEndpointMeta)
 	endpointMeta.Ports = make(map[connector.MicroServicePort]connector.MicroServiceProtocol)
 	if *port > 0 {
-		svcMeta.TargetPorts[*port] = *protocol
-		endpointMeta.Ports[*port] = *protocol
+		normalizedProtocol := *protocol
+		if normalizedProtocol == "tri" {
+			normalizedProtocol = connector.ProtocolGRPC
+		}
+		svcMeta.TargetPorts[*port] = normalizedProtocol
+		endpointMeta.Ports[*port] = normalizedProtocol
 	}
-	if *protocol == connector.ProtocolGRPC {
+	if *protocol == connector.ProtocolGRPC || *protocol == "tri" {
 		if len(instance.GRPCInterface) > 0 && len(instance.GRPCMethods) > 0 {
 			if svcMeta.GRPCMeta == nil {
 				svcMeta.GRPCMeta = new(connector.GRPCMeta)
