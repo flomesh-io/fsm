@@ -7,6 +7,9 @@ var (
 	// ConnectUIDKey is the key used in the meta to track the "k8s" source.
 	ConnectUIDKey = "fsm.connector.service.connector.uid"
 
+	// ServiceInstanceIDKey is the key used in the meta to store the service instance ID
+	ServiceInstanceIDKey = "fsm.connector.service.instance.id"
+
 	// CloudK8SNS is the key used in the meta to record the namespace
 	// of the service/node registration.
 	CloudK8SNS          = "fsm.connector.service.k8s.ns"

@@ -364,6 +364,9 @@ func (cr *CatalogRegistration) ToNacos(cluster, group string, weight float64) *v
 		if cr.Service.MicroService.protocol == ProtocolGRPC {
 			r.Metadata["appprotocol"] = string(ProtocolGRPC)
 		}
+		if len(cr.Service.ID) > 0 {
+			r.Metadata[ServiceInstanceIDKey] = cr.Service.ID
+		}
 	}
 	return r
 }
@@ -445,7 +448,11 @@ func (cs *CatalogService) FromNacos(svc *nacos.Instance) {
 		return
 	}
 	cs.Node = svc.ClusterName
-	cs.ServiceID = svc.InstanceId
+	if serviceID, ok := svc.Metadata[ServiceInstanceIDKey]; ok {
+		cs.ServiceID = serviceID
+	} else {
+		cs.ServiceID = svc.InstanceId
+	}
 	cs.ServiceName = strings.ToLower(strings.Split(svc.ServiceName, constant.SERVICE_INFO_SPLITER)[1])
 }
 
