@@ -859,77 +859,122 @@ func (t *KtoCSource) registerServiceInstance(
 		return
 	}
 
-	seen := map[connector.MicroServiceAddress]struct{}{}
 	for _, subset := range endpoints.Subsets {
-		// For ClusterIP services and if loadBalancerEndpointsSync is true, we use the endpoint port instead
-		// of the service port because we're registering each endpoint as a separate service instance.
-		protocol := baseService.MicroService.Protocol()
-		port := baseService.MicroService.EndpointPort()
-		t.choosePorts(subset, overridePortName, overridePortNumber, protocol, port)
-		if protocol.Empty() || *port == 0 {
-			log.Error().Msgf("invalid port:%d or invalid protocol:%s key:%s", *port, *protocol, key)
-			continue
+		// Collect all (protocol, port) pairs for this subset
+		type portProto struct {
+			protocol *connector.MicroServiceProtocol
+			port     *connector.MicroServicePort
 		}
-		for _, subsetAddr := range subset.Addresses {
-			addr := new(connector.MicroServiceAddress)
-			t.chooseServiceAddrPort(key, addr, port, subsetAddr, useHostname)
-			if len(*addr) == 0 || !t.filterIPRanges(string(*addr)) || t.excludeIPRanges(string(*addr)) {
+		var ppList []portProto
+
+		if len(overridePortName) > 0 || overridePortNumber != 0 {
+			// For ClusterIP services and if loadBalancerEndpointsSync is true, we use the endpoint port
+			// instead of the service port because we're registering each endpoint as a separate service
+			// instance. When a port override is specified, use choosePorts to pick the single port.
+			protocol := baseService.MicroService.Protocol()
+			port := baseService.MicroService.EndpointPort()
+			t.choosePorts(subset, overridePortName, overridePortNumber, protocol, port)
+			if protocol.Empty() || *port == 0 {
+				log.Error().Msgf("invalid port:%d or invalid protocol:%s key:%s", *port, *protocol, key)
 				continue
 			}
-
-			viaAddr := new(connector.MicroServiceAddress)
-			viaPort := new(connector.MicroServicePort)
-			if t.controller.GetK2CWithGateway() {
-				viaAddr.Set(t.controller.GetViaIngressAddr())
-				switch *protocol {
-				case connector.ProtocolHTTP:
-					viaPort.Set(int32(t.controller.GetViaIngressHTTPPort()))
-				case connector.ProtocolGRPC:
-					viaPort.Set(int32(t.controller.GetViaIngressGRPCPort()))
-				default:
+			ppList = []portProto{{protocol: protocol, port: port}}
+		} else {
+			// Multi-port mode: iterate over ALL subset ports and register each port as
+			// a separate Nacos instance for each endpoint address.
+			for _, subsetPort := range subset.Ports {
+				// Port override isn't specified, so iterate over all subset ports.
+				// Skip non-TCP ports.
+				if !strings.EqualFold(strings.ToUpper(string(subsetPort.Protocol)), constants.ProtocolTCP) {
+					continue
 				}
-				if t.controller.GetK2CWithGatewayMode() == ctv1.Proxy {
-					addr.Set(t.controller.GetViaIngressAddr())
+
+				protocol := new(connector.MicroServiceProtocol)
+				port := new(connector.MicroServicePort)
+				port.Set(subsetPort.Port)
+
+				if subsetPort.AppProtocol != nil {
+					p := strings.ToLower(*subsetPort.AppProtocol)
+					if p == constants.ProtocolGRPC || p == "tri" {
+						protocol.Set(constants.ProtocolGRPC)
+					} else {
+						protocol.Set(constants.ProtocolHTTP)
+					}
+				} else {
+					protocol.Set(constants.ProtocolHTTP)
 				}
-			}
 
-			// Its not clear whether K8S guarantees ready addresses to
-			// be unique so we maintain a set to prevent duplicates just
-			// in case.
-			if _, has := seen[*addr]; has {
-				continue
+				if protocol.Empty() || *port == 0 {
+					log.Error().Msgf("invalid port:%d or invalid protocol:%s key:%s", *port, *protocol, key)
+					continue
+				}
+				ppList = append(ppList, portProto{protocol: protocol, port: port})
 			}
-			seen[*addr] = struct{}{}
+		}
 
-			r := baseNode
-			r.Service = t.bindService(svcMeta, baseService, baseService.MicroService.Service, protocol, addr, port, viaAddr, viaPort)
-			// Deepcopy baseService.Meta into r.RegisteredInstances.Meta as baseService is shared
-			// between all nodes of a service
-			for k, v := range baseService.Meta {
-				r.Service.Meta[k] = v
-			}
-			if subsetAddr.TargetRef != nil {
-				r.Service.Meta[connector.CloudK8SRefValue] = subsetAddr.TargetRef.Name
-				r.Service.Meta[connector.CloudK8SRefKind] = subsetAddr.TargetRef.Kind
-			}
-			if subsetAddr.NodeName != nil {
-				r.Service.Meta[connector.CloudK8SNodeName] = *subsetAddr.NodeName
-			}
+		for _, pp := range ppList {
+			seen := map[connector.MicroServiceAddress]struct{}{}
+			for _, subsetAddr := range subset.Addresses {
+				addr := new(connector.MicroServiceAddress)
+				t.chooseServiceAddrPort(key, addr, pp.port, subsetAddr, useHostname)
+				if len(*addr) == 0 || !t.filterIPRanges(string(*addr)) || t.excludeIPRanges(string(*addr)) {
+					continue
+				}
 
-			r.Check = &connector.AgentCheck{
-				CheckID:   healthCheckID(endpoints.Namespace, t.controller.GetServiceInstanceID(r.Service.MicroService.Service, string(*addr), *port, *protocol)),
-				Name:      cloudKubernetesCheckName,
-				Namespace: baseService.MicroService.Namespace,
-				Type:      cloudKubernetesCheckType,
-				Status:    connector.HealthPassing,
-				ServiceID: t.controller.GetServiceInstanceID(r.Service.MicroService.Service, string(*addr), *port, *protocol),
-				Output:    kubernetesSuccessReasonMsg,
-			}
+				viaAddr := new(connector.MicroServiceAddress)
+				viaPort := new(connector.MicroServicePort)
+				if t.controller.GetK2CWithGateway() {
+					viaAddr.Set(t.controller.GetViaIngressAddr())
+					switch *pp.protocol {
+					case connector.ProtocolHTTP:
+						viaPort.Set(int32(t.controller.GetViaIngressHTTPPort()))
+					case connector.ProtocolGRPC:
+						viaPort.Set(int32(t.controller.GetViaIngressGRPCPort()))
+					default:
+					}
+					if t.controller.GetK2CWithGatewayMode() == ctv1.Proxy {
+						addr.Set(t.controller.GetViaIngressAddr())
+					}
+				}
 
-			t.controller.GetK2CContext().RegisteredServiceMap.Upsert(
-				key,
-				[]*connector.CatalogRegistration{&r},
-				t.joinCatalogRegistrations)
+				// Its not clear whether K8S guarantees ready addresses to
+				// be unique so we maintain a set to prevent duplicates just
+				// in case.
+				if _, has := seen[*addr]; has {
+					continue
+				}
+				seen[*addr] = struct{}{}
+
+				r := baseNode
+				r.Service = t.bindService(svcMeta, baseService, baseService.MicroService.Service, pp.protocol, addr, pp.port, viaAddr, viaPort)
+				// Deepcopy baseService.Meta into r.RegisteredInstances.Meta as baseService is shared
+				// between all nodes of a service
+				for k, v := range baseService.Meta {
+					r.Service.Meta[k] = v
+				}
+				if subsetAddr.TargetRef != nil {
+					r.Service.Meta[connector.CloudK8SRefValue] = subsetAddr.TargetRef.Name
+					r.Service.Meta[connector.CloudK8SRefKind] = subsetAddr.TargetRef.Kind
+				}
+				if subsetAddr.NodeName != nil {
+					r.Service.Meta[connector.CloudK8SNodeName] = *subsetAddr.NodeName
+				}
+
+				r.Check = &connector.AgentCheck{
+					CheckID:   healthCheckID(endpoints.Namespace, t.controller.GetServiceInstanceID(r.Service.MicroService.Service, string(*addr), *pp.port, *pp.protocol)),
+					Name:      cloudKubernetesCheckName,
+					Namespace: baseService.MicroService.Namespace,
+					Type:      cloudKubernetesCheckType,
+					Status:    connector.HealthPassing,
+					ServiceID: t.controller.GetServiceInstanceID(r.Service.MicroService.Service, string(*addr), *pp.port, *pp.protocol),
+					Output:    kubernetesSuccessReasonMsg,
+				}
+
+				t.controller.GetK2CContext().RegisteredServiceMap.Upsert(
+					key,
+					[]*connector.CatalogRegistration{&r},
+					t.joinCatalogRegistrations)
+			}
 		}
 	}
 }
