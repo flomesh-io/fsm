@@ -416,6 +416,9 @@ func ServiceToMeshServices(c Controller, lb configv1alpha3.LoadBalancer, svc *co
 				found := false
 				for metaPort, metaProtocol := range svcMeta.TargetPorts {
 					if strings.EqualFold(meshSvc.Protocol, string(metaProtocol)) {
+						if portSpec.TargetPort.IntVal != 0 && int32(metaPort) != portSpec.TargetPort.IntVal {
+							continue
+						}
 						meshSvc.TargetPort = uint16(metaPort)
 						meshServices = append(meshServices, meshSvc)
 						found = true

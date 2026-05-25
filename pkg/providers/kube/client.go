@@ -51,6 +51,9 @@ func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.End
 				lbType := c.meshConfigurator.GetMeshConfig().Spec.Connector.Lb.Type
 				for addr, endpointMeta := range svcMeta.Endpoints {
 					for port, protocol := range endpointMeta.Ports {
+						if svc.TargetPort != 0 && uint16(port) != svc.TargetPort {
+							continue
+						}
 						ept := endpoint.Endpoint{
 							IP:                net.ParseIP(string(addr)),
 							Port:              endpoint.Port(port),

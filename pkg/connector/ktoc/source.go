@@ -952,6 +952,7 @@ func (t *KtoCSource) registerServiceInstance(
 				for k, v := range baseService.Meta {
 					r.Service.Meta[k] = v
 				}
+				r.Service.Meta["protocol"] = string(*pp.protocol)
 				if subsetAddr.TargetRef != nil {
 					r.Service.Meta[connector.CloudK8SRefValue] = subsetAddr.TargetRef.Name
 					r.Service.Meta[connector.CloudK8SRefKind] = subsetAddr.TargetRef.Kind

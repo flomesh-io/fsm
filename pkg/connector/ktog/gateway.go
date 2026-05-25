@@ -239,15 +239,15 @@ func (gw *GatewaySource) updateGatewayHTTPRoute(k8sSvc *corev1.Service, portSpec
 	parentRefs []gwv1.ParentReference) {
 	svcResource := gw.serviceResource
 	httpRouteClient := svcResource.gatewayClient.GatewayV1().HTTPRoutes(k8sSvc.Namespace)
-	existRt := gw.GetHTTPRoute(k8sSvc.Name, k8sSvc.Namespace)
+	routeName := fmt.Sprintf("%s-%d-http", k8sSvc.Name, portSpec.Port)
+	existRt := gw.GetHTTPRoute(routeName, k8sSvc.Namespace)
 
 	weight := int32(constants.ClusterWeightAcceptAll)
 	servicePort := gwv1.PortNumber(portSpec.Port)
-
 	newRt := &gwv1.HTTPRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: k8sSvc.Namespace,
-			Name:      k8sSvc.Name,
+			Name:      routeName,
 		},
 	}
 	newRt.Spec.ParentRefs = parentRefs
@@ -276,28 +276,34 @@ func (gw *GatewaySource) updateGatewayHTTPRoute(k8sSvc *corev1.Service, portSpec
 
 	if existRt == nil {
 		if _, err := httpRouteClient.Create(svcResource.ctx, newRt, metav1.CreateOptions{}); err != nil {
-			log.Error().Msgf("warn creating http route, name:%s warn:%v", k8sSvc.Name, err)
+			log.Error().Msgf("warn creating http route, name:%s warn:%v", routeName, err)
 		}
-	} else {
-		existRtHash, _ := hashstructure.Hash(existRt.Spec, hashstructure.FormatV2,
-			&hashstructure.HashOptions{
-				ZeroNil:         true,
-				IgnoreZeroValue: true,
-				SlicesAsSets:    true,
-			})
-		newRtHash, _ := hashstructure.Hash(newRt.Spec, hashstructure.FormatV2,
-			&hashstructure.HashOptions{
-				ZeroNil:         true,
-				IgnoreZeroValue: true,
-				SlicesAsSets:    true,
-			})
-		if existRtHash != newRtHash {
-			existRt.Spec = newRt.Spec
+	} else if len(existRt.Spec.Rules) > 0 && len(newRt.Spec.Rules) > 0 {
+		if !httpBackendRefsEqual(existRt.Spec.Rules[0].BackendRefs, newRt.Spec.Rules[0].BackendRefs) {
+			existRt.Spec.Rules[0].BackendRefs = newRt.Spec.Rules[0].BackendRefs
 			if _, err := httpRouteClient.Update(svcResource.ctx, existRt, metav1.UpdateOptions{}); err != nil {
-				log.Error().Msgf("warn updating http route, name:%s warn:%v", k8sSvc.Name, err)
+				log.Error().Msgf("warn updating http route, name:%s warn:%v", routeName, err)
 			}
 		}
 	}
+}
+
+func httpBackendRefsEqual(a, b []gwv1.HTTPBackendRef) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i].Name != b[i].Name {
+			return false
+		}
+		if (a[i].Port == nil) != (b[i].Port == nil) {
+			return false
+		}
+		if a[i].Port != nil && *a[i].Port != *b[i].Port {
+			return false
+		}
+	}
+	return true
 }
 
 func buildGRPCRouteMatches(svcMeta *connector.MicroSvcMeta) []gwv1.GRPCRouteMatch {
@@ -323,7 +329,8 @@ func (gw *GatewaySource) updateGatewayGRPCRoute(k8sSvc *corev1.Service, portSpec
 	parentRefs []gwv1.ParentReference, grpcRouteMatches []gwv1.GRPCRouteMatch) {
 	svcResource := gw.serviceResource
 	grpcRouteClient := svcResource.gatewayClient.GatewayV1().GRPCRoutes(k8sSvc.Namespace)
-	existRt := gw.GetGRPCRoute(k8sSvc.Name, k8sSvc.Namespace)
+	routeName := fmt.Sprintf("%s-%d-grpc", k8sSvc.Name, portSpec.Port)
+	existRt := gw.GetGRPCRoute(routeName, k8sSvc.Namespace)
 
 	servicePort := gwv1.PortNumber(portSpec.Port)
 	weight := int32(constants.ClusterWeightAcceptAll)
@@ -331,7 +338,7 @@ func (gw *GatewaySource) updateGatewayGRPCRoute(k8sSvc *corev1.Service, portSpec
 	newRt := &gwv1.GRPCRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: k8sSvc.Namespace,
-			Name:      k8sSvc.Name,
+			Name:      routeName,
 		},
 	}
 	newRt.Spec.ParentRefs = parentRefs
@@ -355,36 +362,42 @@ func (gw *GatewaySource) updateGatewayGRPCRoute(k8sSvc *corev1.Service, portSpec
 
 	if existRt == nil {
 		if _, err := grpcRouteClient.Create(svcResource.ctx, newRt, metav1.CreateOptions{}); err != nil {
-			log.Error().Msgf("warn creating grpc route, name:%s warn:%v", k8sSvc.Name, err)
+			log.Error().Msgf("warn creating grpc route, name:%s warn:%v", routeName, err)
 		}
-	} else {
-		existRtHash, _ := hashstructure.Hash(existRt.Spec, hashstructure.FormatV2,
-			&hashstructure.HashOptions{
-				ZeroNil:         true,
-				IgnoreZeroValue: true,
-				SlicesAsSets:    true,
-			})
-		newRtHash, _ := hashstructure.Hash(newRt.Spec, hashstructure.FormatV2,
-			&hashstructure.HashOptions{
-				ZeroNil:         true,
-				IgnoreZeroValue: true,
-				SlicesAsSets:    true,
-			})
-
-		if existRtHash != newRtHash {
-			existRt.Spec = newRt.Spec
-			if _, err := grpcRouteClient.Update(svcResource.ctx, newRt, metav1.UpdateOptions{}); err != nil {
-				log.Error().Msgf("warn updating grpc route, name:%s warn:%v", k8sSvc.Name, err)
+	} else if len(existRt.Spec.Rules) > 0 && len(newRt.Spec.Rules) > 0 {
+		if !grpcBackendRefsEqual(existRt.Spec.Rules[0].BackendRefs, newRt.Spec.Rules[0].BackendRefs) {
+			existRt.Spec.Rules[0].BackendRefs = newRt.Spec.Rules[0].BackendRefs
+			if _, err := grpcRouteClient.Update(svcResource.ctx, existRt, metav1.UpdateOptions{}); err != nil {
+				log.Error().Msgf("warn updating grpc route, name:%s warn:%v", routeName, err)
 			}
 		}
 	}
+}
+
+func grpcBackendRefsEqual(a, b []gwv1.GRPCBackendRef) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i].Name != b[i].Name {
+			return false
+		}
+		if (a[i].Port == nil) != (b[i].Port == nil) {
+			return false
+		}
+		if a[i].Port != nil && *a[i].Port != *b[i].Port {
+			return false
+		}
+	}
+	return true
 }
 
 func (gw *GatewaySource) updateGatewayTCPRoute(k8sSvc *corev1.Service, portSpec corev1.ServicePort,
 	parentRefs []gwv1.ParentReference) {
 	svcResource := gw.serviceResource
 	tcpRouteClient := svcResource.gatewayClient.GatewayV1alpha2().TCPRoutes(k8sSvc.Namespace)
-	existRt := gw.GetTCPRoute(k8sSvc.Name, k8sSvc.Namespace)
+	routeName := fmt.Sprintf("%s-%d-tcp", k8sSvc.Name, portSpec.Port)
+	existRt := gw.GetTCPRoute(routeName, k8sSvc.Namespace)
 
 	servicePort := gwv1.PortNumber(portSpec.Port)
 	weight := int32(constants.ClusterWeightAcceptAll)
@@ -392,7 +405,7 @@ func (gw *GatewaySource) updateGatewayTCPRoute(k8sSvc *corev1.Service, portSpec 
 	newRt := &gwv1alpha2.TCPRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: k8sSvc.Namespace,
-			Name:      k8sSvc.Name,
+			Name:      routeName,
 		},
 	}
 	newRt.Spec.ParentRefs = parentRefs
@@ -439,20 +452,40 @@ func (gw *GatewaySource) updateGatewayTCPRoute(k8sSvc *corev1.Service, portSpec 
 
 func (gw *GatewaySource) deleteGatewayRoute(name, namespace string) {
 	svcResource := gw.serviceResource
-	if routeIf := gw.GetHTTPRoute(name, namespace); routeIf != nil {
+
+	if httpRoutes := gw.informers.List(fsminformers.InformerKeyGatewayAPIHTTPRoute); len(httpRoutes) > 0 {
 		httpRouteClient := svcResource.gatewayClient.GatewayV1().HTTPRoutes(namespace)
-		_ = httpRouteClient.Delete(svcResource.ctx, name, metav1.DeleteOptions{})
+		for _, r := range httpRoutes {
+			route := r.(*gwv1.HTTPRoute)
+			if route.Namespace == namespace && routeNameForService(route.Name, name) {
+				_ = httpRouteClient.Delete(svcResource.ctx, route.Name, metav1.DeleteOptions{})
+			}
+		}
 	}
 
-	if routeIf := gw.GetGRPCRoute(name, namespace); routeIf != nil {
+	if grpcRoutes := gw.informers.List(fsminformers.InformerKeyGatewayAPIGRPCRoute); len(grpcRoutes) > 0 {
 		grpcRouteClient := svcResource.gatewayClient.GatewayV1().GRPCRoutes(namespace)
-		_ = grpcRouteClient.Delete(svcResource.ctx, name, metav1.DeleteOptions{})
+		for _, r := range grpcRoutes {
+			route := r.(*gwv1.GRPCRoute)
+			if route.Namespace == namespace && routeNameForService(route.Name, name) {
+				_ = grpcRouteClient.Delete(svcResource.ctx, route.Name, metav1.DeleteOptions{})
+			}
+		}
 	}
 
-	if routeIf := gw.GetTCPRoute(name, namespace); routeIf != nil {
+	if tcpRoutes := gw.informers.List(fsminformers.InformerKeyGatewayAPITCPRoute); len(tcpRoutes) > 0 {
 		tcpRouteClient := svcResource.gatewayClient.GatewayV1alpha2().TCPRoutes(namespace)
-		_ = tcpRouteClient.Delete(svcResource.ctx, name, metav1.DeleteOptions{})
+		for _, r := range tcpRoutes {
+			route := r.(*gwv1alpha2.TCPRoute)
+			if route.Namespace == namespace && routeNameForService(route.Name, name) {
+				_ = tcpRouteClient.Delete(svcResource.ctx, route.Name, metav1.DeleteOptions{})
+			}
+		}
 	}
+}
+
+func routeNameForService(routeName, svcName string) bool {
+	return routeName == svcName || strings.HasPrefix(routeName, svcName+"-")
 }
 
 func (gw *GatewaySource) getGatewayRouteHostnamesForService(k8sSvc *corev1.Service) []gwv1.Hostname {
