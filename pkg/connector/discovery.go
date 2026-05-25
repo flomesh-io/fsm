@@ -2,6 +2,7 @@ package connector
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -174,25 +175,8 @@ func (as *AgentService) FromNacos(ins *nacos.Instance) {
 		for k, v := range ins.Metadata {
 			as.Meta[k] = v
 		}
-	}
-	if as.Meta != nil && proto == "tri" {
-		if endpointsJSON, ok := ins.Metadata["dubbo.endpoints"]; ok {
-			var endpoints []struct {
-				Port     int    `json:"port"`
-				Protocol string `json:"protocol"`
-			}
-			if json.Unmarshal([]byte(endpointsJSON), &endpoints) == nil {
-				portMap := make(map[string][]string)
-				for _, ep := range endpoints {
-					if ep.Port > 0 && ep.Protocol != "" {
-						key := fmt.Sprintf("dubbo.endpoint.%s.port", ep.Protocol)
-						portMap[key] = append(portMap[key], strconv.Itoa(ep.Port))
-					}
-				}
-				for key, ports := range portMap {
-					as.Meta[key] = strings.Join(ports, ",")
-				}
-			}
+		if metadataBytes, err := json.Marshal(ins.Metadata); err == nil {
+			as.Meta["_raw.nacos.metadata"] = base64.StdEncoding.EncodeToString(metadataBytes)
 		}
 	}
 }
