@@ -175,16 +175,8 @@ func (as *AgentService) FromNacos(ins *nacos.Instance) {
 		for k, v := range ins.Metadata {
 			as.Meta[k] = v
 		}
-		dubboMeta := make(map[string]string)
-		for k, v := range ins.Metadata {
-			if strings.HasPrefix(k, "dubbo.") {
-				dubboMeta[k] = v
-			}
-		}
-		if len(dubboMeta) > 0 {
-			if metadataBytes, err := json.Marshal(dubboMeta); err == nil {
-				as.Meta["_raw.dubbo.metadata"] = base64.StdEncoding.EncodeToString(metadataBytes)
-			}
+		if metadataBytes, err := json.Marshal(ins.Metadata); err == nil {
+			as.Meta["_raw.nacos.metadata"] = base64.StdEncoding.EncodeToString(metadataBytes)
 		}
 	}
 }
