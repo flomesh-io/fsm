@@ -26,9 +26,6 @@ type registerTimeScale struct {
 	registeredTs      time.Time
 	registeredRetries int
 
-	deregisteredTs      time.Time
-	deregisteredRetries int
-
 	lastAccessTs time.Time
 }
 
@@ -94,9 +91,6 @@ func (c *cache) CacheRegisterInstance(key string, instance interface{}, register
 		})
 	if err == nil {
 		if ts.registeredHash == hash {
-			if ts.registeredTs.Before(ts.deregisteredTs) {
-				ts.registeredRetries = 0
-			}
 			if ts.registeredRetries > retries {
 				return nil
 			}
@@ -117,17 +111,9 @@ func (c *cache) CacheRegisterInstance(key string, instance interface{}, register
 }
 
 func (c *cache) CacheDeregisterInstance(key string, deregisterFunc func() error) error {
-	ts := c.getRegisteredInstanceTimeScale(key)
-	if ts.deregisteredTs.After(ts.registeredTs) {
-		ts.deregisteredRetries = 0
-	}
-	if ts.deregisteredRetries > retries {
-		return nil
-	}
 	err := deregisterFunc()
 	if err == nil {
-		ts.deregisteredRetries++
-		ts.deregisteredTs = time.Now()
+		c.registeredInstances.Remove(key)
 	}
 	return err
 }
