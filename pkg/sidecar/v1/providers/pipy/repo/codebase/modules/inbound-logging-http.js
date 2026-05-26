@@ -21,6 +21,7 @@ pipy({
 .pipeline()
 .handleMessage(
   (msg) => (
+    console.log('[DEBUG inbound]', msg.head?.headers?.['x-b3-traceid'], msg.head?.headers?.['x-b3-spanid'], msg.head?.headers?.['x-b3-parentspanid'], msg.head?.headers?.host),
     loggingEnabled && (
       _loggingData = makeLoggingData(msg, __inbound.remoteAddress, __inbound.remotePort, __inbound.destinationAddress, __inbound.destinationPort),
       _loggingData ? sampledCounter1.increase() : sampledCounter0.increase()
