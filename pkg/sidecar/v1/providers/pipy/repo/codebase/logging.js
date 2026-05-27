@@ -57,10 +57,13 @@
         ) => (
           msg?.head?.headers && (
             (config?.Spec?.Observability?.remoteLogging?.level > 0) ? (
-              (isOutbound || !msg.head.headers['x-b3-traceid']) && (
-                initTracingHeaders(msg.head.headers)
-              ),
-              sampled = (!tracingLimitedID || toInt63(msg.head.headers['x-b3-traceid']) < tracingLimitedID)
+              (config?.Spec?.Observability?.remoteLogging?.level === 1) ? (
+                !isOutbound && initTracingHeaders(msg.head.headers),
+                sampled = (!tracingLimitedID || toInt63(msg.head.headers['x-b3-traceid']) < tracingLimitedID)
+              ) : (
+                initTracingHeaders(msg.head.headers),
+                sampled = (!tracingLimitedID || toInt63(msg.head.headers['x-b3-traceid']) < tracingLimitedID)
+              )
             ) : (
               sampled = true
             )
