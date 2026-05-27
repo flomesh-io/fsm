@@ -16,10 +16,9 @@ export default function (config) {
 
         if (spanId) headers['x-b3-parentspanid'] = spanId
         if (!traceId) headers['x-b3-traceid'] = randomId
-        if (!sampled) headers['x-b3-sampled'] = sampleDecider.allocate().target ? 1 : 0
+        if (!sampled) headers['x-b3-sampled'] = sampleDecider.allocate().target ? '1' : '0'
 
-        headers['x-b3-spanid'] = randomId.substring(16)
-        headers['x-b3-sampled']
+        headers['x-b3-spanid'] = randomId
       }
     )
     .pipeNext()
