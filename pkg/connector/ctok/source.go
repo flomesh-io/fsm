@@ -42,7 +42,11 @@ func (s *CtoKSource) Run(ctx context.Context) {
 		WaitTime:   s.controller.GetSyncPeriod(),
 	}).WithContext(ctx)
 	for {
-		catalogServices := s.pollCatalog(opts)
+		catalogServices, err := s.pollCatalog(opts)
+		if err != nil {
+			time.Sleep(opts.WaitTime)
+			continue
+		}
 		services := s.buildServicesMap(catalogServices)
 		s.syncer.SetServices(services, catalogServices)
 		time.Sleep(opts.WaitTime)
@@ -71,13 +75,21 @@ func (s *CtoKSource) RunEventDriven(ctx context.Context) {
 	}()
 
 	initialSync := func() []ctv1.NamespacedService {
-		svcs := s.pollCatalog(nil)
+		svcs, err := s.pollCatalog(nil)
+		if err != nil {
+			log.Warn().Err(err).Msg("initial catalog sync failed")
+			return nil
+		}
 		s.syncer.SetServices(s.buildServicesMap(svcs), svcs)
 		return svcs
 	}
 
 	discoverAndSubscribe := func(prevServices []ctv1.NamespacedService) []ctv1.NamespacedService {
-		catalogServices := s.pollCatalog(nil)
+		catalogServices, err := s.pollCatalog(nil)
+		if err != nil {
+			log.Warn().Err(err).Msg("discovery sync failed, keeping previous services")
+			return prevServices
+		}
 		currentSet := make(map[string]bool)
 		for _, svc := range catalogServices {
 			currentSet[svc.Service] = true
@@ -122,17 +134,15 @@ func (s *CtoKSource) RunEventDriven(ctx context.Context) {
 	}
 }
 
-func (s *CtoKSource) pollCatalog(opts *connector.QueryOptions) []ctv1.NamespacedService {
-	var catalogServices []ctv1.NamespacedService
+func (s *CtoKSource) pollCatalog(opts *connector.QueryOptions) ([]ctv1.NamespacedService, error) {
 	if s.controller.Purge() {
-		return catalogServices
+		return nil, nil
 	}
-	var err error
-	catalogServices, err = s.discClient.CatalogServices(opts)
+	catalogServices, err := s.discClient.CatalogServices(opts)
 	if err != nil {
-		log.Warn().Err(err).Msgf("error querying services")
+		return nil, err
 	}
-	return catalogServices
+	return catalogServices, nil
 }
 
 func (s *CtoKSource) buildServicesMap(catalogServices []ctv1.NamespacedService) map[connector.KubeSvcName]connector.ServiceConversion {
