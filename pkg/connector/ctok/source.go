@@ -74,16 +74,6 @@ func (s *CtoKSource) RunEventDriven(ctx context.Context) {
 		}
 	}()
 
-	initialSync := func() []ctv1.NamespacedService {
-		svcs, err := s.pollCatalog(nil)
-		if err != nil {
-			log.Warn().Err(err).Msg("initial catalog sync failed")
-			return nil
-		}
-		s.syncer.SetServices(s.buildServicesMap(svcs), svcs)
-		return svcs
-	}
-
 	discoverAndSubscribe := func(prevServices []ctv1.NamespacedService) []ctv1.NamespacedService {
 		catalogServices, err := s.pollCatalog(nil)
 		if err != nil {
@@ -96,13 +86,17 @@ func (s *CtoKSource) RunEventDriven(ctx context.Context) {
 			if _, exists := subscribed[svc.Service]; !exists {
 				svcName := svc.Service
 				unsub, err := subClient.SubscribeToService(svcName, groups, clusters,
-					func(instances interface{}, err error) {
+					func(_ interface{}, err error) {
 						if err != nil {
 							log.Warn().Err(err).Msgf("subscribe callback error for %s", svcName)
 							return
 						}
-						services := s.buildServicesMap(catalogServices)
-						s.syncer.SetServices(services, catalogServices)
+						fresh, err := s.pollCatalog(nil)
+						if err != nil {
+							log.Warn().Err(err).Msgf("re-poll failed on subscribe callback for %s", svcName)
+							return
+						}
+						s.syncer.SetServices(s.buildServicesMap(fresh), fresh)
 					})
 				if err != nil {
 					log.Warn().Err(err).Msgf("failed to subscribe to %s", svcName)
@@ -120,7 +114,11 @@ func (s *CtoKSource) RunEventDriven(ctx context.Context) {
 		return catalogServices
 	}
 
-	currServices := initialSync()
+	currServices := discoverAndSubscribe(nil)
+	if len(currServices) > 0 {
+		s.syncer.SetServices(s.buildServicesMap(currServices), currServices)
+	}
+
 	discoveryTicker := time.NewTicker(discoveryInterval)
 	defer discoveryTicker.Stop()
 
