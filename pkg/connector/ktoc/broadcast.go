@@ -17,8 +17,13 @@ func (t *KtoCSource) BroadcastListener(stopCh <-chan struct{}, syncPeriod time.D
 	defer t.msgBroker.Unsub(serviceUpdatePubSub, serviceUpdateChan)
 
 	slidingWindowEnabled := t.controller.GetNacosK2CSlidingWindowEnabled()
-	slidingTimer := time.NewTimer(time.Second * 10)
-	defer slidingTimer.Stop()
+	var slidingTimerCh <-chan time.Time
+	var slidingTimer *time.Timer
+	if slidingWindowEnabled {
+		slidingTimer = time.NewTimer(time.Second * 10)
+		defer slidingTimer.Stop()
+		slidingTimerCh = slidingTimer.C
+	}
 
 	immediateCh := make(chan struct{}, 1)
 
@@ -39,7 +44,7 @@ func (t *KtoCSource) BroadcastListener(stopCh <-chan struct{}, syncPeriod time.D
 				default:
 				}
 			}
-		case <-slidingTimer.C:
+		case <-slidingTimerCh:
 			t.doSync(&lastServiceDetas)
 			slidingTimer.Reset(syncPeriod)
 		case <-immediateCh:
