@@ -85,6 +85,7 @@ type config struct {
 		nacos2kCfg struct {
 			clusterSet []string
 			groupSet   []string
+			syncMode   ctv1.NacosSyncMode
 		}
 	}
 
@@ -193,8 +194,10 @@ type config struct {
 		}
 
 		nacosCfg struct {
-			clusterId string
-			groupId   string
+			clusterId             string
+			groupId               string
+			enableSlidingWindow   bool
+			enableReconcileTimer  bool
 		}
 
 		zookeeperCfg struct {
@@ -883,6 +886,24 @@ func (c *config) GetSyncPeriod() time.Duration {
 	return c.syncPeriod
 }
 
+func (c *config) GetNacosK2CSlidingWindowEnabled() bool {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.k2cCfg.nacosCfg.enableSlidingWindow
+}
+
+func (c *config) GetNacosK2CReconcileTimerEnabled() bool {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.k2cCfg.nacosCfg.enableReconcileTimer
+}
+
+func (c *config) GetNacosC2KSyncMode() ctv1.NacosSyncMode {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.c2kCfg.nacos2kCfg.syncMode
+}
+
 func (c *config) SyncCloudToK8s() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
@@ -1011,6 +1032,11 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 	} else {
 		c.c2kCfg.nacos2kCfg.groupSet = append([]string{}, spec.SyncToK8S.GroupSet...)
 	}
+	if len(spec.SyncToK8S.SyncMode) == 0 {
+		c.c2kCfg.nacos2kCfg.syncMode = ctv1.NacosSyncPolling
+	} else {
+		c.c2kCfg.nacos2kCfg.syncMode = spec.SyncToK8S.SyncMode
+	}
 
 	if spec.SyncToK8S.ConversionStrategy != nil {
 		c.c2kCfg.enableConversions = spec.SyncToK8S.ConversionStrategy.Enable
@@ -1047,6 +1073,16 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 
 	c.k2cCfg.nacosCfg.clusterId = spec.SyncFromK8S.ClusterId
 	c.k2cCfg.nacosCfg.groupId = spec.SyncFromK8S.GroupId
+	if spec.SyncFromK8S.EnableSlidingWindow != nil {
+		c.k2cCfg.nacosCfg.enableSlidingWindow = *spec.SyncFromK8S.EnableSlidingWindow
+	} else {
+		c.k2cCfg.nacosCfg.enableSlidingWindow = true
+	}
+	if spec.SyncFromK8S.EnableReconcileTimer != nil {
+		c.k2cCfg.nacosCfg.enableReconcileTimer = *spec.SyncFromK8S.EnableReconcileTimer
+	} else {
+		c.k2cCfg.nacosCfg.enableReconcileTimer = true
+	}
 
 	c.limiter.SetLimit(rate.Limit(spec.Limiter.Limit))
 	c.limiter.SetBurst(int(spec.Limiter.Limit))

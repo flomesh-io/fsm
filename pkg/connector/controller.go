@@ -127,6 +127,10 @@ type ConnectController interface {
 	GetNacosGroupId() string
 	GetNacosClusterId() string
 
+	GetNacosK2CSlidingWindowEnabled() bool
+	GetNacosK2CReconcileTimerEnabled() bool
+	GetNacosC2KSyncMode() ctv1.NacosSyncMode
+
 	GetZookeeperBasePath() string
 	GetZookeeperCategory() string
 	GetZookeeperAdaptor() string

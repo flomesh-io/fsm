@@ -539,6 +539,10 @@ type ServiceDiscoveryClient interface {
 	Close()
 }
 
+type SubscriptionClient interface {
+	SubscribeToService(serviceName string, groups []string, clusters []string, callback func(instances interface{}, err error)) (unsubscribe func(), err error)
+}
+
 const (
 	// HealthAny is special, and is used as a wild card,
 	// not as a specific state.
