@@ -55,6 +55,18 @@ func (c *NacosConnector) GetLeaderElection() *bool {
 	return c.Spec.LeaderElection
 }
 
+// NacosSyncMode is the type used to represent the Nacos sync mode for C2K direction.
+// +kubebuilder:validation:Enum=polling;event-driven
+type NacosSyncMode string
+
+const (
+	// NacosSyncPolling uses periodic polling (CatalogServices + SelectInstances).
+	NacosSyncPolling NacosSyncMode = "polling"
+
+	// NacosSyncEventDriven uses Nacos Subscribe API for real-time updates.
+	NacosSyncEventDriven NacosSyncMode = "event-driven"
+)
+
 // NacosSyncToK8SSpec is the type used to represent the sync from Nacos to K8S specification.
 type NacosSyncToK8SSpec struct {
 	Enable bool `json:"enable"`
@@ -113,6 +125,14 @@ type NacosSyncToK8SSpec struct {
 
 	// +optional
 	ConversionStrategy *ConversionStrategy `json:"conversionStrategy,omitempty"`
+
+	// +kubebuilder:default=polling
+	// +kubebuilder:validation:Enum=polling;event-driven
+	// +optional
+	// SyncMode defines how to synchronize services from Nacos to K8s.
+	// - "polling": Periodically poll Nacos for service changes (default).
+	// - "event-driven": Use Nacos Subscribe API for real-time change notifications.
+	SyncMode NacosSyncMode `json:"syncMode,omitempty"`
 }
 
 // NacosSyncFromK8SSpec is the type used to represent the sync from K8S to Nacos specification.
@@ -190,6 +210,19 @@ type NacosSyncFromK8SSpec struct {
 
 	// +optional
 	MetadataStrategy *MetadataStrategy `json:"metadataStrategy,omitempty"`
+
+	// +kubebuilder:default=true
+	// +optional
+	// EnableSlidingWindow controls whether the BroadcastListener uses a sliding window
+	// to batch service update events before syncing to Nacos. When set to false,
+	// each K8s service/endpoint change triggers an immediate sync.
+	EnableSlidingWindow *bool `json:"enableSlidingWindow,omitempty"`
+
+	// +kubebuilder:default=true
+	// +optional
+	// EnableReconcileTimer controls whether the periodic full reconciliation timer
+	// is enabled. When set to false, only event-driven (incremental) syncs are performed.
+	EnableReconcileTimer *bool `json:"enableReconcileTimer,omitempty"`
 }
 
 // NacosSpec is the type used to represent the Nacos Connector specification.

@@ -1090,6 +1090,16 @@ func (in *NacosSyncFromK8SSpec) DeepCopyInto(out *NacosSyncFromK8SSpec) {
 		*out = new(MetadataStrategy)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.EnableSlidingWindow != nil {
+		in, out := &in.EnableSlidingWindow, &out.EnableSlidingWindow
+		*out = new(bool)
+		**out = **in
+	}
+	if in.EnableReconcileTimer != nil {
+		in, out := &in.EnableReconcileTimer, &out.EnableReconcileTimer
+		*out = new(bool)
+		**out = **in
+	}
 	return
 }
 

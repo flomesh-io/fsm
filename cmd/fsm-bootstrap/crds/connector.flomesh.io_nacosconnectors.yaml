@@ -248,6 +248,12 @@ spec:
                     type: array
                   enable:
                     type: boolean
+                  enableReconcileTimer:
+                    default: true
+                    type: boolean
+                  enableSlidingWindow:
+                    default: true
+                    type: boolean
                   excludeIpRanges:
                     items:
                       type: string
@@ -444,6 +450,12 @@ spec:
                   prefixMetadata:
                     type: string
                   suffixMetadata:
+                    type: string
+                  syncMode:
+                    default: polling
+                    enum:
+                    - polling
+                    - event-driven
                     type: string
                   withGateway:
                     default:
