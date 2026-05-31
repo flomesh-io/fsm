@@ -40,7 +40,11 @@ func (c *client) syncCtoK() {
 	eptCacheController := &connector.CacheController{Resource: syncer.EndpointsSource()}
 	go eptCacheController.Run(ctx.Done())
 
-	go source.Run(ctx)
+	if c.GetNacosC2KSyncMode() == ctv1.NacosSyncEventDriven {
+		go source.RunEventDriven(ctx)
+	} else {
+		go source.Run(ctx)
+	}
 }
 
 func (c *client) syncKtoC() {

@@ -551,6 +551,37 @@ func (dc *NacosDiscoveryClient) getServiceInstanceID(name, addr string, port con
 func (dc *NacosDiscoveryClient) Close() {
 }
 
+func (dc *NacosDiscoveryClient) SubscribeToService(
+	serviceName string,
+	groups []string,
+	clusters []string,
+	callback func(instances interface{}, err error),
+) (unsubscribe func(), err error) {
+	nc := dc.nacosClient(aloneConnect)
+	for _, group := range groups {
+		param := &vo.SubscribeParam{
+			ServiceName: serviceName,
+			GroupName:   group,
+			Clusters:    clusters,
+			SubscribeCallback: func(instances []model.Instance, err error) {
+				callback(instances, err)
+			},
+		}
+		if err := nc.Subscribe(param); err != nil {
+			return nil, err
+		}
+	}
+	return func() {
+		for _, group := range groups {
+			nc.Unsubscribe(&vo.SubscribeParam{
+				ServiceName: serviceName,
+				GroupName:   group,
+				Clusters:    clusters,
+			})
+		}
+	}, nil
+}
+
 func GetNacosDiscoveryClient(connectController connector.ConnectController) (*NacosDiscoveryClient, error) {
 	nacosDiscoveryClient := new(NacosDiscoveryClient)
 	nacosDiscoveryClient.connectController = connectController
