@@ -1126,11 +1126,16 @@ func (t *KtoCSource) joinCatalogRegistrations(exist bool,
 // Precondition: lock must be held.
 func (t *KtoCSource) sync() {
 	atomic.AddUint64(&t.serviceDetas, 1)
-	t.msgBroker.GetQueue().AddRateLimited(events.PubSubMessage{
+	msg := events.PubSubMessage{
 		Kind:   announcements.ServiceUpdate,
 		NewObj: nil,
 		OldObj: nil,
-	})
+	}
+	if t.controller.GetNacosK2CSlidingWindowEnabled() {
+		t.msgBroker.GetQueue().AddRateLimited(msg)
+	} else {
+		t.msgBroker.GetQueue().Add(msg)
+	}
 }
 
 // serviceEndpointsSource implements controller.Resource and starts
