@@ -1,6 +1,7 @@
 package ktoc
 
 import (
+	"context"
 	"sync/atomic"
 	"time"
 
@@ -15,8 +16,11 @@ func (t *KtoCSource) BroadcastListener(stopCh <-chan struct{}, syncPeriod time.D
 	serviceUpdateChan := serviceUpdatePubSub.Sub(announcements.ServiceUpdate.String())
 	defer t.msgBroker.Unsub(serviceUpdatePubSub, serviceUpdateChan)
 
+	slidingWindowEnabled := t.controller.GetNacosK2CSlidingWindowEnabled()
 	slidingTimer := time.NewTimer(time.Second * 10)
 	defer slidingTimer.Stop()
+
+	immediateCh := make(chan struct{}, 1)
 
 	lastServiceDetas := uint64(0)
 
@@ -29,21 +33,33 @@ func (t *KtoCSource) BroadcastListener(stopCh <-chan struct{}, syncPeriod time.D
 			if lastServiceDetas == serviceDetas {
 				atomic.CompareAndSwapUint64(&t.serviceDetas, lastServiceDetas, 0)
 			}
-		case <-slidingTimer.C:
-			serviceDetas := atomic.LoadUint64(&t.serviceDetas)
-			if lastServiceDetas != serviceDetas {
-				newJob := func() *SyncJob {
-					return &SyncJob{
-						done:     make(chan struct{}),
-						resource: t,
-					}
+			if !slidingWindowEnabled {
+				select {
+				case immediateCh <- struct{}{}:
+				default:
 				}
-				<-t.msgWorkQueues.AddJob(newJob())
-				lastServiceDetas = serviceDetas
 			}
-
+		case <-slidingTimer.C:
+			t.doSync(&lastServiceDetas)
 			slidingTimer.Reset(syncPeriod)
+		case <-immediateCh:
+			t.doSync(&lastServiceDetas)
 		}
+	}
+}
+
+func (t *KtoCSource) doSync(lastServiceDetas *uint64) {
+	serviceDetas := atomic.LoadUint64(&t.serviceDetas)
+	if *lastServiceDetas != serviceDetas {
+		newJob := func() *SyncJob {
+			return &SyncJob{
+				done:              make(chan struct{}),
+				resource:          t,
+				immediateRegister: !t.controller.GetNacosK2CReconcileTimerEnabled(),
+			}
+		}
+		<-t.msgWorkQueues.AddJob(newJob())
+		*lastServiceDetas = serviceDetas
 	}
 }
 
@@ -52,6 +68,9 @@ type SyncJob struct {
 	// Optional waiter
 	done     chan struct{}
 	resource *KtoCSource
+	// immediateRegister when true executes register/deregister immediately
+	// instead of waiting for the next reconcileTimer tick.
+	immediateRegister bool
 }
 
 // GetDoneCh returns the channel, which when closed, indicates the job has been finished.
@@ -64,19 +83,20 @@ func (job *SyncJob) Run() {
 	defer close(job.done)
 	t := job.resource
 	t.Lock()
-	defer t.Unlock()
-	// NOTE(mitchellh): This isn't the most efficient way to do this and
-	// the times that sync are called are also not the most efficient. All
-	// of these are implementation details so lets improve this later when
-	// it becomes a performance issue and just do the easy thing first.
 	rs := make([]*connector.CatalogRegistration, 0, t.controller.GetK2CContext().RegisteredServiceMap.Count()*4)
 	for item := range t.controller.GetK2CContext().RegisteredServiceMap.IterBuffered() {
 		if set := item.Val; len(set) > 0 {
 			rs = append(rs, set...)
 		}
 	}
-	// Sync, which should be non-blocking in real-world cases
 	t.syncer.Sync(rs)
+
+	if job.immediateRegister {
+		t.Unlock()
+		t.syncer.SyncFull(context.Background())
+		return
+	}
+	t.Unlock()
 }
 
 // JobName implementation for this job, for logging purposes

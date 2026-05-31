@@ -19,6 +19,9 @@ import (
 type Syncer interface {
 	// Sync is called to sync the full set of registrations.
 	Sync([]*connector.CatalogRegistration)
+	// SyncFull performs full reconciliation — deregistering stale and
+	// registering current services.
+	SyncFull(ctx context.Context)
 }
 
 // KtoCSyncer is a Syncer that takes the set of registrations and
@@ -102,6 +105,11 @@ func (s *KtoCSyncer) Run(ctx context.Context) {
 	// Start the background watchers
 	go s.watchReapableServices(ctx)
 
+	if !s.controller.GetNacosK2CReconcileTimerEnabled() {
+		<-ctx.Done()
+		return
+	}
+
 	reconcileTimer := time.NewTimer(s.controller.GetSyncPeriod())
 	defer reconcileTimer.Stop()
 
@@ -112,7 +120,7 @@ func (s *KtoCSyncer) Run(ctx context.Context) {
 			return
 
 		case <-reconcileTimer.C:
-			s.syncFull(ctx)
+			s.SyncFull(ctx)
 			reconcileTimer.Reset(s.controller.GetSyncPeriod())
 		}
 	}
@@ -316,10 +324,10 @@ func (s *KtoCSyncer) scheduleReapServiceLocked(name, namespace string) error {
 	return nil
 }
 
-// syncFull is called periodically to perform all the write-based API
+// SyncFull is called periodically to perform all the write-based API
 // calls to sync the data with cloud. This may also start background
 // watchers for specific services.
-func (s *KtoCSyncer) syncFull(ctx context.Context) {
+func (s *KtoCSyncer) SyncFull(ctx context.Context) {
 	s.Lock()
 	defer s.Unlock()
 
