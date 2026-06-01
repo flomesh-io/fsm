@@ -9,6 +9,8 @@ import (
 	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
+var fullSyncInFlight int32
+
 // BroadcastListener listens for broadcast messages from the message broker
 func (t *KtoCSource) BroadcastListener(stopCh <-chan struct{}, syncPeriod time.Duration) {
 	// Register for service config updates broadcast by the message broker
@@ -17,15 +19,14 @@ func (t *KtoCSource) BroadcastListener(stopCh <-chan struct{}, syncPeriod time.D
 	defer t.msgBroker.Unsub(serviceUpdatePubSub, serviceUpdateChan)
 
 	slidingWindowEnabled := t.controller.GetNacosK2CSlidingWindowEnabled()
-	var slidingTimerCh <-chan time.Time
-	var slidingTimer *time.Timer
-	if slidingWindowEnabled {
-		slidingTimer = time.NewTimer(time.Second * 10)
-		defer slidingTimer.Stop()
-		slidingTimerCh = slidingTimer.C
+
+	if !slidingWindowEnabled {
+		t.syncImmediate(stopCh, serviceUpdateChan)
+		return
 	}
 
-	immediateCh := make(chan struct{}, 1)
+	slidingTimer := time.NewTimer(time.Second * 10)
+	defer slidingTimer.Stop()
 
 	lastServiceDetas := uint64(0)
 
@@ -38,17 +39,9 @@ func (t *KtoCSource) BroadcastListener(stopCh <-chan struct{}, syncPeriod time.D
 			if lastServiceDetas == serviceDetas {
 				atomic.CompareAndSwapUint64(&t.serviceDetas, lastServiceDetas, 0)
 			}
-			if !slidingWindowEnabled {
-				select {
-				case immediateCh <- struct{}{}:
-				default:
-				}
-			}
-		case <-slidingTimerCh:
+		case <-slidingTimer.C:
 			t.doSync(&lastServiceDetas)
 			slidingTimer.Reset(syncPeriod)
-		case <-immediateCh:
-			t.doSync(&lastServiceDetas)
 		}
 	}
 }
@@ -58,9 +51,8 @@ func (t *KtoCSource) doSync(lastServiceDetas *uint64) {
 	if *lastServiceDetas != serviceDetas {
 		newJob := func() *SyncJob {
 			return &SyncJob{
-				done:              make(chan struct{}),
-				resource:          t,
-				immediateRegister: !t.controller.GetNacosK2CReconcileTimerEnabled(),
+				done:     make(chan struct{}),
+				resource: t,
 			}
 		}
 		<-t.msgWorkQueues.AddJob(newJob())
@@ -68,14 +60,64 @@ func (t *KtoCSource) doSync(lastServiceDetas *uint64) {
 	}
 }
 
+func (t *KtoCSource) syncImmediate(stopCh <-chan struct{}, serviceUpdateChan <-chan interface{}) {
+	trigger := make(chan struct{}, 1)
+	go func() {
+		for {
+			select {
+			case <-stopCh:
+				return
+			case <-serviceUpdateChan:
+				select {
+				case trigger <- struct{}{}:
+				default:
+				}
+			}
+		}
+	}()
+
+	for {
+		select {
+		case <-stopCh:
+			return
+		case <-trigger:
+			t.doImmediateSync(trigger)
+		}
+	}
+}
+
+func (t *KtoCSource) doImmediateSync(trigger <-chan struct{}) {
+	immediateRegister := !t.controller.GetNacosK2CReconcileTimerEnabled()
+
+	for {
+		t.Lock()
+		rs := make([]*connector.CatalogRegistration, 0, t.controller.GetK2CContext().RegisteredServiceMap.Count()*4)
+		for item := range t.controller.GetK2CContext().RegisteredServiceMap.IterBuffered() {
+			if set := item.Val; len(set) > 0 {
+				rs = append(rs, set...)
+			}
+		}
+		t.syncer.Sync(rs)
+		t.Unlock()
+
+		if immediateRegister && atomic.CompareAndSwapInt32(&fullSyncInFlight, 0, 1) {
+			t.syncer.SyncFull(context.Background())
+			atomic.StoreInt32(&fullSyncInFlight, 0)
+		}
+
+		select {
+		case <-trigger:
+			continue
+		default:
+			return
+		}
+	}
+}
+
 // SyncJob is the job to sync
 type SyncJob struct {
-	// Optional waiter
 	done     chan struct{}
 	resource *KtoCSource
-	// immediateRegister when true executes register/deregister immediately
-	// instead of waiting for the next reconcileTimer tick.
-	immediateRegister bool
 }
 
 // GetDoneCh returns the channel, which when closed, indicates the job has been finished.
@@ -88,6 +130,7 @@ func (job *SyncJob) Run() {
 	defer close(job.done)
 	t := job.resource
 	t.Lock()
+	defer t.Unlock()
 	rs := make([]*connector.CatalogRegistration, 0, t.controller.GetK2CContext().RegisteredServiceMap.Count()*4)
 	for item := range t.controller.GetK2CContext().RegisteredServiceMap.IterBuffered() {
 		if set := item.Val; len(set) > 0 {
@@ -95,13 +138,6 @@ func (job *SyncJob) Run() {
 		}
 	}
 	t.syncer.Sync(rs)
-
-	if job.immediateRegister {
-		t.Unlock()
-		t.syncer.SyncFull(context.Background())
-		return
-	}
-	t.Unlock()
 }
 
 // JobName implementation for this job, for logging purposes
