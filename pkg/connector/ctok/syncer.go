@@ -270,15 +270,18 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 		case <-ch:
 			return
 		case <-triggerCh:
-			// Coalesce to prevent lots of API calls during churn periods.
-			coalesce(s.ctx,
-				K8SQuietPeriod, K8SMaxPeriod,
-				func(ctx context.Context) {
-					select {
-					case <-triggerCh:
-					case <-ctx.Done():
-					}
-				})
+			if s.controller.GetNacosC2KSyncMode() == ctv1.NacosSyncEventDriven {
+				// event-driven mode skips coalesce for low latency
+			} else {
+				coalesce(s.ctx,
+					K8SQuietPeriod, K8SMaxPeriod,
+					func(ctx context.Context) {
+						select {
+						case <-triggerCh:
+						case <-ctx.Done():
+						}
+					})
+			}
 		}
 
 		s.lock.Lock()
