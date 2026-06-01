@@ -61,55 +61,35 @@ func (t *KtoCSource) doSync(lastServiceDetas *uint64) {
 }
 
 func (t *KtoCSource) syncImmediate(stopCh <-chan struct{}, serviceUpdateChan <-chan interface{}) {
-	trigger := make(chan struct{}, 1)
-	go func() {
-		for {
-			select {
-			case <-stopCh:
-				return
-			case <-serviceUpdateChan:
-				select {
-				case trigger <- struct{}{}:
-				default:
-				}
-			}
-		}
-	}()
+	immediateRegister := !t.controller.GetNacosK2CReconcileTimerEnabled()
 
 	for {
 		select {
 		case <-stopCh:
 			return
-		case <-trigger:
-			t.doImmediateSync(trigger)
-		}
-	}
-}
-
-func (t *KtoCSource) doImmediateSync(trigger <-chan struct{}) {
-	immediateRegister := !t.controller.GetNacosK2CReconcileTimerEnabled()
-
-	for {
-		t.Lock()
-		rs := make([]*connector.CatalogRegistration, 0, t.controller.GetK2CContext().RegisteredServiceMap.Count()*4)
-		for item := range t.controller.GetK2CContext().RegisteredServiceMap.IterBuffered() {
-			if set := item.Val; len(set) > 0 {
-				rs = append(rs, set...)
+		case <-serviceUpdateChan:
+			for {
+				select {
+				case <-serviceUpdateChan:
+				default:
+					goto process
+				}
 			}
-		}
-		t.syncer.Sync(rs)
-		t.Unlock()
+		process:
+			t.Lock()
+			rs := make([]*connector.CatalogRegistration, 0, t.controller.GetK2CContext().RegisteredServiceMap.Count()*4)
+			for item := range t.controller.GetK2CContext().RegisteredServiceMap.IterBuffered() {
+				if set := item.Val; len(set) > 0 {
+					rs = append(rs, set...)
+				}
+			}
+			t.syncer.Sync(rs)
+			t.Unlock()
 
-		if immediateRegister && atomic.CompareAndSwapInt32(&fullSyncInFlight, 0, 1) {
-			t.syncer.SyncFull(context.Background())
-			atomic.StoreInt32(&fullSyncInFlight, 0)
-		}
-
-		select {
-		case <-trigger:
-			continue
-		default:
-			return
+			if immediateRegister && atomic.CompareAndSwapInt32(&fullSyncInFlight, 0, 1) {
+				t.syncer.SyncFull(context.Background())
+				atomic.StoreInt32(&fullSyncInFlight, 0)
+			}
 		}
 	}
 }
