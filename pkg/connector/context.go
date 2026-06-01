@@ -79,9 +79,8 @@ type K2CContext struct {
 	//deregistrations
 	Deregs chm.ConcurrentMap[string, *CatalogDeregistration]
 
-	// Watchers is all namespaces mapped to a map of cloud service
-	// names mapped to a cancel function for watcher routines
 	Watchers chm.ConcurrentMap[string, chm.ConcurrentMap[string, context.CancelFunc]]
+	DirtyKeys mapset.Set
 }
 
 // K2GContext is the k2g context for connector controller
@@ -123,6 +122,7 @@ func NewK2CContext() *K2CContext {
 		ServiceHostnameMap:   chm.NewConcurrentMap[ServiceAddress](),
 		Deregs:               chm.NewConcurrentMap[*CatalogDeregistration](),
 		Watchers:             chm.NewConcurrentMap[chm.ConcurrentMap[string, context.CancelFunc]](),
+		DirtyKeys:            mapset.NewSet(),
 	}
 }
 

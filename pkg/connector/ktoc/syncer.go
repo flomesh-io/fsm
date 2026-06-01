@@ -17,11 +17,9 @@ import (
 // updates the Syncer. The Syncer should keep the remote system in sync with
 // the given set of registrations.
 type Syncer interface {
-	// Sync is called to sync the full set of registrations.
 	Sync([]*connector.CatalogRegistration)
-	// SyncFull performs full reconciliation — deregistering stale and
-	// registering current services.
 	SyncFull(ctx context.Context)
+	SyncIncremental(dirty []*connector.CatalogRegistration)
 }
 
 // KtoCSyncer is a Syncer that takes the set of registrations and
@@ -322,6 +320,41 @@ func (s *KtoCSyncer) scheduleReapServiceLocked(name, namespace string) error {
 	}
 
 	return nil
+}
+
+// SyncIncremental registers only the given dirty registrations and processes
+// pending deregistrations, without iterating all namespaces/services.
+func (s *KtoCSyncer) SyncIncremental(dirty []*connector.CatalogRegistration) {
+	s.Lock()
+	defer s.Unlock()
+
+	log.Info().Msg("registering services (incremental)")
+
+	var deregWg sync.WaitGroup
+	for item := range s.controller.GetK2CContext().Deregs.IterBuffered() {
+		service := item.Val
+		deregWg.Add(1)
+		go func(r *connector.CatalogDeregistration) {
+			defer deregWg.Done()
+			if err := s.discClient.Deregister(r); err != nil {
+				log.Error().Err(err).Msgf("error deregistering %s", r.ServiceID)
+			}
+		}(service)
+	}
+	deregWg.Wait()
+	s.controller.GetK2CContext().Deregs.Clear()
+
+	var regWg sync.WaitGroup
+	for _, r := range dirty {
+		regWg.Add(1)
+		go func(r *connector.CatalogRegistration) {
+			defer regWg.Done()
+			if err := s.discClient.Register(r); err != nil {
+				log.Error().Err(err).Msgf("error registering %s", r.Service.MicroService.Service)
+			}
+		}(r)
+	}
+	regWg.Wait()
 }
 
 // SyncFull is called periodically to perform all the write-based API

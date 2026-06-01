@@ -77,8 +77,19 @@ func (t *KtoCSource) syncImmediate(stopCh <-chan struct{}, serviceUpdateChan <-c
 			}
 		process:
 			t.Lock()
-			rs := make([]*connector.CatalogRegistration, 0, t.controller.GetK2CContext().RegisteredServiceMap.Count()*4)
-			for item := range t.controller.GetK2CContext().RegisteredServiceMap.IterBuffered() {
+			ctx := t.controller.GetK2CContext()
+			// Collect full registrations for Sync (updates syncer state)
+			rs := make([]*connector.CatalogRegistration, 0, ctx.RegisteredServiceMap.Count()*4)
+			var dirty []*connector.CatalogRegistration
+			if ctx.DirtyKeys.Cardinality() > 0 {
+				for _, key := range ctx.DirtyKeys.ToSlice() {
+					if regs, ok := ctx.RegisteredServiceMap.Get(key.(string)); ok {
+						dirty = append(dirty, regs...)
+					}
+				}
+				ctx.DirtyKeys.Clear()
+			}
+			for item := range ctx.RegisteredServiceMap.IterBuffered() {
 				if set := item.Val; len(set) > 0 {
 					rs = append(rs, set...)
 				}
@@ -87,7 +98,11 @@ func (t *KtoCSource) syncImmediate(stopCh <-chan struct{}, serviceUpdateChan <-c
 			t.Unlock()
 
 			if immediateRegister && atomic.CompareAndSwapInt32(&fullSyncInFlight, 0, 1) {
-				t.syncer.SyncFull(context.Background())
+				if len(dirty) > 0 {
+					t.syncer.SyncIncremental(dirty)
+				} else {
+					t.syncer.SyncFull(context.Background())
+				}
 				atomic.StoreInt32(&fullSyncInFlight, 0)
 			}
 		}

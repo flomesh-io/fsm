@@ -207,6 +207,7 @@ func (t *KtoCSource) doDelete(key string) {
 	// If there were registrations related to this service, then
 	// delete them and sync.
 	t.controller.GetK2CContext().RegisteredServiceMap.Remove(key)
+	t.controller.GetK2CContext().DirtyKeys.Add(key)
 	t.sync()
 }
 
@@ -475,6 +476,7 @@ func (t *KtoCSource) generateRegistrations(key string) {
 	case corev1.ServiceTypeClusterIP:
 		t.registerServiceInstance(svcMeta, baseNode, baseService, key, overridePortName, overridePortNumber, true)
 	}
+	t.controller.GetK2CContext().DirtyKeys.Add(key)
 }
 
 func (t *KtoCSource) fillTagMetadata(svc *corev1.Service, baseService *connector.AgentService) {
