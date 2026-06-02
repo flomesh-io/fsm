@@ -242,6 +242,13 @@ func (c *GatewayProcessor) getDelItems(gatewayPath string, existFiles []string) 
 		return nil, err
 	}
 
+	// Normalize: ensure all paths have leading "/" to match existFiles format (from item.String())
+	for i, f := range files {
+		if !strings.HasPrefix(f, "/") {
+			files[i] = "/" + f
+		}
+	}
+
 	toDelete := sets.NewString(files...)
 
 	for _, item := range existFiles {

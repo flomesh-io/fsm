@@ -348,6 +348,9 @@ func (p *PipyRepoClient) batch(batches []Batch, incremental bool) error {
 		}
 
 		for _, file := range batch.DelItems {
+			if !strings.HasPrefix(file, "/") {
+				file = "/" + file
+			}
 			fullPath := fmt.Sprintf("%s%s", batch.Basepath, file)
 			log.Debug().Msgf("Deleting %q", fullPath)
 			if _, err := p.deleteFile(fullPath); err != nil {
