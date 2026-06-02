@@ -20,6 +20,7 @@ var (
 		constants.AppProtocolWS,
 		constants.AppProtocolWSS,
 		constants.AppProtocolHTTP,
+		constants.AppProtocolGRPC,
 	}
 )
 
