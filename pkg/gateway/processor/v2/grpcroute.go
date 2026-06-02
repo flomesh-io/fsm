@@ -124,9 +124,21 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, index 
 		f := f
 		switch f.Type {
 		case gwv1.GRPCRouteFilterRequestMirror:
+			log.Debug().Msgf("[GW] Processing RequestMirror filter #%s-%d for GRPCRoute %s/%s, target: %s/%s:%d",
+				index, i, grpcRoute.Namespace, grpcRoute.Name,
+				gwutils.NamespaceDerefOr(f.RequestMirror.BackendRef.Namespace, grpcRoute.Namespace),
+				f.RequestMirror.BackendRef.Name, *f.RequestMirror.BackendRef.Port)
+
 			if svcPort := c.backendRefToServicePortName(grpcRoute, f.RequestMirror.BackendRef); svcPort != nil {
-				if c.toFGWBackend(svcPort) == nil {
-					continue
+				// Mirror backends don't require available endpoints — mirror traffic is fire-and-forget.
+				// If the backend has no endpoints, create a placeholder so Pipy can reference it.
+				bk := c.toFGWBackend(svcPort)
+				if bk == nil {
+					log.Debug().Msgf("[GW] Mirror backend %s has no endpoints, creating placeholder Backend", svcPort.String())
+					bk = fgwv2.NewBackend(svcPort.String(), toFGWAppProtocol(svcPort.AppProtocol), nil)
+					c.backends[svcPort.String()] = bk
+				} else {
+					log.Debug().Msgf("[GW] Mirror backend %s resolved with %d target(s)", svcPort.String(), len(bk.Spec.Targets))
 				}
 
 				f2 := fgwv2.GRPCRouteFilter{}
@@ -142,6 +154,11 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, index 
 				f2.Key = filterKey(grpcRoute, f2, fmt.Sprintf("%s-%d", index, i))
 
 				filters = append(filters, f2)
+				log.Debug().Msgf("[GW] RequestMirror filter added to GRPCRoute %s/%s, backend: %s, key: %s",
+					grpcRoute.Namespace, grpcRoute.Name, svcPort.String(), f2.Key)
+			} else {
+				log.Warn().Msgf("[GW] Failed to resolve RequestMirror backendRef for GRPCRoute %s/%s, filter #%s-%d will be skipped",
+					grpcRoute.Namespace, grpcRoute.Name, index, i)
 			}
 		case gwv1.GRPCRouteFilterExtensionRef:
 			filter := gwutils.ExtensionRefToFilter(c.client, grpcRoute, f.ExtensionRef)

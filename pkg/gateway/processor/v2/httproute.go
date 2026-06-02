@@ -125,9 +125,21 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, index 
 		f := f
 		switch f.Type {
 		case gwv1.HTTPRouteFilterRequestMirror:
+			log.Debug().Msgf("[GW] Processing RequestMirror filter #%s-%d for HTTPRoute %s/%s, target: %s/%s:%d",
+				index, i, httpRoute.Namespace, httpRoute.Name,
+				gwutils.NamespaceDerefOr(f.RequestMirror.BackendRef.Namespace, httpRoute.Namespace),
+				f.RequestMirror.BackendRef.Name, *f.RequestMirror.BackendRef.Port)
+
 			if svcPort := c.backendRefToServicePortName(httpRoute, f.RequestMirror.BackendRef); svcPort != nil {
-				if c.toFGWBackend(svcPort) == nil {
-					continue
+				// Mirror backends don't require available endpoints — mirror traffic is fire-and-forget.
+				// If the backend has no endpoints, create a placeholder so Pipy can reference it.
+				bk := c.toFGWBackend(svcPort)
+				if bk == nil {
+					log.Debug().Msgf("[GW] Mirror backend %s has no endpoints, creating placeholder Backend", svcPort.String())
+					bk = fgwv2.NewBackend(svcPort.String(), toFGWAppProtocol(svcPort.AppProtocol), nil)
+					c.backends[svcPort.String()] = bk
+				} else {
+					log.Debug().Msgf("[GW] Mirror backend %s resolved with %d target(s)", svcPort.String(), len(bk.Spec.Targets))
 				}
 
 				f2 := fgwv2.HTTPRouteFilter{}
@@ -143,6 +155,11 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, index 
 				f2.Key = filterKey(httpRoute, f2, fmt.Sprintf("%s-%d", index, i))
 
 				filters = append(filters, f2)
+				log.Debug().Msgf("[GW] RequestMirror filter added to HTTPRoute %s/%s, backend: %s, key: %s",
+					httpRoute.Namespace, httpRoute.Name, svcPort.String(), f2.Key)
+			} else {
+				log.Warn().Msgf("[GW] Failed to resolve RequestMirror backendRef for HTTPRoute %s/%s, filter #%s-%d will be skipped",
+					httpRoute.Namespace, httpRoute.Name, index, i)
 			}
 		case gwv1.HTTPRouteFilterExtensionRef:
 			filter := gwutils.ExtensionRefToFilter(c.client, httpRoute, f.ExtensionRef)
