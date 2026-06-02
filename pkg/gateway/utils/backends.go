@@ -47,6 +47,16 @@ func BackendRefToServicePortName(client cache.Cache, route client.Object, backen
 
 	gvk := route.GetObjectKind().GroupVersionKind()
 	routeNamespace := route.GetNamespace()
+
+	// Normalize empty Group/Kind to Gateway API defaults before cross-namespace check.
+	// Per spec, empty Group and Kind default to core API group ("") and "Service".
+	backendGroup := string(*backendRef.Group)
+	backendKind := string(*backendRef.Kind)
+	if backendGroup == "" && backendKind == "" {
+		backendGroup = constants.KubernetesCoreGroup
+		backendKind = constants.KubernetesServiceKind
+	}
+
 	if backendRef.Namespace != nil && string(*backendRef.Namespace) != routeNamespace && !ValidCrossNamespaceRef(
 		gwtypes.CrossNamespaceFrom{
 			Group:     gvk.Group,
@@ -54,8 +64,8 @@ func BackendRefToServicePortName(client cache.Cache, route client.Object, backen
 			Namespace: routeNamespace,
 		},
 		gwtypes.CrossNamespaceTo{
-			Group:     string(*backendRef.Group),
-			Kind:      string(*backendRef.Kind),
+			Group:     backendGroup,
+			Kind:      backendKind,
 			Namespace: string(*backendRef.Namespace),
 			Name:      string(backendRef.Name),
 		},

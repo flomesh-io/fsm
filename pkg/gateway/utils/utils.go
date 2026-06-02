@@ -345,7 +345,8 @@ func IsValidRefToGroupKindOfCA(ref gwv1.ObjectReference) bool {
 	return false
 }
 
-// IsValidBackendRefToGroupKindOfService returns true if the reference is to a Service in the core group
+// IsValidBackendRefToGroupKindOfService returns true if the reference is to a Service in the core group.
+// Per Gateway API spec, an empty Group and Kind default to core API group ("") and "Service" respectively.
 func IsValidBackendRefToGroupKindOfService(ref gwv1.BackendObjectReference) bool {
 	if ref.Group == nil {
 		return false
@@ -353,6 +354,11 @@ func IsValidBackendRefToGroupKindOfService(ref gwv1.BackendObjectReference) bool
 
 	if ref.Kind == nil {
 		return false
+	}
+
+	// Both group and kind are empty: defaults to core Service per Gateway API spec
+	if *ref.Group == "" && *ref.Kind == "" {
+		return true
 	}
 
 	if (string(*ref.Kind) == constants.KubernetesServiceKind && string(*ref.Group) == constants.KubernetesCoreGroup) ||
