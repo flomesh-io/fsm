@@ -68,21 +68,28 @@ func toFGWAppProtocol(appProtocol *string) *string {
 		if strings.HasPrefix(*appProtocol, prefix) {
 			after, _ := strings.CutPrefix(*appProtocol, prefix)
 			if isFGWAppProtocolSupported(after) {
-				return ptr.To(after)
+				return ptr.To(normalizeAppProtocol(after))
 			}
 		}
 	}
 
 	if isFGWAppProtocolSupported(*appProtocol) {
-		return appProtocol
+		return ptr.To(normalizeAppProtocol(*appProtocol))
 	}
 
 	return nil
 }
 
+func normalizeAppProtocol(p string) string {
+	if p == "grpc" {
+		return "h2c"
+	}
+	return p
+}
+
 func isFGWAppProtocolSupported(appProtocol string) bool {
 	switch appProtocol {
-	case constants.AppProtocolH2C, constants.AppProtocolWS, constants.AppProtocolWSS:
+	case constants.AppProtocolH2C, constants.AppProtocolWS, constants.AppProtocolWSS, "grpc":
 		return true
 	default:
 		return false
