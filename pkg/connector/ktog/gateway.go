@@ -127,6 +127,7 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *corev1.Service) {
 			}
 			protocol = strings.ToUpper(protocol)
 			parentRefs := gw.findParentRefs(gatewayList, internalSource, protocol, externalSource)
+			log.Debug().Msgf("[GatewaySource.updateGatewayRoute] evaluating service:%s/%s port:%d protocol:%s parentRefs:%d internal:%t external:%t", k8sSvc.Namespace, k8sSvc.Name, portSpec.Port, protocol, len(parentRefs), internalSource, externalSource)
 			if len(parentRefs) > 0 {
 				if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) {
 					gw.updateGatewayHTTPRoute(k8sSvc, portSpec, parentRefs)
@@ -452,13 +453,21 @@ func (gw *GatewaySource) updateGatewayTCPRoute(k8sSvc *corev1.Service, portSpec 
 
 func (gw *GatewaySource) deleteGatewayRoute(name, namespace string) {
 	svcResource := gw.serviceResource
+	deletedAny := false
+	log.Info().Msgf("[GatewaySource.deleteGatewayRoute] deleting generated routes for missing service %s/%s", namespace, name)
 
 	if httpRoutes := gw.informers.List(fsminformers.InformerKeyGatewayAPIHTTPRoute); len(httpRoutes) > 0 {
 		httpRouteClient := svcResource.gatewayClient.GatewayV1().HTTPRoutes(namespace)
 		for _, r := range httpRoutes {
 			route := r.(*gwv1.HTTPRoute)
 			if route.Namespace == namespace && routeNameForService(route.Name, name) {
-				_ = httpRouteClient.Delete(svcResource.ctx, route.Name, metav1.DeleteOptions{})
+				log.Info().Msgf("[GatewaySource.deleteGatewayRoute] deleting HTTPRoute %s/%s for service %s/%s", route.Namespace, route.Name, namespace, name)
+				if err := httpRouteClient.Delete(svcResource.ctx, route.Name, metav1.DeleteOptions{}); err != nil {
+					log.Error().Msgf("[GatewaySource.deleteGatewayRoute] failed deleting HTTPRoute %s/%s for service %s/%s: %v", route.Namespace, route.Name, namespace, name, err)
+				} else {
+					deletedAny = true
+					log.Info().Msgf("[GatewaySource.deleteGatewayRoute] deleted HTTPRoute %s/%s for service %s/%s", route.Namespace, route.Name, namespace, name)
+				}
 			}
 		}
 	}
@@ -468,7 +477,13 @@ func (gw *GatewaySource) deleteGatewayRoute(name, namespace string) {
 		for _, r := range grpcRoutes {
 			route := r.(*gwv1.GRPCRoute)
 			if route.Namespace == namespace && routeNameForService(route.Name, name) {
-				_ = grpcRouteClient.Delete(svcResource.ctx, route.Name, metav1.DeleteOptions{})
+				log.Info().Msgf("[GatewaySource.deleteGatewayRoute] deleting GRPCRoute %s/%s for service %s/%s", route.Namespace, route.Name, namespace, name)
+				if err := grpcRouteClient.Delete(svcResource.ctx, route.Name, metav1.DeleteOptions{}); err != nil {
+					log.Error().Msgf("[GatewaySource.deleteGatewayRoute] failed deleting GRPCRoute %s/%s for service %s/%s: %v", route.Namespace, route.Name, namespace, name, err)
+				} else {
+					deletedAny = true
+					log.Info().Msgf("[GatewaySource.deleteGatewayRoute] deleted GRPCRoute %s/%s for service %s/%s", route.Namespace, route.Name, namespace, name)
+				}
 			}
 		}
 	}
@@ -478,9 +493,19 @@ func (gw *GatewaySource) deleteGatewayRoute(name, namespace string) {
 		for _, r := range tcpRoutes {
 			route := r.(*gwv1alpha2.TCPRoute)
 			if route.Namespace == namespace && routeNameForService(route.Name, name) {
-				_ = tcpRouteClient.Delete(svcResource.ctx, route.Name, metav1.DeleteOptions{})
+				log.Info().Msgf("[GatewaySource.deleteGatewayRoute] deleting TCPRoute %s/%s for service %s/%s", route.Namespace, route.Name, namespace, name)
+				if err := tcpRouteClient.Delete(svcResource.ctx, route.Name, metav1.DeleteOptions{}); err != nil {
+					log.Error().Msgf("[GatewaySource.deleteGatewayRoute] failed deleting TCPRoute %s/%s for service %s/%s: %v", route.Namespace, route.Name, namespace, name, err)
+				} else {
+					deletedAny = true
+					log.Info().Msgf("[GatewaySource.deleteGatewayRoute] deleted TCPRoute %s/%s for service %s/%s", route.Namespace, route.Name, namespace, name)
+				}
 			}
 		}
+	}
+
+	if !deletedAny {
+		log.Warn().Msgf("[GatewaySource.deleteGatewayRoute] no generated routes matched missing service %s/%s", namespace, name)
 	}
 }
 

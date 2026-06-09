@@ -162,6 +162,7 @@ func (c *GatewayProcessor) syncConfigDir(gateway *gwv1.Gateway, config fgw.Confi
 			Content:  toYAML(r),
 		})
 	}
+	log.Debug().Msgf("[GW] Prepared generated resources for Gateway %s/%s resources:%d secrets:%d filterProtocols:%d", gateway.Namespace, gateway.Name, len(config.GetResources()), len(config.GetSecrets()), len(config.GetFilters()))
 
 	for name, secret := range config.GetSecrets() {
 		upsertItem(repo.BatchItem{
@@ -187,6 +188,11 @@ func (c *GatewayProcessor) syncConfigDir(gateway *gwv1.Gateway, config fgw.Confi
 		return
 	}
 	batch.DelItems = delItems
+	if len(delItems) > 0 {
+		log.Warn().Msgf("[GW] Gateway %s/%s scheduled repo deletions: %v", gateway.Namespace, gateway.Name, delItems)
+	} else {
+		log.Debug().Msgf("[GW] Gateway %s/%s has no repo deletions in this sync", gateway.Namespace, gateway.Name)
+	}
 
 	log.Debug().Msgf("[GW] Items length: %d， Delete Items length: %d", len(batch.Items), len(batch.DelItems))
 
@@ -197,12 +203,14 @@ func (c *GatewayProcessor) syncConfigDir(gateway *gwv1.Gateway, config fgw.Confi
 
 	if jsonVersion == "" {
 		// Full update
+		log.Info().Msgf("[GW] Executing full repo sync for Gateway %s/%s path:%s upserts:%d deletes:%d", gateway.Namespace, gateway.Name, gatewayPath, len(batch.Items), len(batch.DelItems))
 		if err := c.repoClient.BatchFullUpdate([]repo.Batch{batch}); err != nil {
 			log.Error().Msgf("[GW] Full sync config of Gateway %s/%s to repo failed: %s", gateway.Namespace, gateway.Name, err)
 			return
 		}
 	} else {
 		// Incremental update
+		log.Info().Msgf("[GW] Executing incremental repo sync for Gateway %s/%s path:%s upserts:%d deletes:%d", gateway.Namespace, gateway.Name, gatewayPath, len(batch.Items), len(batch.DelItems))
 		if err := c.repoClient.BatchIncrementalUpdate([]repo.Batch{batch}); err != nil {
 			log.Error().Msgf("[GW] Incremental sync config of Gateway %s/%s to repo failed: %s", gateway.Namespace, gateway.Name, err)
 			return
@@ -213,6 +221,7 @@ func (c *GatewayProcessor) syncConfigDir(gateway *gwv1.Gateway, config fgw.Confi
 	for _, item := range delItems {
 		delete(filesHash, item)
 	}
+	log.Debug().Msgf("[GW] Completed repo sync for Gateway %s/%s path:%s remainingTrackedFiles:%d", gateway.Namespace, gateway.Name, gatewayPath, len(filesHash))
 
 	// update the files hash of the gateway
 	c.mutex.Lock()
@@ -255,7 +264,9 @@ func (c *GatewayProcessor) getDelItems(gatewayPath string, existFiles []string) 
 		toDelete.Delete(item)
 	}
 
-	return toDelete.UnsortedList(), nil
+	deleteList := toDelete.UnsortedList()
+	log.Debug().Msgf("[GW] getDelItems path:%s repoFiles:%d generatedFiles:%d deleteCandidates:%v", gatewayPath, len(files), len(existFiles), deleteList)
+	return deleteList, nil
 }
 
 func (c *GatewayProcessor) getVersion(basepath string, file string) (string, error) {

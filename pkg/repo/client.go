@@ -201,6 +201,7 @@ func (p *PipyRepoClient) upsertFile(path string, content interface{}) error {
 		SetHeader("Content-Type", contentType).
 		SetBody(content).
 		Post(fullFileApiPath(path))
+	log.Debug().Msgf("[PipyRepoClient] POST %s contentType:%s", fullFileApiPath(path), contentType)
 
 	if err != nil {
 		log.Error().Msgf("error happened while trying to upsert %q to repo, %s", path, err.Error())
@@ -208,6 +209,7 @@ func (p *PipyRepoClient) upsertFile(path string, content interface{}) error {
 	}
 
 	if resp.IsSuccess() {
+		log.Debug().Msgf("[PipyRepoClient] POST %s success status:%s", fullFileApiPath(path), resp.Status())
 		return nil
 	}
 
@@ -239,16 +241,19 @@ func (p *PipyRepoClient) DeleteCodebase(path string) (success bool, err error) {
 // deleteFile delete codebase file
 func (p *PipyRepoClient) deleteFile(path string) (success bool, err error) {
 	var resp *resty.Response
+	log.Info().Msgf("[PipyRepoClient] DELETE %s", fullFileApiPath(path))
 
 	resp, err = p.httpClient.R().
 		Delete(fullFileApiPath(path))
 
 	if err == nil {
 		if resp.IsSuccess() {
+			log.Debug().Msgf("[PipyRepoClient] DELETE %s success status:%s", fullFileApiPath(path), resp.Status())
 			success = true
 			return
 		}
 		err = fmt.Errorf("error happened while deleting file %q, reason: %s", path, resp.Status())
+		log.Error().Msgf("[PipyRepoClient] DELETE %s failed status:%s", fullFileApiPath(path), resp.Status())
 		return
 	}
 
@@ -259,6 +264,7 @@ func (p *PipyRepoClient) deleteFile(path string) (success bool, err error) {
 // commit the codebase, version is the current version of the codebase, it will be increased by 1 when committing
 // it triggers a full update and client reloads the codebase
 func (p *PipyRepoClient) commit(path string, _ int64) error {
+	log.Info().Msgf("[PipyRepoClient] PATCH full commit %s", fullRepoApiPath(path))
 	resp, err := p.httpClient.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(Codebase{Version: time.Now().UnixNano()}).
@@ -270,6 +276,7 @@ func (p *PipyRepoClient) commit(path string, _ int64) error {
 	}
 
 	if resp.IsSuccess() {
+		log.Debug().Msgf("[PipyRepoClient] PATCH full commit %s success status:%s", fullRepoApiPath(path), resp.Status())
 		return nil
 	}
 
@@ -281,6 +288,7 @@ func (p *PipyRepoClient) commit(path string, _ int64) error {
 
 // incrementalCommit commits the codebase incrementally
 func (p *PipyRepoClient) incrementalCommit(path string) error {
+	log.Info().Msgf("[PipyRepoClient] PATCH incremental commit %s", fullRepoApiPath(path))
 	resp, err := p.httpClient.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(Codebase{}).
@@ -292,6 +300,7 @@ func (p *PipyRepoClient) incrementalCommit(path string) error {
 	}
 
 	if resp.IsSuccess() {
+		log.Debug().Msgf("[PipyRepoClient] PATCH incremental commit %s success status:%s", fullRepoApiPath(path), resp.Status())
 		return nil
 	}
 
@@ -317,6 +326,7 @@ func (p *PipyRepoClient) batch(batches []Batch, incremental bool) error {
 	for _, batch := range batches {
 		// 1. batch.Basepath, if not exists, create it
 		log.Debug().Msgf("batch.Basepath = %q", batch.Basepath)
+		log.Info().Msgf("[PipyRepoClient] begin batch basepath:%s incremental:%t upserts:%d deletes:%d", batch.Basepath, incremental, len(batch.Items), len(batch.DelItems))
 		var version int64
 		exists, codebase := p.codebaseExists(batch.Basepath)
 		if exists {
@@ -354,6 +364,7 @@ func (p *PipyRepoClient) batch(batches []Batch, incremental bool) error {
 			fullPath := fmt.Sprintf("%s%s", batch.Basepath, file)
 			log.Debug().Msgf("Deleting %q", fullPath)
 			if _, err := p.deleteFile(fullPath); err != nil {
+				log.Error().Msgf("[PipyRepoClient] delete during batch failed basepath:%s target:%s error:%v", batch.Basepath, fullPath, err)
 				return err
 			}
 		}
@@ -378,6 +389,7 @@ func (p *PipyRepoClient) batch(batches []Batch, incremental bool) error {
 				return err
 			}
 		}
+		log.Debug().Msgf("[PipyRepoClient] completed batch basepath:%s incremental:%t upserts:%d deletes:%d", batch.Basepath, incremental, len(batch.Items), len(batch.DelItems))
 	}
 
 	return nil

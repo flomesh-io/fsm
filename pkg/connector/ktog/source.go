@@ -113,7 +113,7 @@ func (t *KtoGSource) Upsert(key string, raw interface{}) error {
 	if !t.shouldSync(service) {
 		// Check if its in our map and delete it.
 		if _, ok = t.controller.GetK2GContext().ServiceMap[key]; ok {
-			log.Info().Msgf("Service should no longer be synced Service:%s", key)
+			log.Info().Msgf("[KtoGSource.Upsert] Service should no longer be synced, scheduling deletion key:%s service:%s/%s uid:%s ports:%d", key, service.Namespace, service.Name, service.UID, len(service.Spec.Ports))
 			t.doDelete(key)
 		} else {
 			log.Debug().Msgf("[KtoGSource.Upsert] syncing disabled for Service, ignoring key:%s", key)
@@ -123,19 +123,24 @@ func (t *KtoGSource) Upsert(key string, raw interface{}) error {
 
 	// Syncing is enabled, let's keep track of this Service.
 	t.controller.GetK2GContext().ServiceMap[key] = service
-	log.Debug().Msgf("[KtoGSource.Upsert] adding Service to serviceMap key:%s Service:%v", key, service)
+	log.Debug().Msgf("[KtoGSource.Upsert] adding Service to serviceMap key:%s service:%s/%s uid:%s ports:%d annotations:%d", key, service.Namespace, service.Name, service.UID, len(service.Spec.Ports), len(service.Annotations))
 
 	t.sync()
-	log.Info().Msgf("upsert key:%s", key)
+	log.Debug().Msgf("[KtoGSource.Upsert] synced key:%s service:%s/%s uid:%s", key, service.Namespace, service.Name, service.UID)
 	return nil
 }
 
 // Delete implements the controller.Resource interface.
-func (t *KtoGSource) Delete(key string, _ interface{}) error {
+func (t *KtoGSource) Delete(key string, raw interface{}) error {
 	t.serviceLock.Lock()
 	defer t.serviceLock.Unlock()
+	if svc, ok := raw.(*corev1.Service); ok {
+		log.Info().Msgf("[KtoGSource.Delete] received delete event key:%s service:%s/%s uid:%s ports:%d", key, svc.Namespace, svc.Name, svc.UID, len(svc.Spec.Ports))
+	} else {
+		log.Info().Msgf("[KtoGSource.Delete] received delete event key:%s rawType:%T", key, raw)
+	}
 	t.doDelete(key)
-	log.Info().Msgf("delete key:%s", key)
+	log.Debug().Msgf("[KtoGSource.Delete] finished delete sync for key:%s", key)
 	return nil
 }
 
@@ -143,8 +148,14 @@ func (t *KtoGSource) Delete(key string, _ interface{}) error {
 //
 // Precondition: assumes t.serviceLock is held.
 func (t *KtoGSource) doDelete(key string) {
+	trackedSvc, tracked := t.controller.GetK2GContext().ServiceMap[key]
+	if tracked {
+		log.Info().Msgf("[KtoGSource.doDelete] removing tracked service key:%s service:%s/%s uid:%s", key, trackedSvc.Namespace, trackedSvc.Name, trackedSvc.UID)
+	} else {
+		log.Warn().Msgf("[KtoGSource.doDelete] service key:%s is already absent from serviceMap", key)
+	}
 	delete(t.controller.GetK2GContext().ServiceMap, key)
-	log.Debug().Msgf("[doDelete] deleting Service from serviceMap key:%s", key)
+	log.Debug().Msgf("[KtoGSource.doDelete] deleted service from serviceMap key:%s remaining:%d", key, len(t.controller.GetK2GContext().ServiceMap))
 	t.sync()
 }
 
@@ -194,6 +205,7 @@ func (t *KtoGSource) sync() {
 	for _, svc := range t.controller.GetK2GContext().ServiceMap {
 		rs = append(rs, svc)
 	}
+	log.Debug().Msgf("[KtoGSource.sync] rebuilding K2G sync set trackedServices:%d", len(rs))
 
 	// Sync, which should be non-blocking in real-world cases
 	t.syncer.Sync(rs)

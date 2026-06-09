@@ -62,6 +62,7 @@ func (s *KtoGSyncer) Sync(rs []*corev1.Service) {
 		shadowSvc := svc
 		s.controller.GetK2GContext().Deregs[string(shadowSvc.UID)] = shadowSvc
 	}
+	log.Debug().Msgf("[KtoGSyncer.Sync] staging tracked services for reconciliation old:%d incoming:%d pendingDeletes:%d", len(s.controller.GetK2GContext().Services), len(rs), len(s.controller.GetK2GContext().Deregs))
 
 	s.controller.GetK2GContext().Services = make(map[string]*corev1.Service)
 
@@ -72,6 +73,7 @@ func (s *KtoGSyncer) Sync(rs []*corev1.Service) {
 			delete(s.controller.GetK2GContext().Deregs, string(shadowSvc.UID))
 		}
 	}
+	log.Debug().Msgf("[KtoGSyncer.Sync] prepared reconciliation active:%d pendingDeletes:%d purge:%t", len(s.controller.GetK2GContext().Services), len(s.controller.GetK2GContext().Deregs), s.controller.Purge())
 
 	// Signal that the initial sync is complete and our maps have been populated.
 	// We can now safely reap untracked services.
@@ -111,16 +113,20 @@ func (s *KtoGSyncer) Run(ctx context.Context, ctrls ...*connector.CacheControlle
 func (s *KtoGSyncer) syncFull(ctx context.Context) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	log.Info().Msgf("[KtoGSyncer.syncFull] start active:%d pendingDeletes:%d", len(s.controller.GetK2GContext().Services), len(s.controller.GetK2GContext().Deregs))
 
 	for _, svc := range s.controller.GetK2GContext().Deregs {
+		log.Info().Msgf("[KtoGSyncer.syncFull] deleting gateway routes for missing service %s/%s uid:%s", svc.Namespace, svc.Name, svc.UID)
 		s.source.deleteGatewayRoute(svc.Name, svc.Namespace)
 	}
 
 	s.controller.GetK2GContext().Deregs = make(map[string]*corev1.Service)
 
 	for _, svc := range s.controller.GetK2GContext().Services {
+		log.Debug().Msgf("[KtoGSyncer.syncFull] ensuring gateway routes for service %s/%s uid:%s", svc.Namespace, svc.Name, svc.UID)
 		s.source.updateGatewayRoute(svc)
 	}
+	log.Debug().Msgf("[KtoGSyncer.syncFull] finished active:%d pendingDeletes:%d", len(s.controller.GetK2GContext().Services), len(s.controller.GetK2GContext().Deregs))
 }
 
 func (s *KtoGSyncer) init() {
