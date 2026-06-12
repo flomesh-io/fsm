@@ -12,7 +12,7 @@ fsm:
     # -- Container image pull policy for control plane containers
     pullPolicy: IfNotPresent
     # -- Container image tag for control plane images
-    tag: "1.5.1"
+    tag: "1.5.2"
     # -- Image name defaults
     name:
       # -- fsm-controller's image name
@@ -80,7 +80,7 @@ fsm:
       # -- Sidecar image name
       name: pipy
       # -- Sidecar image tag
-      tag: 1.5.14
+      tag: 1.5.17
     # -- Sidecar runs without mTLS
     sidecarDisabledMTLS: false
     # -- Sidecar compresses config.json
@@ -102,7 +102,7 @@ fsm:
       # -- Repo server image name
       name: pipy-repo
       # -- Repo server image tag
-      tag: 1.5.14
+      tag: 2.0.2
     # -- if false , Pipy RepoServer is installed within fsmController pod.
     standalone: false
     # -- ipaddr of host/service where Pipy RepoServer is installed
@@ -295,7 +295,7 @@ fsm:
         # -- xnet image name
         name: xnet
         # -- xnet image tag
-        tag: latest
+        tag: 1.5.2
       resource:
         limits:
           cpu: "1.5"

@@ -1,6 +1,6 @@
 # Flomesh Service Mesh Helm Chart
 
-![Version: 1.5.1](https://img.shields.io/badge/Version-1.5.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.5.1](https://img.shields.io/badge/AppVersion-v1.5.1-informational?style=flat-square)
+![Version: 1.5.2](https://img.shields.io/badge/Version-1.5.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.5.2](https://img.shields.io/badge/AppVersion-v1.5.2-informational?style=flat-square)
 
 A Helm chart to install the [fsm](https://github.com/flomesh-io/fsm) control plane on Kubernetes.
 
@@ -254,10 +254,10 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmXnetwork.initResources | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | FSM xnetwork's init-container resource parameters. |
 | fsm.fsmXnetwork.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.fsmXnetwork.xmgt | object | `{"resource":{"limits":{"cpu":"1.5","memory":"1G"},"requests":{"cpu":"0.5","memory":"256M"}}}` | xmgt |
-| fsm.fsmXnetwork.xnet | object | `{"cnis":{"calicoVxlan":{"bridge4":{"enable":false,"mac":"ee:ee:ee:ee:ee:ee","name":"vxlan.calico"},"bridge6":{"enable":false,"mac":"ee:ee:ee:ee:ee:ee","name":"vxlan-v6.calico"},"enable":false},"flannel":{"bridge4":{"enable":true,"mac":"","name":"cni0"},"bridge6":{"enable":false,"mac":"","name":"cni0"},"enable":true}},"features":{"e4lb":{"enable":false,"magic":{"ipv4":"0A50","ipv6":"0A50"}},"mesh":{"enable":true,"filter":{"ports":{"inbound":"mesh","outbound":"mesh"}},"magic":{"ipv4":"0400040","ipv6":"02"}}},"flush":{"conntrack":{"tcp":{"batchSize":4096,"crontab":"30 3 */1 * *","idleSeconds":3600},"udp":{"batchSize":4096,"crontab":"*/2 * * * *","idleSeconds":120}}},"image":{"name":"xnet","registry":"flomesh","tag":"latest"},"nodePaths":{"k3s":{"cniBin":"/bin","cniNetd":"/var/lib/rancher/k3s/agent/etc/cni/net.d","enable":true,"sysFs":"/opt","sysProc":"/proc","sysRun":"/var/run"},"k8s":{"cniBin":"/opt/cni/bin","cniNetd":"/etc/cni/net.d","enable":false,"sysFs":"/opt","sysProc":"/proc","sysRun":"/var/run"}},"resource":{"limits":{"cpu":"1.5","memory":"1G"},"requests":{"cpu":"0.5","memory":"256M"}}}` | xnet |
+| fsm.fsmXnetwork.xnet | object | `{"cnis":{"calicoVxlan":{"bridge4":{"enable":false,"mac":"ee:ee:ee:ee:ee:ee","name":"vxlan.calico"},"bridge6":{"enable":false,"mac":"ee:ee:ee:ee:ee:ee","name":"vxlan-v6.calico"},"enable":false},"flannel":{"bridge4":{"enable":true,"mac":"","name":"cni0"},"bridge6":{"enable":false,"mac":"","name":"cni0"},"enable":true}},"features":{"e4lb":{"enable":false,"magic":{"ipv4":"0A50","ipv6":"0A50"}},"mesh":{"enable":true,"filter":{"ports":{"inbound":"mesh","outbound":"mesh"}},"magic":{"ipv4":"0400040","ipv6":"02"}}},"flush":{"conntrack":{"tcp":{"batchSize":4096,"crontab":"30 3 */1 * *","idleSeconds":3600},"udp":{"batchSize":4096,"crontab":"*/2 * * * *","idleSeconds":120}}},"image":{"name":"xnet","registry":"flomesh","tag":"1.5.2"},"nodePaths":{"k3s":{"cniBin":"/bin","cniNetd":"/var/lib/rancher/k3s/agent/etc/cni/net.d","enable":true,"sysFs":"/opt","sysProc":"/proc","sysRun":"/var/run"},"k8s":{"cniBin":"/opt/cni/bin","cniNetd":"/etc/cni/net.d","enable":false,"sysFs":"/opt","sysProc":"/proc","sysRun":"/var/run"}},"resource":{"limits":{"cpu":"1.5","memory":"1G"},"requests":{"cpu":"0.5","memory":"256M"}}}` | xnet |
 | fsm.fsmXnetwork.xnet.image.name | string | `"xnet"` | xnet image name |
 | fsm.fsmXnetwork.xnet.image.registry | string | `"flomesh"` | Registry for xnet image |
-| fsm.fsmXnetwork.xnet.image.tag | string | `"latest"` | xnet image tag |
+| fsm.fsmXnetwork.xnet.image.tag | string | `"1.5.2"` | xnet image tag |
 | fsm.fsmXnetwork.xnet.nodePaths.k3s.cniBin | string | `"/bin"` | If the version is higher than v1.28, it needs to be set to: -- /var/lib/rancher/k3s/data/cni |
 | fsm.grafana.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
 | fsm.grafana.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator | string | `"In"` |  |
@@ -311,7 +311,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.image.name.fsmXnetmgmt | string | `"fsm-xnetmgmt"` | fsm-xnetmgmt's image name |
 | fsm.image.pullPolicy | string | `"IfNotPresent"` | Container image pull policy for control plane containers |
 | fsm.image.registry | string | `"flomesh"` | Container image registry for control plane images |
-| fsm.image.tag | string | `"1.5.1"` | Container image tag for control plane images |
+| fsm.image.tag | string | `"1.5.2"` | Container image tag for control plane images |
 | fsm.imagePullSecrets | list | `[]` | `fsm-controller` image pull secret |
 | fsm.inboundPortExclusionList | list | `[]` | Specifies a global list of ports to exclude from inbound traffic interception by the sidecar proxy. If specified, must be a list of positive integers. |
 | fsm.injector.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
@@ -436,11 +436,11 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.remoteLogging.port | int | `30514` | Port of the remote logging service |
 | fsm.remoteLogging.sampledFraction | string | `"1.0"` | Sampled Fraction |
 | fsm.remoteLogging.secretName | string | `"fsm-remote-logging-secret"` | Secret Name |
-| fsm.repoServer | object | `{"codebase":"","image":{"name":"pipy-repo","registry":"flomesh","tag":"1.5.14"},"ipaddr":"127.0.0.1","port":6060,"standalone":false}` | Pipy RepoServer |
+| fsm.repoServer | object | `{"codebase":"","image":{"name":"pipy-repo","registry":"flomesh","tag":"2.0.2"},"ipaddr":"127.0.0.1","port":6060,"standalone":false}` | Pipy RepoServer |
 | fsm.repoServer.codebase | string | `""` | codebase is the folder used by fsmController. |
 | fsm.repoServer.image.name | string | `"pipy-repo"` | Repo server image name |
 | fsm.repoServer.image.registry | string | `"flomesh"` | Registry for repo server image |
-| fsm.repoServer.image.tag | string | `"1.5.14"` | Repo server image tag |
+| fsm.repoServer.image.tag | string | `"2.0.2"` | Repo server image tag |
 | fsm.repoServer.ipaddr | string | `"127.0.0.1"` | ipaddr of host/service where Pipy RepoServer is installed |
 | fsm.repoServer.port | int | `6060` | port of pipy RepoServer |
 | fsm.repoServer.standalone | bool | `false` | if false , Pipy RepoServer is installed within fsmController pod. |
@@ -449,13 +449,13 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.serviceLB.image.name | string | `"mirrored-klipper-lb"` | service-lb image name |
 | fsm.serviceLB.image.registry | string | `"flomesh"` | Registry for service-lb image |
 | fsm.serviceLB.image.tag | string | `"v0.4.7"` | service-lb image tag |
-| fsm.sidecar | object | `{"compressConfig":true,"gracefulExitUntilDownstreamEnds":true,"holdApplicationUntilProxyStarts":true,"image":{"name":"pipy","registry":"flomesh","tag":"1.5.14"},"sidecarDisabledMTLS":false,"sidecarLogLevel":"error","sidecarTimeout":60}` | Sidecar supported by fsm |
+| fsm.sidecar | object | `{"compressConfig":true,"gracefulExitUntilDownstreamEnds":true,"holdApplicationUntilProxyStarts":true,"image":{"name":"pipy","registry":"flomesh","tag":"1.5.17"},"sidecarDisabledMTLS":false,"sidecarLogLevel":"error","sidecarTimeout":60}` | Sidecar supported by fsm |
 | fsm.sidecar.compressConfig | bool | `true` | Sidecar compresses config.json |
 | fsm.sidecar.gracefulExitUntilDownstreamEnds | bool | `true` | This feature delays the pod proxy exit until active downstream connections end. |
 | fsm.sidecar.holdApplicationUntilProxyStarts | bool | `true` | This feature delays application startup until the pod proxy is ready to accept traffic, mitigating some startup race conditions. |
 | fsm.sidecar.image.name | string | `"pipy"` | Sidecar image name |
 | fsm.sidecar.image.registry | string | `"flomesh"` | Registry for sidecar image |
-| fsm.sidecar.image.tag | string | `"1.5.14"` | Sidecar image tag |
+| fsm.sidecar.image.tag | string | `"1.5.17"` | Sidecar image tag |
 | fsm.sidecar.sidecarDisabledMTLS | bool | `false` | Sidecar runs without mTLS |
 | fsm.sidecar.sidecarLogLevel | string | `"error"` | Log level for the proxy sidecar. Non developers should generally never set this value. In production environments the LogLevel should be set to `error` |
 | fsm.sidecar.sidecarTimeout | int | `60` | Sets connect/idle/read/write timeout |
@@ -471,7 +471,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.tracing.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[3] | string | `"s390x"` |  |
 | fsm.tracing.enable | bool | `false` | Toggles Sidecar's tracing functionality on/off for all sidecar proxies in the mesh |
 | fsm.tracing.endpoint | string | `"/api/v2/spans"` | Tracing collector's API path where the spans will be sent to |
-| fsm.tracing.image | object | `{"name":"all-in-one","registry":"jaegertracing","tag":"latest"}` | Sampled Fraction |
+| fsm.tracing.image | object | `{"name":"all-in-one","registry":"jaegertracing","tag":"1.5.2"}` | Sampled Fraction |
 | fsm.tracing.image.name | string | `"all-in-one"` | Tracing image name |
 | fsm.tracing.image.registry | string | `"jaegertracing"` | Registry for Tracing image |
 | fsm.tracing.image.tag | string | `"latest"` | Tracing image tag |

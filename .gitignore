@@ -84,3 +84,4 @@ rootfs/
 gomock_reflect_*/
 
 dist/
+.sisyphus/

@@ -384,7 +384,7 @@ func (p *PipyRepoClient) DeriveCodebase(codebaseName, base string, version uint6
 	//log.Info().Msgf("Successfully derived codebase %q", codebaseName)
 
 	//log.Info().Msgf("Committing the changes of codebase %q", codebaseName)
-	if success, err = p.commit(codebaseName, codebase.Version); err != nil || !success {
+	if success, err = p.commit(codebaseName, fmt.Sprintf("%d", version)); err != nil || !success {
 		success = false
 		log.Err(err).Msgf("Committing codebase %q", codebaseName)
 		return
