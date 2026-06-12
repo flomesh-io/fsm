@@ -26,11 +26,13 @@ const (
 )
 
 type nacosConnect struct {
+	lock         sync.Mutex
 	namingClient naming_client.INamingClient
 	serverCfg    constant.ServerConfig
 	clientCfg    constant.ClientConfig
 	ttl          time.Duration
 	expiresAt    time.Time
+	generation   uint64
 }
 
 func (nc *nacosConnect) close() {
@@ -41,30 +43,34 @@ func (nc *nacosConnect) close() {
 }
 
 type NacosDiscoveryClient struct {
-	connectController connector.ConnectController
-	nacosConnects     map[string]*nacosConnect
-	lock              sync.Mutex
+	connectController  connector.ConnectController
+	nacosConnects      map[string]*nacosConnect
+	lock               sync.Mutex
+	createNamingClient func(map[string]interface{}) (naming_client.INamingClient, error)
+	clientReadyDelay   time.Duration
 }
 
-func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INamingClient {
-	dc.lock.Lock()
-	defer dc.lock.Unlock()
-
-	connectController := dc.connectController
-
+func (dc *NacosDiscoveryClient) nacosClient(connectKey string) (naming_client.INamingClient, uint64, error) {
 	if len(connectKey) == 0 {
 		connectKey = aloneConnect
 	}
 
+	dc.lock.Lock()
 	conn, exists := dc.nacosConnects[connectKey]
-	if !exists || time.Now().After(conn.expiresAt) {
+	if !exists {
+		conn = &nacosConnect{}
+		dc.nacosConnects[connectKey] = conn
+	}
+	dc.lock.Unlock()
+
+	connectController := dc.connectController
+	conn.lock.Lock()
+	defer conn.lock.Unlock()
+
+	if time.Now().After(conn.expiresAt) {
 		level := env.GetString("LOG_LEVEL", "error")
 
-		if conn != nil {
-			conn.close()
-		}
-
-		conn = new(nacosConnect)
+		conn.close()
 		conn.clientCfg = constant.ClientConfig{
 			TimeoutMs:            60000,
 			NotLoadCacheAtStart:  true,
@@ -77,7 +83,6 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INa
 		}
 		conn.ttl = connectController.GetAuthNacosTokenTtl()
 		conn.expiresAt = time.Now().Add(conn.ttl)
-		dc.nacosConnects[connectKey] = conn
 	}
 
 	namespaceId := connectController.GetAuthNacosNamespaceId()
@@ -158,17 +163,23 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) naming_client.INa
 	}
 
 	if conn.namingClient == nil {
-		conn.namingClient, _ = clients.CreateNamingClient(map[string]interface{}{
+		configureNacosSDKStdoutLogger(conn.clientCfg.LogLevel)
+		client, err := dc.createNamingClient(map[string]interface{}{
 			"serverConfigs": []constant.ServerConfig{conn.serverCfg},
 			"clientConfig":  conn.clientCfg,
 		})
+		if err != nil {
+			return nil, conn.generation, err
+		}
+		conn.namingClient = client
+		conn.generation++
 		conn.expiresAt = time.Now().Add(conn.ttl)
 		// Allow SDK internal goroutines to establish connection
-		time.Sleep(2 * time.Second)
+		time.Sleep(dc.clientReadyDelay)
 	}
 
 	connectController.WaitLimiter()
-	return conn.namingClient
+	return conn.namingClient, conn.generation, nil
 }
 
 func (dc *NacosDiscoveryClient) selectServices() ([]string, error) {
@@ -179,7 +190,11 @@ func (dc *NacosDiscoveryClient) selectServices() ([]string, error) {
 		if len(namespaceId) == 0 {
 			namespaceId = constant.DEFAULT_NAMESPACE_ID
 		}
-		if serviceList, err := dc.nacosClient(aloneConnect).GetAllServicesInfo(vo.GetAllServiceInfoParam{
+		nc, _, err := dc.nacosClient(aloneConnect)
+		if err != nil {
+			return nil, err
+		}
+		if serviceList, err := nc.GetAllServicesInfo(vo.GetAllServiceInfoParam{
 			NameSpace: namespaceId,
 			GroupName: group,
 			PageNo:    1,
@@ -204,7 +219,11 @@ func (dc *NacosDiscoveryClient) selectInstances(svc string) ([]model.Instance, e
 	result, err := dc.connectController.CacheCatalogInstances(svc, func() (interface{}, error) {
 		var instances []model.Instance
 		for _, group := range dc.connectController.GetNacos2KGroupSet() {
-			if groupInstances, err := dc.nacosClient(aloneConnect).SelectInstances(vo.SelectInstancesParam{
+			nc, _, err := dc.nacosClient(aloneConnect)
+			if err != nil {
+				return nil, err
+			}
+			if groupInstances, err := nc.SelectInstances(vo.SelectInstancesParam{
 				ServiceName: svc,
 				GroupName:   group,
 				Clusters:    dc.connectController.GetNacos2KClusterSet(),
@@ -460,15 +479,17 @@ func (dc *NacosDiscoveryClient) Deregister(dereg *connector.CatalogDeregistratio
 	port := int32(parsedPort)
 	instanceId := dc.getServiceInstanceID(ins.ServiceName, ins.Ip, connector.MicroServicePort(port), connector.ProtocolHTTP)
 	return dc.connectController.CacheDeregisterInstance(instanceId, func() error {
-		conn := dc.nacosClient(instanceId)
-		_, err := conn.DeregisterInstance(*ins)
+		conn, _, err := dc.nacosClient(instanceId)
+		if err != nil {
+			return err
+		}
+		_, err = conn.DeregisterInstance(*ins)
 		if err != nil {
 			log.Error().Err(err).Msgf("deregister nacos instance failed: service=%s, ip=%s, port=%d, cluster=%s, group=%s",
 				ins.ServiceName, ins.Ip, ins.Port, ins.Cluster, ins.GroupName)
 			return err
 		}
-		conn.CloseClient()
-		delete(dc.nacosConnects, instanceId)
+		dc.removeConnection(instanceId)
 		return nil
 	})
 }
@@ -492,7 +513,11 @@ func (dc *NacosDiscoveryClient) Register(reg *connector.CatalogRegistration) err
 	protocol := protocolFromNacosMetadata(ins.Metadata)
 	instanceId := dc.getServiceInstanceID(ins.ServiceName, ins.Ip, connector.MicroServicePort(port), protocol)
 	return dc.connectController.CacheRegisterInstance(instanceId, ins, func() error {
-		_, err := dc.nacosClient(instanceId).RegisterInstance(*ins)
+		nc, _, err := dc.nacosClient(instanceId)
+		if err != nil {
+			return err
+		}
+		_, err = nc.RegisterInstance(*ins)
 		return err
 	})
 }
@@ -549,6 +574,16 @@ func (dc *NacosDiscoveryClient) getServiceInstanceID(name, addr string, port con
 }
 
 func (dc *NacosDiscoveryClient) Close() {
+	dc.lock.Lock()
+	connections := dc.nacosConnects
+	dc.nacosConnects = make(map[string]*nacosConnect)
+	dc.lock.Unlock()
+
+	for _, conn := range connections {
+		conn.lock.Lock()
+		conn.close()
+		conn.lock.Unlock()
+	}
 }
 
 func (dc *NacosDiscoveryClient) SubscribeToService(
@@ -556,8 +591,12 @@ func (dc *NacosDiscoveryClient) SubscribeToService(
 	groups []string,
 	clusters []string,
 	callback func(instances interface{}, err error),
-) (unsubscribe func(), err error) {
-	nc := dc.nacosClient(aloneConnect)
+) (unsubscribe func(), generation uint64, err error) {
+	nc, generation, err := dc.nacosClient(aloneConnect)
+	if err != nil {
+		return nil, generation, err
+	}
+	var subscribedGroups []string
 	for _, group := range groups {
 		param := &vo.SubscribeParam{
 			ServiceName: serviceName,
@@ -568,24 +607,58 @@ func (dc *NacosDiscoveryClient) SubscribeToService(
 			},
 		}
 		if err := nc.Subscribe(param); err != nil {
-			return nil, err
+			for _, subscribedGroup := range subscribedGroups {
+				_ = nc.Unsubscribe(&vo.SubscribeParam{
+					ServiceName: serviceName,
+					GroupName:   subscribedGroup,
+					Clusters:    clusters,
+				})
+			}
+			return nil, generation, err
 		}
+		subscribedGroups = append(subscribedGroups, group)
 	}
 	return func() {
-		for _, group := range groups {
-			nc.Unsubscribe(&vo.SubscribeParam{
+		for _, group := range subscribedGroups {
+			_ = nc.Unsubscribe(&vo.SubscribeParam{
 				ServiceName: serviceName,
 				GroupName:   group,
 				Clusters:    clusters,
 			})
 		}
-	}, nil
+	}, generation, nil
+}
+
+func (dc *NacosDiscoveryClient) SubscriptionGeneration() uint64 {
+	dc.lock.Lock()
+	conn := dc.nacosConnects[aloneConnect]
+	dc.lock.Unlock()
+	if conn == nil {
+		return 0
+	}
+	conn.lock.Lock()
+	defer conn.lock.Unlock()
+	return conn.generation
 }
 
 func GetNacosDiscoveryClient(connectController connector.ConnectController) (*NacosDiscoveryClient, error) {
 	nacosDiscoveryClient := new(NacosDiscoveryClient)
 	nacosDiscoveryClient.connectController = connectController
 	nacosDiscoveryClient.nacosConnects = make(map[string]*nacosConnect)
+	nacosDiscoveryClient.createNamingClient = clients.CreateNamingClient
+	nacosDiscoveryClient.clientReadyDelay = 2 * time.Second
 	nacosDiscoveryClient.connectController.SetServiceInstanceIDFunc(nacosDiscoveryClient.getServiceInstanceID)
 	return nacosDiscoveryClient, nil
+}
+
+func (dc *NacosDiscoveryClient) removeConnection(connectKey string) {
+	dc.lock.Lock()
+	conn := dc.nacosConnects[connectKey]
+	delete(dc.nacosConnects, connectKey)
+	dc.lock.Unlock()
+	if conn != nil {
+		conn.lock.Lock()
+		conn.close()
+		conn.lock.Unlock()
+	}
 }

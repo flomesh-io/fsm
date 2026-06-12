@@ -67,10 +67,14 @@ func (s *CtoKSource) RunEventDriven(ctx context.Context) {
 	clusters := s.controller.GetNacos2KClusterSet()
 	discoveryInterval := 30 * time.Second
 
-	subscribed := make(map[string]func())
+	type subscription struct {
+		unsubscribe func()
+		generation  uint64
+	}
+	subscribed := make(map[string]subscription)
 	defer func() {
-		for _, unsub := range subscribed {
-			unsub()
+		for _, sub := range subscribed {
+			sub.unsubscribe()
 		}
 	}()
 
@@ -83,31 +87,36 @@ func (s *CtoKSource) RunEventDriven(ctx context.Context) {
 		currentSet := make(map[string]bool)
 		for _, svc := range catalogServices {
 			currentSet[svc.Service] = true
-			if _, exists := subscribed[svc.Service]; !exists {
-				svcName := svc.Service
-				unsub, err := subClient.SubscribeToService(svcName, groups, clusters,
-					func(_ interface{}, err error) {
-						if err != nil {
-							log.Warn().Err(err).Msgf("subscribe callback error for %s", svcName)
-							return
-						}
-						fresh, err := s.pollCatalog(nil)
-						if err != nil {
-							log.Warn().Err(err).Msgf("re-poll failed on subscribe callback for %s", svcName)
-							return
-						}
-						s.syncer.SetServices(s.buildServicesMap(fresh), fresh)
-					})
-				if err != nil {
-					log.Warn().Err(err).Msgf("failed to subscribe to %s", svcName)
-					continue
-				}
-				subscribed[svcName] = unsub
+			svcName := svc.Service
+			currentGeneration := subClient.SubscriptionGeneration()
+			if current, exists := subscribed[svcName]; exists && current.generation == currentGeneration {
+				continue
 			}
+			unsub, generation, err := subClient.SubscribeToService(svcName, groups, clusters,
+				func(_ interface{}, err error) {
+					if err != nil {
+						log.Warn().Err(err).Msgf("subscribe callback error for %s", svcName)
+						return
+					}
+					fresh, err := s.pollCatalog(nil)
+					if err != nil {
+						log.Warn().Err(err).Msgf("re-poll failed on subscribe callback for %s", svcName)
+						return
+					}
+					s.syncer.SetServices(s.buildServicesMap(fresh), fresh)
+				})
+			if err != nil {
+				log.Warn().Err(err).Msgf("failed to subscribe to %s", svcName)
+				continue
+			}
+			if current, exists := subscribed[svcName]; exists {
+				current.unsubscribe()
+			}
+			subscribed[svcName] = subscription{unsubscribe: unsub, generation: generation}
 		}
-		for key, unsub := range subscribed {
+		for key, sub := range subscribed {
 			if !currentSet[key] {
-				unsub()
+				sub.unsubscribe()
 				delete(subscribed, key)
 			}
 		}

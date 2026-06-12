@@ -3,6 +3,7 @@ package ktog
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/mitchellh/hashstructure/v2"
@@ -510,7 +511,27 @@ func (gw *GatewaySource) deleteGatewayRoute(name, namespace string) {
 }
 
 func routeNameForService(routeName, svcName string) bool {
-	return routeName == svcName || strings.HasPrefix(routeName, svcName+"-")
+	if routeName == svcName {
+		return true
+	}
+
+	for _, suffix := range []string{"-http", "-grpc", "-tcp"} {
+		if !strings.HasSuffix(routeName, suffix) {
+			continue
+		}
+		nameAndPort := strings.TrimSuffix(routeName, suffix)
+		portSeparator := strings.LastIndex(nameAndPort, "-")
+		if portSeparator <= 0 {
+			return false
+		}
+		port, err := strconv.ParseUint(nameAndPort[portSeparator+1:], 10, 16)
+		if err != nil || port == 0 {
+			return false
+		}
+		return nameAndPort[:portSeparator] == svcName
+	}
+
+	return false
 }
 
 func (gw *GatewaySource) getGatewayRouteHostnamesForService(k8sSvc *corev1.Service) []gwv1.Hostname {

@@ -540,7 +540,8 @@ type ServiceDiscoveryClient interface {
 }
 
 type SubscriptionClient interface {
-	SubscribeToService(serviceName string, groups []string, clusters []string, callback func(instances interface{}, err error)) (unsubscribe func(), err error)
+	SubscribeToService(serviceName string, groups []string, clusters []string, callback func(instances interface{}, err error)) (unsubscribe func(), generation uint64, err error)
+	SubscriptionGeneration() uint64
 }
 
 const (

@@ -99,12 +99,45 @@ func (s *CtoKSource) aggregateMeta(svcMetaMap map[connector.KubeSvcName]*connect
 		svcMeta.TargetPorts[*port] = normalizedProtocol
 	}
 
+	isGRPC := *protocol == connector.ProtocolGRPC || *protocol == "tri"
+	if isGRPC && len(instance.GRPCInterface) > 0 && len(instance.GRPCMethods) > 0 {
+		mergeGRPCMethods := true
+		if svcMeta.GRPCMeta == nil {
+			svcMeta.GRPCMeta = &connector.GRPCMeta{
+				Interface: instance.GRPCInterface,
+				Methods:   make(map[string][]string),
+			}
+		} else if svcMeta.GRPCMeta.Interface != instance.GRPCInterface {
+			if instance.GRPCInterface < svcMeta.GRPCMeta.Interface {
+				log.Warn().Msgf("conflicting gRPC interfaces for service %s: replacing %s with %s",
+					kubeSvcName, svcMeta.GRPCMeta.Interface, instance.GRPCInterface)
+				svcMeta.GRPCMeta.Interface = instance.GRPCInterface
+				svcMeta.GRPCMeta.Methods = make(map[string][]string)
+			} else {
+				log.Warn().Msgf("conflicting gRPC interfaces for service %s: keeping %s and ignoring %s",
+					kubeSvcName, svcMeta.GRPCMeta.Interface, instance.GRPCInterface)
+				mergeGRPCMethods = false
+			}
+		}
+		if mergeGRPCMethods {
+			for _, method := range instance.GRPCMethods {
+				endpoint := instance.MicroService.EndpointAddress().Get()
+				svcMeta.GRPCMeta.Methods[method] = appendUniqueEndpoint(svcMeta.GRPCMeta.Methods[method], endpoint)
+			}
+		}
+	}
+
 	// Check if endpoint already exists for this address (same IP, different port)
 	existingEP, epExists := svcMeta.Endpoints[addr]
 	if epExists {
-		// Merge port only - preserve existing endpointMeta fields from first instance
 		if *port > 0 {
 			existingEP.Ports[*port] = normalizedProtocol
+		}
+		if isGRPC && len(instance.Meta) > 0 {
+			if existingEP.GRPCMeta == nil {
+				existingEP.GRPCMeta = make(map[string]interface{})
+			}
+			maps.Copy(existingEP.GRPCMeta, instance.Meta)
 		}
 		return
 	}
@@ -115,24 +148,9 @@ func (s *CtoKSource) aggregateMeta(svcMetaMap map[connector.KubeSvcName]*connect
 	if *port > 0 {
 		endpointMeta.Ports[*port] = normalizedProtocol
 	}
-	if *protocol == connector.ProtocolGRPC || *protocol == "tri" {
+	if isGRPC {
 		if len(instance.GRPCInterface) > 0 && len(instance.GRPCMethods) > 0 {
-			if svcMeta.GRPCMeta == nil {
-				svcMeta.GRPCMeta = new(connector.GRPCMeta)
-				svcMeta.GRPCMeta.Interface = instance.GRPCInterface
-				if svcMeta.GRPCMeta.Methods == nil {
-					svcMeta.GRPCMeta.Methods = make(map[string][]string)
-				}
-				for _, method := range instance.GRPCMethods {
-					eps, exists := svcMeta.GRPCMeta.Methods[method]
-					if !exists {
-						eps = make([]string, 0)
-					}
-					eps = append(eps, instance.MicroService.EndpointAddress().Get())
-					svcMeta.GRPCMeta.Methods[method] = eps
-				}
-			}
-			endpointMeta.GRPCMeta = instance.Meta
+			endpointMeta.GRPCMeta = maps.Clone(instance.Meta)
 		}
 	}
 	endpointMeta.Address = addr
@@ -171,6 +189,15 @@ func (s *CtoKSource) aggregateMeta(svcMetaMap map[connector.KubeSvcName]*connect
 		endpointMeta.Native.ClusterSet = endpointMeta.Native.ClusterId
 	}
 	svcMeta.Endpoints[addr] = endpointMeta
+}
+
+func appendUniqueEndpoint(endpoints []string, endpoint string) []string {
+	for _, existing := range endpoints {
+		if existing == endpoint {
+			return endpoints
+		}
+	}
+	return append(endpoints, endpoint)
 }
 
 func (s *CtoKSource) aggregateTag(kubeSvcName connector.KubeSvcName, svc *connector.AgentService, kubeSvcNames []connector.KubeSvcName, enableTagStrategy bool, labelConversions, labels, annotationConversions, annotations map[string]string) []connector.KubeSvcName {

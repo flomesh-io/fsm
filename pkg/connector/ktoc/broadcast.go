@@ -9,8 +9,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
-var fullSyncInFlight int32
-
 // BroadcastListener listens for broadcast messages from the message broker
 func (t *KtoCSource) BroadcastListener(stopCh <-chan struct{}, syncPeriod time.Duration) {
 	// Register for service config updates broadcast by the message broker
@@ -97,13 +95,12 @@ func (t *KtoCSource) syncImmediate(stopCh <-chan struct{}, serviceUpdateChan <-c
 			t.syncer.Sync(rs)
 			t.Unlock()
 
-			if immediateRegister && atomic.CompareAndSwapInt32(&fullSyncInFlight, 0, 1) {
-				if len(dirty) > 0 {
+			if immediateRegister {
+				if len(dirty) > 0 || !ctx.Deregs.IsEmpty() {
 					t.syncer.SyncIncremental(dirty)
 				} else {
 					t.syncer.SyncFull(context.Background())
 				}
-				atomic.StoreInt32(&fullSyncInFlight, 0)
 			}
 		}
 	}

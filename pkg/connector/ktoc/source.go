@@ -206,9 +206,44 @@ func (t *KtoCSource) doDelete(key string) {
 	log.Debug().Msgf("[doDelete] deleting endpoints from endpointsMap key:%s", key)
 	// If there were registrations related to this service, then
 	// delete them and sync.
+	t.scheduleDeregistrationsForKey(key)
 	t.controller.GetK2CContext().RegisteredServiceMap.Remove(key)
 	t.controller.GetK2CContext().DirtyKeys.Add(key)
 	t.sync()
+}
+
+// scheduleDeregistrationsForKey snapshots registrations before their source
+// entry is removed so immediate mode can deregister without a later full scan.
+//
+// Precondition: assumes t.serviceLock is held.
+func (t *KtoCSource) scheduleDeregistrationsForKey(key string) {
+	registrations, ok := t.controller.GetK2CContext().RegisteredServiceMap.Get(key)
+	if !ok {
+		return
+	}
+	for _, registration := range registrations {
+		deregistration := deregistrationFromRegistration(registration)
+		if deregistration == nil || len(deregistration.ServiceID) == 0 {
+			continue
+		}
+		t.controller.GetK2CContext().Deregs.Set(deregistration.ServiceID, deregistration)
+	}
+}
+
+func deregistrationFromRegistration(registration *connector.CatalogRegistration) *connector.CatalogDeregistration {
+	if registration == nil || registration.Service == nil {
+		return nil
+	}
+	serviceRef := registration.Service.InstanceId
+	if len(serviceRef) == 0 {
+		serviceRef = registration.Service.ID
+	}
+	return &connector.CatalogDeregistration{
+		NamespacedService: registration.Service.MicroService.NamespacedService,
+		Node:              registration.Node,
+		ServiceID:         registration.Service.ID,
+		ServiceRef:        serviceRef,
+	}
 }
 
 // Run implements the controller.Backgrounder interface.
@@ -1231,7 +1266,9 @@ func (t *serviceEndpointsSource) Delete(key string, _ interface{}) error {
 	// if we were tracking this endpoint to begin with and that endpoint
 	// had associated registrations.
 	t.Service.controller.GetK2CContext().EndpointsMap.Remove(key)
+	t.Service.scheduleDeregistrationsForKey(key)
 	t.Service.controller.GetK2CContext().RegisteredServiceMap.Remove(key)
+	t.Service.controller.GetK2CContext().DirtyKeys.Add(key)
 	t.Service.sync()
 
 	log.Info().Msgf("delete endpoint key:%s", key)

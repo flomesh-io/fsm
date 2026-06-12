@@ -54,12 +54,14 @@
       makeLoggingData: (msg, remoteAddr, remotePort, localAddr, localPort, isOutbound) => (
         (
           sampled = false,
+          traceId = null,
         ) => (
           msg?.head?.headers && (
             (config?.Spec?.Observability?.remoteLogging?.level > 0) ? (
               (config?.Spec?.Observability?.remoteLogging?.level === 1) ? (
                 !isOutbound && initTracingHeaders(msg.head.headers),
-                sampled = (!tracingLimitedID || toInt63(msg.head.headers['x-b3-traceid']) < tracingLimitedID)
+                traceId = msg.head.headers['x-b3-traceid'],
+                sampled = (!traceId || !tracingLimitedID || toInt63(traceId) < tracingLimitedID)
               ) : (
                 initTracingHeaders(msg.head.headers),
                 sampled = (!tracingLimitedID || toInt63(msg.head.headers['x-b3-traceid']) < tracingLimitedID)
