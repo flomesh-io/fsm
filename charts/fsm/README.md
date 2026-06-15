@@ -312,7 +312,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.image.pullPolicy | string | `"IfNotPresent"` | Container image pull policy for control plane containers |
 | fsm.image.registry | string | `"flomesh"` | Container image registry for control plane images |
 | fsm.image.tag | string | `"1.5.2"` | Container image tag for control plane images |
-| fsm.imagePullSecrets | list | `[]` | `fsm-controller` image pull secret |
+| fsm.imagePullSecrets | list | `[]` | Image pull secrets for FSM control plane pods and meshed workload pods |
 | fsm.inboundPortExclusionList | list | `[]` | Specifies a global list of ports to exclude from inbound traffic interception by the sidecar proxy. If specified, must be a list of positive integers. |
 | fsm.injector.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
 | fsm.injector.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator | string | `"In"` |  |

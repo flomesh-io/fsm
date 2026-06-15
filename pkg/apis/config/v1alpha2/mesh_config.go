@@ -86,6 +86,9 @@ type SidecarSpec struct {
 	// SidecarImage defines the container image used for the proxy sidecar.
 	SidecarImage string `json:"sidecarImage,omitempty"`
 
+	// ImagePullSecrets defines references to secrets used for pulling images injected into meshed pods.
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+
 	// SidecarDisabledMTLS defines whether mTLS is disabled.
 	SidecarDisabledMTLS bool `json:"sidecarDisabledMTLS"`
 

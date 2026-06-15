@@ -46,6 +46,8 @@ func (wh *mutatingWebhook) createPodPatch(pod *corev1.Pod, req *admissionv1.Admi
 		return nil, err
 	}
 
+	ConfigurePodImagePullSecrets(pod, wh.configurator.GetMeshConfig().Spec.Sidecar.ImagePullSecrets)
+
 	enableMetrics, err := IsMetricsEnabled(wh.kubeController, namespace)
 	if err != nil {
 		log.Error().Err(err).Msgf("Error checking if namespace %s is enabled for metrics", namespace)
@@ -112,6 +114,28 @@ func (wh *mutatingWebhook) verifyPrerequisites(podOS string) error {
 	}
 
 	return nil
+}
+
+// ConfigurePodImagePullSecrets appends configured image pull secrets that are not already present on the pod.
+func ConfigurePodImagePullSecrets(pod *corev1.Pod, configured []corev1.LocalObjectReference) {
+	existing := make(map[string]struct{}, len(pod.Spec.ImagePullSecrets))
+	for _, secret := range pod.Spec.ImagePullSecrets {
+		if secret.Name != "" {
+			existing[secret.Name] = struct{}{}
+		}
+	}
+
+	for _, secret := range configured {
+		if secret.Name == "" {
+			continue
+		}
+		if _, found := existing[secret.Name]; found {
+			continue
+		}
+
+		pod.Spec.ImagePullSecrets = append(pod.Spec.ImagePullSecrets, secret)
+		existing[secret.Name] = struct{}{}
+	}
 }
 
 // ConfigurePodInit patch the init container to pod.

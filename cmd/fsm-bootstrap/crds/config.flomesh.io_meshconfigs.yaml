@@ -349,6 +349,26 @@ spec:
                     description: EnablePrivilegedInitContainer defines a boolean indicating
                       whether the init container for a meshed pod should run as privileged.
                     type: boolean
+                  imagePullSecrets:
+                    description: ImagePullSecrets defines references to secrets used
+                      for pulling images injected into meshed pods.
+                    items:
+                      description: |-
+                        LocalObjectReference contains enough information to let you locate the
+                        referenced object inside the same namespace.
+                      properties:
+                        name:
+                          default: ""
+                          description: |-
+                            Name of the referent.
+                            This field is effectively required, but due to backwards compatibility is
+                            allowed to be empty. Instances of this type with an empty value here are
+                            almost certainly wrong.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    type: array
                   initContainerImage:
                     description: InitContainerImage defines the container image used
                       for the init container injected to meshed pods.
@@ -916,6 +936,26 @@ spec:
                     description: EnablePrivilegedInitContainer defines a boolean indicating
                       whether the init container for a meshed pod should run as privileged.
                     type: boolean
+                  imagePullSecrets:
+                    description: ImagePullSecrets defines references to secrets used
+                      for pulling images injected into meshed pods.
+                    items:
+                      description: |-
+                        LocalObjectReference contains enough information to let you locate the
+                        referenced object inside the same namespace.
+                      properties:
+                        name:
+                          default: ""
+                          description: |-
+                            Name of the referent.
+                            This field is effectively required, but due to backwards compatibility is
+                            allowed to be empty. Instances of this type with an empty value here are
+                            almost certainly wrong.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    type: array
                   initContainerImage:
                     description: InitContainerImage defines the container image used
                       for the init container injected to meshed pods.
@@ -2060,6 +2100,26 @@ spec:
                       is ready to accept traffic, mitigating some startup race conditions.
                       Default value is 'true'.
                     type: boolean
+                  imagePullSecrets:
+                    description: ImagePullSecrets defines references to secrets used
+                      for pulling images injected into meshed pods.
+                    items:
+                      description: |-
+                        LocalObjectReference contains enough information to let you locate the
+                        referenced object inside the same namespace.
+                      properties:
+                        name:
+                          default: ""
+                          description: |-
+                            Name of the referent.
+                            This field is effectively required, but due to backwards compatibility is
+                            allowed to be empty. Instances of this type with an empty value here are
+                            almost certainly wrong.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    type: array
                   initResources:
                     description: InitResources defines the compute resources for init
                       container.

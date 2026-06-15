@@ -3382,7 +3382,7 @@
                     "$id": "#/properties/fsm/properties/imagePullSecrets",
                     "type": "array",
                     "title": "The imagePullSecrets schema",
-                    "description": "ImagePullSecrets for the control plane pod",
+                    "description": "Image pull secrets for FSM control plane pods and meshed workload pods",
                     "items": {
                         "type": "object"
                     },
