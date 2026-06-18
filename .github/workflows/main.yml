@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: ShellCheck
         run: shellcheck -x $(find . -name '*.sh')
 
@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
@@ -83,7 +83,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
@@ -105,7 +105,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
@@ -121,7 +121,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
@@ -135,7 +135,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
@@ -152,7 +152,7 @@ jobs:
     needs: build
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
@@ -164,7 +164,7 @@ jobs:
         run: make go-test-coverage
       - name: Upload Coverage
         if: ${{ success() }}
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           flags: unittests
 
@@ -180,7 +180,7 @@ jobs:
       FSM_DEMO_TAR_PATH: /tmp/fsm-demo-images/${{ github.sha }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Setup Go
         id: setup-go
         uses: actions/setup-go@v6
@@ -194,7 +194,7 @@ jobs:
         env:
           DOCKER_TAR_PATH: ${{ env.FSM_TAR_PATH }}
       - name: Upload fsm images
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.FSM_IMAGE_ARTIFACTS_NAME }}
           path: ${{ env.FSM_TAR_PATH }}
@@ -207,7 +207,7 @@ jobs:
         env:
           DOCKER_TAR_PATH: ${{ env.FSM_DEMO_TAR_PATH }}
       - name: Upload fsm demo images
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.FSM_DEMO_IMAGE_ARTIFACTS_NAME }}
           path: ${{ env.FSM_DEMO_TAR_PATH }}
@@ -216,7 +216,7 @@ jobs:
       - name: Build fsm CLI
         run: make build-fsm
       - name: Upload fsm CLI
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: fsm-cli
           path: ./bin/fsm
@@ -229,9 +229,9 @@ jobs:
     needs: fsm-artifacts
     steps:
       - name: Setup Trivy
-        uses: aquasecurity/setup-trivy@v0.2.4
+        uses: aquasecurity/setup-trivy@v0.3.1
       - name: Download docker image artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.FSM_IMAGE_ARTIFACTS_NAME }}
           path: ${{ env.FSM_IMAGES_DOWNLOAD_PATH }}
@@ -360,7 +360,7 @@ jobs:
           docker-images: false
           swap-storage: true
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
@@ -371,7 +371,7 @@ jobs:
           curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
           k3d version
       - name: Download fsm image artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.FSM_IMAGE_ARTIFACTS_NAME }}
           path: ${{ env.FSM_IMAGES_DOWNLOAD_PATH }}
@@ -380,7 +380,7 @@ jobs:
           ls -1 ${{ env.FSM_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
           docker image ls -a
       - name: Download fsm demo image artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.FSM_DEMO_IMAGE_ARTIFACTS_NAME }}
           path: ${{ env.FSM_DEMO_IMAGES_DOWNLOAD_PATH }}
@@ -389,7 +389,7 @@ jobs:
           ls -1 ${{ env.FSM_DEMO_IMAGES_DOWNLOAD_PATH }}/*.tar | xargs --no-run-if-empty -L 1 docker load -i
           docker image ls -a
       - name: Download fsm CLI
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.FSM_CLI_ARTIFACTS_NAME }}
           path: ./bin
@@ -431,7 +431,7 @@ jobs:
       CTR_REGISTRY: ${{ secrets.RELEASE_REGISTRY }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Docker Login
         run: docker login --username "$DOCKER_USER" --password-stdin <<< "$DOCKER_PASS"
       - name: Push images with "latest-main" tag
