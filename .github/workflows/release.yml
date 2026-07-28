@@ -32,18 +32,18 @@ jobs:
       HOMEBREW_RELEASE_PAT: ${{ secrets.HOMEBREW_RELEASE_PAT }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: false
       - name: Generate Release Notes
         run: scripts/release-notes.sh $VERSION > /tmp/release-notes.md
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           args: release --clean --parallelism 5 --release-notes /tmp/release-notes.md --verbose
 
@@ -84,7 +84,7 @@ jobs:
       VERSION: ${{ needs.version.outputs.version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Exclude Charts
