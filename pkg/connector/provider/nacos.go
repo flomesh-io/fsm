@@ -19,6 +19,7 @@ import (
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
+	"github.com/flomesh-io/fsm/pkg/metricsstore"
 )
 
 const (
@@ -182,8 +183,17 @@ func (dc *NacosDiscoveryClient) nacosClient(connectKey string) (naming_client.IN
 	return conn.namingClient, conn.generation, nil
 }
 
-func (dc *NacosDiscoveryClient) selectServices() ([]string, error) {
-	var services []string
+func (dc *NacosDiscoveryClient) selectServices() (services []string, err error) {
+	started := time.Now()
+	defer func() {
+		result := "success"
+		if err != nil {
+			result = "error"
+		}
+		metricsstore.DefaultMetricsStore.ConnectorNacosAPIRequests.WithLabelValues("catalog_list", result).Inc()
+		metricsstore.DefaultMetricsStore.ConnectorNacosAPIRequestDuration.WithLabelValues("catalog_list").Observe(time.Since(started).Seconds())
+	}()
+
 	serviceSet := mapset.NewSet()
 	for _, group := range dc.connectController.GetNacos2KGroupSet() {
 		namespaceId := dc.connectController.GetAuthNacosNamespaceId()
@@ -215,7 +225,17 @@ func (dc *NacosDiscoveryClient) selectServices() ([]string, error) {
 	return services, nil
 }
 
-func (dc *NacosDiscoveryClient) selectInstances(svc string) ([]model.Instance, error) {
+func (dc *NacosDiscoveryClient) selectInstances(svc string) (instances []model.Instance, err error) {
+	started := time.Now()
+	defer func() {
+		result := "success"
+		if err != nil {
+			result = "error"
+		}
+		metricsstore.DefaultMetricsStore.ConnectorNacosAPIRequests.WithLabelValues("instance_list", result).Inc()
+		metricsstore.DefaultMetricsStore.ConnectorNacosAPIRequestDuration.WithLabelValues("instance_list").Observe(time.Since(started).Seconds())
+	}()
+
 	result, err := dc.connectController.CacheCatalogInstances(svc, func() (interface{}, error) {
 		var instances []model.Instance
 		for _, group := range dc.connectController.GetNacos2KGroupSet() {
@@ -240,7 +260,8 @@ func (dc *NacosDiscoveryClient) selectInstances(svc string) ([]model.Instance, e
 		return instances, nil
 	})
 	if result != nil {
-		return result.([]model.Instance), err
+		instances = result.([]model.Instance)
+		return instances, err
 	}
 	return nil, err
 }
@@ -467,7 +488,23 @@ func (dc *NacosDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]c
 	return registeredServices, nil
 }
 
-func (dc *NacosDiscoveryClient) Deregister(dereg *connector.CatalogDeregistration) error {
+func (dc *NacosDiscoveryClient) Deregister(dereg *connector.CatalogDeregistration) (err error) {
+	started := time.Now()
+	defer func() {
+		result := "success"
+		if err != nil {
+			result = "error"
+		}
+		metricsstore.DefaultMetricsStore.ConnectorNacosAPIRequests.WithLabelValues("instance_deregister", result).Inc()
+		metricsstore.DefaultMetricsStore.ConnectorNacosAPIRequestDuration.WithLabelValues("instance_deregister").Observe(time.Since(started).Seconds())
+		metricsstore.DefaultMetricsStore.ConnectorSyncOperations.WithLabelValues("k8s_to_cloud", "instance_deregister", result).Inc()
+		metricsstore.DefaultMetricsStore.ConnectorSyncOperationDuration.WithLabelValues("k8s_to_cloud", "instance_deregister").Observe(time.Since(started).Seconds())
+		if err == nil {
+			metricsstore.DefaultMetricsStore.ConnectorSyncReady.WithLabelValues("k8s_to_cloud").Set(1)
+			metricsstore.DefaultMetricsStore.ConnectorSyncLastSuccess.WithLabelValues("k8s_to_cloud").SetToCurrentTime()
+		}
+	}()
+
 	ins := dereg.ToNacos()
 	if ins == nil {
 		return nil
@@ -478,7 +515,7 @@ func (dc *NacosDiscoveryClient) Deregister(dereg *connector.CatalogDeregistratio
 	}
 	port := int32(parsedPort)
 	instanceId := dc.getServiceInstanceID(ins.ServiceName, ins.Ip, connector.MicroServicePort(port), connector.ProtocolHTTP)
-	return dc.connectController.CacheDeregisterInstance(instanceId, func() error {
+	err = dc.connectController.CacheDeregisterInstance(instanceId, func() error {
 		conn, _, err := dc.nacosClient(instanceId)
 		if err != nil {
 			return err
@@ -492,9 +529,26 @@ func (dc *NacosDiscoveryClient) Deregister(dereg *connector.CatalogDeregistratio
 		dc.removeConnection(instanceId)
 		return nil
 	})
+	return err
 }
 
-func (dc *NacosDiscoveryClient) Register(reg *connector.CatalogRegistration) error {
+func (dc *NacosDiscoveryClient) Register(reg *connector.CatalogRegistration) (err error) {
+	started := time.Now()
+	defer func() {
+		result := "success"
+		if err != nil {
+			result = "error"
+		}
+		metricsstore.DefaultMetricsStore.ConnectorNacosAPIRequests.WithLabelValues("instance_register", result).Inc()
+		metricsstore.DefaultMetricsStore.ConnectorNacosAPIRequestDuration.WithLabelValues("instance_register").Observe(time.Since(started).Seconds())
+		metricsstore.DefaultMetricsStore.ConnectorSyncOperations.WithLabelValues("k8s_to_cloud", "instance_register", result).Inc()
+		metricsstore.DefaultMetricsStore.ConnectorSyncOperationDuration.WithLabelValues("k8s_to_cloud", "instance_register").Observe(time.Since(started).Seconds())
+		if err == nil {
+			metricsstore.DefaultMetricsStore.ConnectorSyncReady.WithLabelValues("k8s_to_cloud").Set(1)
+			metricsstore.DefaultMetricsStore.ConnectorSyncLastSuccess.WithLabelValues("k8s_to_cloud").SetToCurrentTime()
+		}
+	}()
+
 	k2cGroupId := dc.connectController.GetNacosGroupId()
 	if len(k2cGroupId) == 0 {
 		k2cGroupId = constant.DEFAULT_GROUP
@@ -512,7 +566,7 @@ func (dc *NacosDiscoveryClient) Register(reg *connector.CatalogRegistration) err
 	port := int32(parsedPort)
 	protocol := protocolFromNacosMetadata(ins.Metadata)
 	instanceId := dc.getServiceInstanceID(ins.ServiceName, ins.Ip, connector.MicroServicePort(port), protocol)
-	return dc.connectController.CacheRegisterInstance(instanceId, ins, func() error {
+	err = dc.connectController.CacheRegisterInstance(instanceId, ins, func() error {
 		nc, _, err := dc.nacosClient(instanceId)
 		if err != nil {
 			return err
@@ -520,6 +574,7 @@ func (dc *NacosDiscoveryClient) Register(reg *connector.CatalogRegistration) err
 		_, err = nc.RegisterInstance(*ins)
 		return err
 	})
+	return err
 }
 
 func (dc *NacosDiscoveryClient) EnableNamespaces() bool {

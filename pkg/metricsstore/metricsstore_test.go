@@ -113,3 +113,21 @@ fsm_error_err_code_count{err_code="E1100"} %d
 		}
 	})
 }
+
+func TestConnectorMetrics(t *testing.T) {
+	DefaultMetricsStore.Start(
+		DefaultMetricsStore.ConnectorSyncReady,
+		DefaultMetricsStore.ConnectorSyncOperations,
+	)
+	defer DefaultMetricsStore.Stop(
+		DefaultMetricsStore.ConnectorSyncReady,
+		DefaultMetricsStore.ConnectorSyncOperations,
+	)
+
+	DefaultMetricsStore.ConnectorSyncReady.WithLabelValues("cloud_to_k8s").Set(1)
+	DefaultMetricsStore.ConnectorSyncOperations.WithLabelValues("cloud_to_k8s", "catalog_list", "success").Inc()
+
+	assert := tassert.New(t)
+	assert.True(DefaultMetricsStore.Contains("fsm_connector_sync_ready{direction=\"cloud_to_k8s\"} 1\n"))
+	assert.True(DefaultMetricsStore.Contains("fsm_connector_sync_operations_total{direction=\"cloud_to_k8s\",operation=\"catalog_list\",result=\"success\"} 1\n"))
+}

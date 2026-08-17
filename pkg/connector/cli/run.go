@@ -6,6 +6,7 @@ import (
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector/provider"
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
+	"github.com/flomesh-io/fsm/pkg/metricsstore"
 )
 
 func (c *client) Refresh() {
@@ -100,11 +101,17 @@ func (c *client) startSync() {
 	}
 
 	if c.SyncCloudToK8s() {
+		metricsstore.DefaultMetricsStore.ConnectorSyncEnabled.WithLabelValues("cloud_to_k8s").Set(1)
 		go c.syncCtoK()
+	} else {
+		metricsstore.DefaultMetricsStore.ConnectorSyncEnabled.WithLabelValues("cloud_to_k8s").Set(0)
 	}
 
 	if c.SyncK8sToCloud() {
+		metricsstore.DefaultMetricsStore.ConnectorSyncEnabled.WithLabelValues("k8s_to_cloud").Set(1)
 		go c.syncKtoC()
+	} else {
+		metricsstore.DefaultMetricsStore.ConnectorSyncEnabled.WithLabelValues("k8s_to_cloud").Set(0)
 	}
 
 	if c.SyncK8sToGateway() {

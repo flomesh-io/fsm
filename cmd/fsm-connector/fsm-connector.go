@@ -36,6 +36,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/messaging"
+	"github.com/flomesh-io/fsm/pkg/metricsstore"
 	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/signals"
 	"github.com/flomesh-io/fsm/pkg/version"
@@ -100,6 +101,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	stop := signals.RegisterExitHandlers(cancel)
+	startMetricsStore()
 
 	msgBroker := messaging.NewBroker(stop)
 	configClient := configClientset.NewForConfigOrDie(kubeConfig)
@@ -124,6 +126,7 @@ func main() {
 	connectController.SetClusterSet(clusterSet.Name, clusterSet.Group, clusterSet.Zone, clusterSet.Region)
 
 	if cli.Cfg.LeaderElection {
+		metricsstore.DefaultMetricsStore.ConnectorLeader.WithLabelValues(cli.Cfg.SdrProvider).Set(0)
 		lock := &resourcelock.LeaseLock{
 			LeaseMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("%s-%s-%s", cli.Cfg.SdrProvider, cli.Cfg.SdrConnectorNamespace, cli.Cfg.SdrConnectorName),
@@ -144,10 +147,12 @@ func main() {
 				RetryPeriod:     5 * time.Second,
 				Callbacks: leaderelection.LeaderCallbacks{
 					OnStartedLeading: func(ctx context.Context) {
+						metricsstore.DefaultMetricsStore.ConnectorLeader.WithLabelValues(cli.Cfg.SdrProvider).Set(1)
 						go connectController.BroadcastListener(stop)
 						go connectController.CacheCleaner(stop)
 					},
 					OnStoppedLeading: func() {
+						metricsstore.DefaultMetricsStore.ConnectorLeader.WithLabelValues(cli.Cfg.SdrProvider).Set(0)
 					},
 					OnNewLeader: func(identity string) {
 						log.Info().Msgf("new leader %s", identity)
@@ -156,6 +161,7 @@ func main() {
 			})
 		}()
 	} else {
+		metricsstore.DefaultMetricsStore.ConnectorLeader.WithLabelValues(cli.Cfg.SdrProvider).Set(1)
 		go connectController.BroadcastListener(stop)
 		go connectController.CacheCleaner(stop)
 	}
@@ -172,6 +178,8 @@ func main() {
 	httpServer.AddHandler(constants.VersionPath, version.GetVersionHandler())
 	// Health checks
 	httpServer.AddHandler(constants.WebhookHealthPath, http.HandlerFunc(health.SimpleHandler))
+	// Metrics
+	httpServer.AddHandler(constants.MetricsPath, metricsstore.DefaultMetricsStore.Handler())
 
 	// Start HTTP server
 	err = httpServer.Start()
@@ -181,4 +189,25 @@ func main() {
 
 	<-stop
 	log.Info().Msgf("Stopping fsm-connector %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
+}
+
+func startMetricsStore() {
+	metricsstore.DefaultMetricsStore.Start(
+		metricsstore.DefaultMetricsStore.ConnectorInfo,
+		metricsstore.DefaultMetricsStore.ConnectorLeader,
+		metricsstore.DefaultMetricsStore.ConnectorSyncEnabled,
+		metricsstore.DefaultMetricsStore.ConnectorSyncReady,
+		metricsstore.DefaultMetricsStore.ConnectorSyncOperations,
+		metricsstore.DefaultMetricsStore.ConnectorSyncOperationDuration,
+		metricsstore.DefaultMetricsStore.ConnectorSyncLastSuccess,
+		metricsstore.DefaultMetricsStore.ConnectorTrackedServices,
+		metricsstore.DefaultMetricsStore.ConnectorDesiredInstances,
+		metricsstore.DefaultMetricsStore.ConnectorNacosAPIRequests,
+		metricsstore.DefaultMetricsStore.ConnectorNacosAPIRequestDuration,
+		metricsstore.DefaultMetricsStore.HTTPResponseTotal,
+		metricsstore.DefaultMetricsStore.HTTPResponseDuration,
+		metricsstore.DefaultMetricsStore.VersionInfo,
+	)
+
+	metricsstore.DefaultMetricsStore.ConnectorInfo.WithLabelValues(cli.Cfg.SdrProvider).Set(1)
 }

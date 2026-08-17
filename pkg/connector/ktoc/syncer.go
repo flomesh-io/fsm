@@ -9,6 +9,7 @@ import (
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
+	"github.com/flomesh-io/fsm/pkg/metricsstore"
 	"github.com/flomesh-io/fsm/pkg/utils/chm"
 )
 
@@ -59,11 +60,13 @@ func (s *KtoCSyncer) Sync(rs []*connector.CatalogRegistration) {
 	s.controller.GetK2CContext().ServiceNames.Clear()
 	s.controller.GetK2CContext().Namespaces.Clear()
 
+	trackedServices := make(map[string]struct{})
 	for _, r := range rs {
 		// Determine the namespace the service is in to use for indexing
 		// against the s.serviceNames and s.namespaces maps.
 		// This will be "" for OSS.
 		ns := r.Service.MicroService.Namespace
+		trackedServices[ns+"\x00"+r.Service.MicroService.Service] = struct{}{}
 
 		// Mark this as a valid service, initializing state if necessary
 		set, ok := s.controller.GetK2CContext().ServiceNames.Get(ns)
@@ -84,6 +87,8 @@ func (s *KtoCSyncer) Sync(rs []*connector.CatalogRegistration) {
 		nsSet.Set(r.Service.ID, r)
 		log.Debug().Msgf("[Sync] adding service to namespaces map service:%v", r.Service)
 	}
+	metricsstore.DefaultMetricsStore.ConnectorTrackedServices.WithLabelValues("k8s_to_cloud").Set(float64(len(trackedServices)))
+	metricsstore.DefaultMetricsStore.ConnectorDesiredInstances.WithLabelValues("k8s_to_cloud").Set(float64(len(rs)))
 
 	// Signal that the initial sync is complete and our maps have been populated.
 	// We can now safely reap untracked services.

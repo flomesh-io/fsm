@@ -86,6 +86,39 @@ type MetricsStore struct {
 	// ConnectorBroadcastEventCounter is the metric for the total number of ConnectorBroadcast events published
 	ConnectorBroadcastEventCounter prometheus.Counter
 
+	// ConnectorInfo contains connector configuration information. The gauge is always set to 1.
+	ConnectorInfo *prometheus.GaugeVec
+
+	// ConnectorLeader indicates whether this connector instance currently holds leadership.
+	ConnectorLeader *prometheus.GaugeVec
+
+	// ConnectorSyncEnabled indicates whether synchronization is enabled for a direction.
+	ConnectorSyncEnabled *prometheus.GaugeVec
+
+	// ConnectorSyncReady indicates whether a synchronization direction has completed successfully.
+	ConnectorSyncReady *prometheus.GaugeVec
+
+	// ConnectorSyncOperations counts synchronization operations by direction, operation and result.
+	ConnectorSyncOperations *prometheus.CounterVec
+
+	// ConnectorSyncOperationDuration tracks the duration of synchronization operations.
+	ConnectorSyncOperationDuration *prometheus.HistogramVec
+
+	// ConnectorSyncLastSuccess records the Unix timestamp of the last successful synchronization.
+	ConnectorSyncLastSuccess *prometheus.GaugeVec
+
+	// ConnectorTrackedServices records the number of services currently tracked for synchronization.
+	ConnectorTrackedServices *prometheus.GaugeVec
+
+	// ConnectorDesiredInstances records the number of desired instances for synchronization.
+	ConnectorDesiredInstances *prometheus.GaugeVec
+
+	// ConnectorNacosAPIRequests counts Nacos API requests by operation and result.
+	ConnectorNacosAPIRequests *prometheus.CounterVec
+
+	// ConnectorNacosAPIRequestDuration tracks the duration of Nacos API requests.
+	ConnectorNacosAPIRequestDuration *prometheus.HistogramVec
+
 	/*
 	 * Certificate metrics
 	 */
@@ -326,6 +359,83 @@ func init() {
 		Name:      "broadcast_event_count",
 		Help:      "Represents the number of ConnectorBroadcast events published by the FSM controller",
 	})
+
+	defaultMetricsStore.ConnectorInfo = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metricsRootNamespace,
+		Subsystem: "connector",
+		Name:      "info",
+		Help:      "Static information about the FSM connector",
+	}, []string{"provider"})
+
+	defaultMetricsStore.ConnectorLeader = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metricsRootNamespace,
+		Subsystem: "connector",
+		Name:      "leader",
+		Help:      "Whether this FSM connector instance currently holds leadership",
+	}, []string{"provider"})
+
+	defaultMetricsStore.ConnectorSyncEnabled = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metricsRootNamespace,
+		Subsystem: "connector",
+		Name:      "sync_enabled",
+		Help:      "Whether synchronization is enabled for a direction",
+	}, []string{"direction"})
+
+	defaultMetricsStore.ConnectorSyncReady = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metricsRootNamespace,
+		Subsystem: "connector",
+		Name:      "sync_ready",
+		Help:      "Whether a synchronization direction has completed successfully",
+	}, []string{"direction"})
+
+	defaultMetricsStore.ConnectorSyncOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metricsRootNamespace,
+		Subsystem: "connector",
+		Name:      "sync_operations_total",
+		Help:      "Total connector synchronization operations",
+	}, []string{"direction", "operation", "result"})
+
+	defaultMetricsStore.ConnectorSyncOperationDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metricsRootNamespace,
+		Subsystem: "connector",
+		Name:      "sync_operation_duration_seconds",
+		Help:      "Duration of connector synchronization operations",
+	}, []string{"direction", "operation"})
+
+	defaultMetricsStore.ConnectorSyncLastSuccess = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metricsRootNamespace,
+		Subsystem: "connector",
+		Name:      "sync_last_success_timestamp_seconds",
+		Help:      "Unix timestamp of the last successful connector synchronization",
+	}, []string{"direction"})
+
+	defaultMetricsStore.ConnectorTrackedServices = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metricsRootNamespace,
+		Subsystem: "connector",
+		Name:      "tracked_services",
+		Help:      "Number of services currently tracked by the connector",
+	}, []string{"direction"})
+
+	defaultMetricsStore.ConnectorDesiredInstances = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metricsRootNamespace,
+		Subsystem: "connector",
+		Name:      "desired_instances",
+		Help:      "Number of instances currently desired by the connector",
+	}, []string{"direction"})
+
+	defaultMetricsStore.ConnectorNacosAPIRequests = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metricsRootNamespace,
+		Subsystem: "connector",
+		Name:      "nacos_api_requests_total",
+		Help:      "Total Nacos API requests made by the connector",
+	}, []string{"operation", "result"})
+
+	defaultMetricsStore.ConnectorNacosAPIRequestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metricsRootNamespace,
+		Subsystem: "connector",
+		Name:      "nacos_api_request_duration_seconds",
+		Help:      "Duration of Nacos API requests made by the connector",
+	}, []string{"operation"})
 
 	defaultMetricsStore.registry = prometheus.NewRegistry()
 }

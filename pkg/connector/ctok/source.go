@@ -9,6 +9,7 @@ import (
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
+	"github.com/flomesh-io/fsm/pkg/metricsstore"
 )
 
 // CtoKSource is the source for the sync that watches cloud services and
@@ -142,13 +143,20 @@ func (s *CtoKSource) RunEventDriven(ctx context.Context) {
 }
 
 func (s *CtoKSource) pollCatalog(opts *connector.QueryOptions) ([]ctv1.NamespacedService, error) {
+	started := time.Now()
 	if s.controller.Purge() {
 		return nil, nil
 	}
 	catalogServices, err := s.discClient.CatalogServices(opts)
+	metricsstore.DefaultMetricsStore.ConnectorSyncOperationDuration.WithLabelValues("cloud_to_k8s", "catalog_list").Observe(time.Since(started).Seconds())
 	if err != nil {
+		metricsstore.DefaultMetricsStore.ConnectorSyncOperations.WithLabelValues("cloud_to_k8s", "catalog_list", "error").Inc()
 		return nil, err
 	}
+	metricsstore.DefaultMetricsStore.ConnectorSyncOperations.WithLabelValues("cloud_to_k8s", "catalog_list", "success").Inc()
+	metricsstore.DefaultMetricsStore.ConnectorSyncReady.WithLabelValues("cloud_to_k8s").Set(1)
+	metricsstore.DefaultMetricsStore.ConnectorSyncLastSuccess.WithLabelValues("cloud_to_k8s").SetToCurrentTime()
+	metricsstore.DefaultMetricsStore.ConnectorTrackedServices.WithLabelValues("cloud_to_k8s").Set(float64(len(catalogServices)))
 	return catalogServices, nil
 }
 
