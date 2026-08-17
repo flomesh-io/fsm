@@ -197,7 +197,7 @@ func getPipySidecarContainerSpec(
 			searches = append(searches, trustDomain)
 
 			pod.Spec.DNSConfig = &corev1.PodDNSConfig{
-				Nameservers: []string{fsmControllerSvc.Spec.ClusterIP},
+				Nameservers: getLocalDNSProxyNameservers(injCtx.Configurator, fsmControllerSvc.Spec.ClusterIP),
 				Searches:    searches,
 				Options: []corev1.PodDNSConfigOption{
 					{Name: "ndots", Value: &dots},
@@ -232,6 +232,34 @@ func getPipySidecarContainerSpec(
 	}
 
 	return sidecarContainer, holdApp
+}
+
+type localDNSProxyUpstreamGetter interface {
+	GetLocalDNSProxyPrimaryUpstream() string
+	GetLocalDNSProxySecondaryUpstream() string
+}
+
+func getLocalDNSProxyNameservers(cfg localDNSProxyUpstreamGetter, fsmControllerSvcIP string) []string {
+	candidates := []string{
+		fsmControllerSvcIP,
+		cfg.GetLocalDNSProxyPrimaryUpstream(),
+		cfg.GetLocalDNSProxySecondaryUpstream(),
+	}
+
+	nameservers := make([]string, 0, len(candidates))
+	seen := make(map[string]struct{}, len(candidates))
+	for _, candidate := range candidates {
+		nameserver := strings.TrimSpace(candidate)
+		if nameserver == "" {
+			continue
+		}
+		if _, exists := seen[nameserver]; exists {
+			continue
+		}
+		nameservers = append(nameservers, nameserver)
+		seen[nameserver] = struct{}{}
+	}
+	return nameservers
 }
 
 func getPipyContainerPorts(originalHealthProbes models.HealthProbes) []corev1.ContainerPort {
