@@ -41,9 +41,18 @@ func (q *Question) String() string {
 // DNSHandler type
 type DNSHandler struct {
 	requestChannel chan DNSOperationData
-	resolver       *Resolver
+	resolver       dnsResolver
 	active         bool
 	muActive       sync.RWMutex
+}
+
+type dnsResolver interface {
+	Lookup(net string, req *dns.Msg, timeout int, interval int, nameServers []string) (*dns.Msg, error)
+}
+
+type questionNameRewrite struct {
+	original  string
+	forwarded string
 }
 
 // DNSOperationData type
@@ -55,13 +64,10 @@ type DNSOperationData struct {
 
 // NewHandler returns a new DNSHandler
 func NewHandler(config *Config) *DNSHandler {
-	var (
-		clientConfig *dns.ClientConfig
-		resolver     *Resolver
-	)
+	return newHandler(config, &Resolver{})
+}
 
-	resolver = &Resolver{clientConfig}
-
+func newHandler(config *Config, resolver dnsResolver) *DNSHandler {
 	handler := &DNSHandler{
 		requestChannel: make(chan DNSOperationData),
 		resolver:       resolver,
@@ -92,20 +98,31 @@ func (h *DNSHandler) getTrustDomainSearches(trustDomain, namespace string) []str
 	return searches
 }
 
-func (h *DNSHandler) getRawQName(qname, trustDomain string) (string, string) {
+func (h *DNSHandler) isClusterServiceQName(qname, trustDomain string) bool {
+	prefix, found := strings.CutSuffix(qname, fmt.Sprintf(`.svc.%s.`, trustDomain))
+	if !found {
+		return false
+	}
+	sections := strings.Split(prefix, `.`)
+	return len(sections) == 2 && k8sClient.GetK8sNamespace(sections[1]) != nil
+}
+
+func (h *DNSHandler) getRawQName(qname, trustDomain string) (string, string, bool) {
 	fromNamespace := `default`
+	hadSearchSuffix := false
 	suffixDomains := h.getSuffixDomains(trustDomain)
 	for _, suffixDomain := range suffixDomains {
-		if strings.HasSuffix(qname, suffixDomain) {
-			qname = strings.TrimSuffix(qname, suffixDomain)
+		if trimmedQName, found := strings.CutSuffix(qname, suffixDomain); found {
+			hadSearchSuffix = true
+			qname = trimmedQName
 			sections := strings.Split(qname, `.`)
 			ndots := len(sections)
 			if ndots > 1 {
 				fromNamespace = sections[len(sections)-1]
 				searches := h.getTrustDomainSearches(trustDomain, fromNamespace)
 				for _, search := range searches {
-					if strings.HasSuffix(qname, search) {
-						qname = strings.TrimSuffix(qname, search)
+					if trimmedQName, found := strings.CutSuffix(qname, search); found {
+						qname = trimmedQName
 						break
 					}
 				}
@@ -113,7 +130,7 @@ func (h *DNSHandler) getRawQName(qname, trustDomain string) (string, string) {
 			break
 		}
 	}
-	return strings.TrimSuffix(qname, `.`), fromNamespace
+	return strings.TrimSuffix(qname, `.`), fromNamespace, hadSearchSuffix
 }
 
 func (h *DNSHandler) do(cfg *Config) {
@@ -135,11 +152,15 @@ func (h *DNSHandler) do(cfg *Config) {
 				remote = w.RemoteAddr().(*net.UDPAddr).IP
 			}
 
-			var origQuestions []dns.Question
+			var (
+				origQuestions     []dns.Question
+				nameRewrites      []questionNameRewrite
+				continueDNSSearch bool
+			)
 
 			for index, q := range req.Question {
 				origQuestions = append(origQuestions, q)
-				qname, fromNamespace := h.getRawQName(q.Name, trustDomain)
+				qname, fromNamespace, hadSearchSuffix := h.getRawQName(q.Name, trustDomain)
 				log.Debug().Msgf("%s lookup q.Name:%s qname:%s namespace:%s　trustDomain:%s", remote, q.Name, qname, fromNamespace, trustDomain)
 
 				segs := strings.Split(qname, `.`)
@@ -155,6 +176,21 @@ func (h *DNSHandler) do(cfg *Config) {
 						req.Question[index].Name = fmt.Sprintf(`%s.`, qname)
 					}
 				}
+				nameRewrites = append(nameRewrites, questionNameRewrite{
+					original:  q.Name,
+					forwarded: req.Question[index].Name,
+				})
+				if hadSearchSuffix && !h.isClusterServiceQName(q.Name, trustDomain) {
+					continueDNSSearch = true
+				}
+			}
+
+			if continueDNSSearch {
+				m := new(dns.Msg)
+				m.SetRcode(req, dns.RcodeNameError)
+				m.Question = origQuestions
+				h.WriteReplyMsg(w, m)
+				return
 			}
 
 			q := req.Question[0]
@@ -179,8 +215,6 @@ func (h *DNSHandler) do(cfg *Config) {
 				h.HandleFailed(w, req)
 				return
 			}
-			resp.Question = origQuestions
-
 			if resp.Truncated && Net == "udp" {
 				resp, err = h.resolver.Lookup("tcp", req, cfg.GetTimeout(), cfg.GetInterval(), cfg.GetNameservers())
 				if err != nil {
@@ -194,25 +228,12 @@ func (h *DNSHandler) do(cfg *Config) {
 
 			if resp.Rcode == dns.RcodeNameError && cfg.IsWildcard() {
 				req.Question = origQuestions
-				h.HandleWildcard(req, cfg, ipQuery, &q, w)
+				h.HandleWildcard(req, cfg, ipQuery, w)
 				return
 			}
 
-			if len(origQuestions) > 0 && len(origQuestions) >= len(resp.Answer) {
-				for idx, rr := range resp.Answer {
-					header := rr.Header()
-					switch header.Rrtype {
-					case dns.TypeA:
-						a := rr.(*dns.A)
-						a.Hdr.Name = origQuestions[idx].Name
-						resp.Answer[idx] = a
-					case dns.TypeAAAA:
-						aaaa := rr.(*dns.AAAA)
-						aaaa.Hdr.Name = origQuestions[idx].Name
-						resp.Answer[idx] = aaaa
-					}
-				}
-			}
+			resp.Question = origQuestions
+			restoreAnswerNames(resp.Answer, nameRewrites)
 
 			if dbs := cfg.GetWildcardResolveDB(); cfg.IsWildcard() && len(dbs) > 0 {
 				los := cfg.GetLoopbackResolveDB()
@@ -282,9 +303,10 @@ func (h *DNSHandler) HandleFailed(w dns.ResponseWriter, req *dns.Msg) {
 	h.WriteReplyMsg(w, m)
 }
 
-func (h *DNSHandler) HandleWildcard(req *dns.Msg, cfg *Config, ipQuery int, q *dns.Question, w dns.ResponseWriter) {
+func (h *DNSHandler) HandleWildcard(req *dns.Msg, cfg *Config, ipQuery int, w dns.ResponseWriter) {
 	m := new(dns.Msg)
 	m.SetReply(req)
+	q := req.Question[0]
 
 	if cfg.GetNXDomain() {
 		m.SetRcode(req, dns.RcodeNameError)
@@ -324,6 +346,17 @@ func (h *DNSHandler) HandleWildcard(req *dns.Msg, cfg *Config, ipQuery int, q *d
 		}
 	}
 	h.WriteReplyMsg(w, m)
+}
+
+func restoreAnswerNames(answers []dns.RR, rewrites []questionNameRewrite) {
+	for _, rr := range answers {
+		for _, rewrite := range rewrites {
+			if strings.EqualFold(rr.Header().Name, rewrite.forwarded) {
+				rr.Header().Name = rewrite.original
+				break
+			}
+		}
+	}
 }
 
 // WriteReplyMsg writes the dns reply
