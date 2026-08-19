@@ -1080,7 +1080,8 @@
                     "holdApplicationUntilProxyStarts",
                     "gracefulExitUntilDownstreamEnds",
                     "sidecarLogLevel",
-                    "sidecarTimeout"
+                    "sidecarTimeout",
+                    "httpResponseBufferSize"
                   ],
                   "properties": {
                     "image": {
@@ -1192,6 +1193,16 @@
                       "description": "Sets connect/idle/read/write timeout",
                       "examples": [
                         "60"
+                      ]
+                    },
+                    "httpResponseBufferSize": {
+                      "$id": "#/properties/fsm/properties/sidecar/properties/httpResponseBufferSize",
+                      "type": "integer",
+                      "minimum": 1,
+                      "title": "The httpResponseBufferSize schema",
+                      "description": "Response bytes buffered before HTTP/1.x switches to chunked transfer encoding",
+                      "examples": [
+                        1
                       ]
                     },
                     "resource": {

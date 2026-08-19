@@ -349,6 +349,13 @@ spec:
                     description: EnablePrivilegedInitContainer defines a boolean indicating
                       whether the init container for a meshed pod should run as privileged.
                     type: boolean
+                  httpResponseBufferSize:
+                    default: 1
+                    description: HTTPResponseBufferSize defines the number of response
+                      body bytes buffered before HTTP/1.x switches to chunked transfer
+                      encoding.
+                    minimum: 1
+                    type: integer
                   imagePullSecrets:
                     description: ImagePullSecrets defines references to secrets used
                       for pulling images injected into meshed pods.
@@ -936,6 +943,13 @@ spec:
                     description: EnablePrivilegedInitContainer defines a boolean indicating
                       whether the init container for a meshed pod should run as privileged.
                     type: boolean
+                  httpResponseBufferSize:
+                    default: 1
+                    description: HTTPResponseBufferSize defines the number of response
+                      body bytes buffered before HTTP/1.x switches to chunked transfer
+                      encoding.
+                    minimum: 1
+                    type: integer
                   imagePullSecrets:
                     description: ImagePullSecrets defines references to secrets used
                       for pulling images injected into meshed pods.
@@ -2100,6 +2114,13 @@ spec:
                       is ready to accept traffic, mitigating some startup race conditions.
                       Default value is 'true'.
                     type: boolean
+                  httpResponseBufferSize:
+                    default: 1
+                    description: HTTPResponseBufferSize defines the number of response
+                      body bytes buffered before HTTP/1.x switches to chunked transfer
+                      encoding.
+                    minimum: 1
+                    type: integer
                   imagePullSecrets:
                     description: ImagePullSecrets defines references to secrets used
                       for pulling images injected into meshed pods.

@@ -213,6 +213,11 @@ type SidecarSpec struct {
 	// SidecarTimeout defines the connect/idle/read/write timeout.
 	SidecarTimeout int `json:"sidecarTimeout,omitempty"`
 
+	// HTTPResponseBufferSize defines the number of response body bytes buffered before HTTP/1.x switches to chunked transfer encoding.
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default=1
+	HTTPResponseBufferSize int `json:"httpResponseBufferSize,omitempty"`
+
 	// Resources defines the compute resources for the sidecar.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 

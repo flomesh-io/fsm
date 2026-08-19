@@ -174,7 +174,7 @@
     .replay({ 'delay': 0 }).to(
       $=>$
       .link('upstream')
-      .replaceMessage(
+      .replaceMessageStart(
         msg => (
           (
             status = msg?.head?.status

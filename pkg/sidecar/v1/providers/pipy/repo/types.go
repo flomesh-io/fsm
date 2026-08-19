@@ -239,12 +239,13 @@ type ObservabilitySpec struct {
 
 // MeshConfigSpec represents the spec of mesh config
 type MeshConfigSpec struct {
-	ServiceIdentity identity.ServiceIdentity
-	SidecarLogLevel string
-	SidecarTimeout  int
-	Traffic         TrafficSpec
-	FeatureFlags    FeatureFlags
-	Probes          struct {
+	ServiceIdentity        identity.ServiceIdentity
+	SidecarLogLevel        string
+	SidecarTimeout         int
+	HTTPResponseBufferSize int
+	Traffic                TrafficSpec
+	FeatureFlags           FeatureFlags
+	Probes                 struct {
 		ReadinessProbes []corev1.Probe `json:"ReadinessProbes,omitempty"`
 		LivenessProbes  []corev1.Probe `json:"LivenessProbes,omitempty"`
 		StartupProbes   []corev1.Probe `json:"StartupProbes,omitempty"`

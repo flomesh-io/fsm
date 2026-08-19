@@ -31,6 +31,7 @@ data:
         "imagePullSecrets": {{.Values.fsm.imagePullSecrets | mustToJson}},
         "sidecarDisabledMTLS": {{.Values.fsm.sidecar.sidecarDisabledMTLS | mustToJson }},
         "sidecarTimeout": {{.Values.fsm.sidecar.sidecarTimeout | mustToJson}},
+        "httpResponseBufferSize": {{.Values.fsm.sidecar.httpResponseBufferSize | mustToJson}},
         "localProxyMode": {{.Values.fsm.localProxyMode | mustToJson}},
         "localDNSProxy": {{.Values.fsm.localDNSProxy | mustToJson}},
         "xnetDNSProxy": {{.Values.fsm.xnetDNSProxy | mustToJson}}

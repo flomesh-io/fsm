@@ -222,6 +222,24 @@ func TestGetProxyUpdateEvent(t *testing.T) {
 			expectedTopic: announcements.ProxyUpdate.String(),
 		},
 		{
+			name: "MeshConfig HTTP response buffer size update results in proxy update",
+			msg: events.PubSubMessage{
+				Kind: announcements.MeshConfigUpdated,
+				OldObj: &configv1alpha3.MeshConfig{
+					Spec: configv1alpha3.MeshConfigSpec{
+						Sidecar: configv1alpha3.SidecarSpec{HTTPResponseBufferSize: 1},
+					},
+				},
+				NewObj: &configv1alpha3.MeshConfig{
+					Spec: configv1alpha3.MeshConfigSpec{
+						Sidecar: configv1alpha3.SidecarSpec{HTTPResponseBufferSize: 4096},
+					},
+				},
+			},
+			expectEvent:   true,
+			expectedTopic: announcements.ProxyUpdate.String(),
+		},
+		{
 			name: "MeshConfigUpdate event with unexpected object type",
 			msg: events.PubSubMessage{
 				Kind:   announcements.MeshConfigUpdated,

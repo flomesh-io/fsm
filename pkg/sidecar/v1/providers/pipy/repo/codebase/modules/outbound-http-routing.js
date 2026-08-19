@@ -2,6 +2,7 @@
   config = pipy.solve('config.js'),
   specServiceIdentity = config?.Spec?.ServiceIdentity,
   isDebugEnabled = config?.Spec?.SidecarLogLevel === 'debug',
+  httpResponseBufferSize = config?.Spec?.HTTPResponseBufferSize > 0 ? config.Spec.HTTPResponseBufferSize : 1,
   {
     shuffle,
     failover,
@@ -150,7 +151,7 @@
     $=>$
   )
 )
-.demuxHTTP().to(
+.demuxHTTP({ bufferSize: httpResponseBufferSize }).to(
   $=>$
   .replay({ 'delay': 0 }).to(
     $=>$
@@ -172,7 +173,7 @@
       )
     )
     .chain()
-    .replaceMessage(
+    .replaceMessageStart(
       msg => (
         (
           status = msg?.head?.status

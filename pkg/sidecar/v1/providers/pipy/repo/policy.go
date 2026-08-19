@@ -55,6 +55,16 @@ func (p *PipyConf) setSidecarTimeout(sidecarTimeout int) (update bool) {
 	return
 }
 
+func (p *PipyConf) setHTTPResponseBufferSize(httpResponseBufferSize int) (update bool) {
+	if httpResponseBufferSize < 1 {
+		httpResponseBufferSize = 1
+	}
+	if update = p.Spec.HTTPResponseBufferSize != httpResponseBufferSize; update {
+		p.Spec.HTTPResponseBufferSize = httpResponseBufferSize
+	}
+	return
+}
+
 func (p *PipyConf) setSidecarCompressConfig(compressConfig bool) (update bool) {
 	if update = p.Spec.sidecarCompressConfig != compressConfig; update {
 		p.Spec.sidecarCompressConfig = compressConfig

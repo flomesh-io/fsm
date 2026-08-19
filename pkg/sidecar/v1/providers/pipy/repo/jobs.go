@@ -399,6 +399,7 @@ func features(s *Server, proxy *pipy.Proxy, pipyConf *PipyConf) {
 		pipyConf.setSidecarCompressConfig((*meshConf).GetMeshConfig().Spec.Sidecar.CompressConfig)
 		pipyConf.setSidecarLogLevel((*meshConf).GetMeshConfig().Spec.Sidecar.LogLevel)
 		pipyConf.setSidecarTimeout((*meshConf).GetMeshConfig().Spec.Sidecar.SidecarTimeout)
+		pipyConf.setHTTPResponseBufferSize((*meshConf).GetMeshConfig().Spec.Sidecar.HTTPResponseBufferSize)
 		pipyConf.setEnableSidecarActiveHealthChecks((*meshConf).GetFeatureFlags().EnableSidecarActiveHealthChecks)
 		pipyConf.setEnableAutoDefaultRoute((*meshConf).GetFeatureFlags().EnableAutoDefaultRoute)
 		pipyConf.setEnableEgress((*meshConf).IsEgressEnabled())

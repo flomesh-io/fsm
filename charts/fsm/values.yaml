@@ -93,6 +93,8 @@ fsm:
     sidecarLogLevel: error
     # -- Sets connect/idle/read/write timeout
     sidecarTimeout: 60
+    # -- Response bytes buffered before HTTP/1.x switches to chunked transfer encoding
+    httpResponseBufferSize: 1
 
   # -- Pipy RepoServer
   repoServer:

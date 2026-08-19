@@ -1,5 +1,6 @@
 ((
   config = pipy.solve('config.js'),
+  httpResponseBufferSize = config?.Spec?.HTTPResponseBufferSize > 0 ? config.Spec.HTTPResponseBufferSize : 1,
 
   allMethods = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
 
@@ -145,7 +146,7 @@
     $=>$
   )
 )
-.demuxHTTP().to(
+.demuxHTTP({ bufferSize: httpResponseBufferSize }).to(
   $=>$.handleMessageStart(
     msg => (
       _useHttp2 && msg?.head?.headers?.['content-type']?.startsWith?.('application/grpc') && (
