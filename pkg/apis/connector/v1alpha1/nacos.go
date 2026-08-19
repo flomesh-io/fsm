@@ -127,7 +127,6 @@ type NacosSyncToK8SSpec struct {
 	ConversionStrategy *ConversionStrategy `json:"conversionStrategy,omitempty"`
 
 	// +kubebuilder:default=polling
-	// +kubebuilder:validation:Enum=polling;event-driven
 	// +optional
 	// SyncMode defines how to synchronize services from Nacos to K8s.
 	// - "polling": Periodically poll Nacos for service changes (default).

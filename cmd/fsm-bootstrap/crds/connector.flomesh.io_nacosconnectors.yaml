@@ -250,9 +250,16 @@ spec:
                     type: boolean
                   enableReconcileTimer:
                     default: true
+                    description: |-
+                      EnableReconcileTimer controls whether the periodic full reconciliation timer
+                      is enabled. When set to false, only event-driven (incremental) syncs are performed.
                     type: boolean
                   enableSlidingWindow:
                     default: true
+                    description: |-
+                      EnableSlidingWindow controls whether the BroadcastListener uses a sliding window
+                      to batch service update events before syncing to Nacos. When set to false,
+                      each K8s service/endpoint change triggers an immediate sync.
                     type: boolean
                   excludeIpRanges:
                     items:
@@ -453,6 +460,10 @@ spec:
                     type: string
                   syncMode:
                     default: polling
+                    description: |-
+                      SyncMode defines how to synchronize services from Nacos to K8s.
+                      - "polling": Periodically poll Nacos for service changes (default).
+                      - "event-driven": Use Nacos Subscribe API for real-time change notifications.
                     enum:
                     - polling
                     - event-driven
