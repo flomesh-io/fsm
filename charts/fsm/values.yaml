@@ -12,7 +12,7 @@ fsm:
     # -- Container image pull policy for control plane containers
     pullPolicy: IfNotPresent
     # -- Container image tag for control plane images
-    tag: "1.5.2"
+    tag: "1.5.3"
     # -- Image name defaults
     name:
       # -- fsm-controller's image name
@@ -104,7 +104,7 @@ fsm:
       # -- Repo server image name
       name: pipy-repo
       # -- Repo server image tag
-      tag: 2.0.2
+      tag: 2.0.3
     # -- if false , Pipy RepoServer is installed within fsmController pod.
     standalone: false
     # -- ipaddr of host/service where Pipy RepoServer is installed
@@ -297,7 +297,7 @@ fsm:
         # -- xnet image name
         name: xnet
         # -- xnet image tag
-        tag: 1.5.2
+        tag: 1.5.3
       resource:
         limits:
           cpu: "1.5"
